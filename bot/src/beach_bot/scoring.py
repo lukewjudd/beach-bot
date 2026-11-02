@@ -257,7 +257,8 @@ def score_surf_hour(sp: SurfSpot, h: dict):
         notes.append("closing out")
 
     # Quality: gap between waves (short wind chop is mushy, groundswell is clean) and wind
-    q = 0 if period < 6 else 5 if period < 8 else 10 if period < 10 else 15 if period < 12 else 22 if period < 14 else 25
+    q = 0 if period < 6 else 5 if period < 8 else 10 if period < 10 else 15 if period < 12 else 22
+    q += 3 if period >= 14 else 0
     if period < 6:
         notes.append("short, choppy swell")
     kind = wind_kind(h["wind_direction_10m"], sp.facing)
