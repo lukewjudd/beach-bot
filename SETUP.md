@@ -52,30 +52,29 @@ gcloud --project beach-bot-luke run jobs execute beach-bot --region us-central1 
 ```
 
 ## Tuning
-The thresholds are at the top of `beach_bot.py`:
+The thresholds are in `bot/src/beach_bot/config.py`:
 - `EVENT_THRESHOLD`: how good a session has to be before it's posted.
 - `FIRE_THRESHOLD`: when a session gets a 🔥.
 - `CLOVELLY_TOLERANCE`: how close another beach's score has to be for Clovelly to still win.
 
-The rule ids in the code (R-W1 and so on) match `beach-knowledge.md`.
+The beaches themselves are in `bot/src/beach_bot/beaches.py`. The rule ids in the code (R-W1 and so on) match `beach-knowledge.md`.
 
-To preview without touching the calendar:
-- `python beach_bot.py` shows the sessions that would be posted.
-- `python beach_bot.py --all` shows the full report for every session.
+To preview without touching the calendar, from `bot/`:
+- `uv run beach-bot` shows the sessions that would be posted.
+- `uv run beach-bot --all` shows the full report for every session.
 
-Re-run `./deploy.sh` after any change.
+Re-run `./deploy.sh` after any change to the bot.
 
 ## Map site
-Every run also uploads `scores.json` to the public bucket `<PROJECT>-beach-scores`. The site in `docs/` reads that file and is published with GitHub Pages: go to **Settings → Pages → Deploy from a branch → `main` / `/docs`**.
+Every run also uploads `scores.json` to the public bucket `<PROJECT>-beach-scores`. The site in `web/` reads that file. It's built and published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that touches `web/`. In the repo's **Settings → Pages**, the source must be **GitHub Actions**.
 
-To preview the site locally:
+To work on the site locally:
 ```bash
-python beach_bot.py --json docs/scores.json
-npx http-server docs -p 8765 -c-1
+cd bot && uv run beach-bot --json ../web/public/scores.json
+cd web && npm install && npm run dev
 ```
-Then open http://localhost:8765. Use a server that supports byte ranges (Python's built-in one doesn't), because the map reads tiles out of `docs/map/eastern-suburbs.pmtiles` with range requests.
 
-The map is a [Protomaps](https://protomaps.com) extract with self-hosted fonts and sprites, so there's no map provider or key. To rebuild it (the coastline doesn't change much, so roughly once a year):
+The map is a [Protomaps](https://protomaps.com) extract with self-hosted fonts and sprites in `web/public/map/`, so there's no map provider or key. MapLibre reads tiles out of the one `.pmtiles` file with byte-range requests, which GitHub Pages supports. To rebuild it (the coastline doesn't change much, so roughly once a year):
 ```bash
-pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles docs/map/eastern-suburbs.pmtiles --bbox=151.17,-34.01,151.32,-33.83 --maxzoom=14
+pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles web/public/map/eastern-suburbs.pmtiles --bbox=151.17,-34.01,151.32,-33.83 --maxzoom=14
 ```
