@@ -75,7 +75,7 @@ COORDS = {
     "Tamarama": (-33.9007, 151.2709),
     "Bronte": (-33.9031, 151.2688),
     "Clovelly": (-33.9138, 151.2666),
-    "Gordons Bay": (-33.9158, 151.2648),
+    "Gordons Bay": (-33.9149, 151.2613),  # the sand at the back of the bay (OSM beach polygon)
     "Coogee": (-33.9208, 151.2582),
     "Maroubra": (-33.9475, 151.2572),
     "Malabar": (-33.9644, 151.2523),
