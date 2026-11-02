@@ -127,10 +127,12 @@ function render() {
   for (const spot of order) {
     const sc = byId[spot.id];
     if (spot.kind === "surf" && !sc) continue;   // surf not working: no marker, so it can't be mistaken for the beach
+    // MapLibre positions this outer element with a transform; styling lives on the inner pin so our CSS
+    // (position, borders) can't fight that and make pins drift while zooming
     const el = document.createElement("div");
-    el.className = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
     el.title = spot.name;
-    el.innerHTML = `${sc ? sc.rating : "–"}${spot.kind === "surf" ? '<span class="badge">🏄</span>' : ""}`;
+    const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
+    el.innerHTML = `<div class="${cls}">${sc ? sc.rating : "–"}${spot.kind === "surf" ? '<span class="badge">🏄</span>' : ""}</div>`;
     el.addEventListener("click", () => highlight(spot.id, false));
     markers[spot.id] = new maplibregl.Marker({ element: el })
       .setLngLat([spot.lon, spot.lat])
