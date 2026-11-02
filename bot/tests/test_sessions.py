@@ -5,7 +5,7 @@ from conftest import make_forecast, score
 from beach_bot.calendar import event_body
 from beach_bot.export import export_scores
 from beach_bot.forecast import Context
-from beach_bot.sessions import build_sessions, out_of_10, score_session
+from beach_bot.sessions import build_sessions, out_of_10, report, score_session
 
 WED = date(2026, 11, 4)
 
@@ -101,3 +101,22 @@ def test_monday_2_nov_was_not_worth_it(real_forecast):
     assert not monday["am"].is_good
     # NE sea breeze gusting past 40 km/h under full cloud
     assert not monday["pm"].is_good
+
+
+def test_conditions_are_per_spot_where_they_should_be():
+    # A NE breeze and a 1.2m E swell: onshore and rough at Maroubra, sheltered inside Clovelly
+    def ne_breeze(t, h):
+        h.update(wind_speed_10m=22.0, wind_direction_10m=45, wind_gusts_10m=30.0, wave_height=1.2)
+        h["swell_wave_direction"] = 90
+        return h
+
+    hours, sun = make_forecast(WED, ne_breeze)
+    sessions, ctx = score(hours, sun, WED)
+    am = sessions["am"]
+    beach = {b.name: b for _, b, _ in am.swim}
+    clovelly = report(am, hours, ctx, {}, WED, beach["Clovelly"])
+    maroubra = report(am, hours, ctx, {}, WED, beach["Maroubra"])
+
+    assert clovelly["Calm water"] > maroubra["Calm water"]
+    assert clovelly["Wind"] > maroubra["Wind"]  # cross-shore at Clovelly, onshore at Maroubra
+    assert clovelly["Water temp"] == maroubra["Water temp"]  # one sea temperature for the coast

@@ -109,6 +109,14 @@ class Pool:
 
 _BEACH = {b.name: b for b in BEACHES}
 
+# Surf spots share the water (and Beachwatch site) of the beach they break off
+BEACH_FOR_SURF = {
+    "Bondi (south end)": _BEACH["Bondi (north end)"],
+    "Maroubra": _BEACH["Maroubra"],
+    "Bronte": _BEACH["Bronte"],
+    "Coogee": _BEACH["Coogee"],
+}
+
 POOLS = [
     Pool("Bondi Icebergs", _BEACH["Bondi (north end)"], 1.0, cleaning_day=3),  # R-P7: Thursdays
     Pool("Bronte Baths", _BEACH["Bronte"], 0.8, cleaning_day=2, cleaning_before_low=True),  # R-P7: Wednesdays

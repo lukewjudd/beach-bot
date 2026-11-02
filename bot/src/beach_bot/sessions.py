@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import BEACHES, POOLS, SURF_SPOTS
+from .beaches import BEACH_FOR_SURF, BEACHES, POOLS, SURF_SPOTS, Pool
 from .config import (
     CLOVELLY_TOLERANCE,
     DAYS_AHEAD,
@@ -198,26 +198,37 @@ def out_of_10(score):
     return max(1, min(10, int(score // 10)))  # 80-89 -> 8, so 8/10 always means it cleared the bar
 
 
-def report(sess, hours, ctx, beachwatch, today):
-    """Out-of-10 ratings per condition, judged at the top swim pick during its best window."""
-    b = sess.best_swim[1] if sess.best_swim else BEACHES[3]
-    keys = window_hours(sess, b.name)
+def report(sess, hours, ctx, beachwatch, today, spot=None):
+    """Out-of-10 ratings per condition at one spot (a Beach, Pool or SurfSpot) during its best window.
+    Without a spot it's the top swim pick, which is what the calendar event shows.
+    Wind, weather and water temp come from area-wide forecasts; how the wind and swell hit the spot,
+    and its water quality, are the spot's own."""
+    spot = spot or (sess.best_swim[1] if sess.best_swim else BEACHES[3])
+    keys = window_hours(sess, spot.name)
     c = conditions(sess, hours, keys)
     hs_list = [hours[t] for t in keys]
+    facing = None if isinstance(spot, Pool) else spot.facing  # pools sit behind rocks: no on/offshore
+    water_beach = spot.beach if isinstance(spot, Pool) else BEACH_FOR_SURF.get(spot.name, spot)
 
     wind = c["wind"]
     w = 10 if wind < 8 else 8 if wind < 15 else 6 if wind < 20 else 4 if wind < 28 else 2
-    kinds = [wind_kind(h["wind_direction_10m"], b.facing) for h in hs_list]
-    if kinds.count("onshore") > len(kinds) / 2 and wind >= 12:
-        w -= 2
-    elif kinds.count("offshore") > len(kinds) / 2:
-        w += 1
+    if facing is not None:
+        kinds = [wind_kind(h["wind_direction_10m"], facing) for h in hs_list]
+        if kinds.count("onshore") > len(kinds) / 2 and wind >= 12:
+            w -= 2
+        elif kinds.count("offshore") > len(kinds) / 2:
+            w += 1
     w -= 3 if c["gust"] >= 45 else 2 if c["gust"] >= 35 else 0
 
-    sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
-    hb = c["hs"] * (b.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
-    calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
-    surf = out_of_10(sess.surf[0][0]) if sess.surf else 1
+    if isinstance(spot, Pool):  # calm inside unless swell is coming over the walls
+        surge = c["hs"] * spot.exposure
+        calm = 10 if surge < 0.8 else 8 if surge < 1.2 else 6 if surge < 1.5 else 4 if surge < 2.0 else 2
+    else:
+        sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
+        hb = c["hs"] * (spot.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
+        calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
+    own_surf = next((sc for sc, sp, _ in sess.surf if sp.name == spot.name), None)
+    surf = out_of_10(own_surf if own_surf is not None else sess.surf[0][0]) if sess.surf else 1
 
     sea = c["sea"] or 20
     water = (
@@ -242,11 +253,14 @@ def report(sess, hours, ctx, beachwatch, today):
     weather = 10 if air >= 26 else 8 if air >= 23 else 6 if air >= 21 else 4 if air >= 19 else 2
     weather -= 3 if c["rain_prob"] >= 60 else 1 if c["rain_prob"] >= 40 else 0
 
+    b = water_beach
     bw = beachwatch.get(b.beachwatch) if sess.day == today else None
     rain24 = ctx.rain(sess.hours[0], 0, 24)
     quality = {"Likely": 2, "Possible": 5, "Unlikely": 10}.get(
         bw, 10 if rain24 < b.rain_occ else 6 if rain24 < b.rain_often else 3
     )
+    if b.poor_grade and quality == 10 and ctx.rain(sess.hours[0], 0, 72) >= 1:  # R-R3: slow to clear
+        quality = 6
 
     clamp = lambda x: max(1, min(10, x))  # noqa: E731
     return {

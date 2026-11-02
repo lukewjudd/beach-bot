@@ -107,6 +107,12 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
                     "uv": round(c["uv"]),
                 },
                 "report": report(sess, hours, ctx, beachwatch, now.date()),
+                # Conditions at each spot, so the site can show the one you've picked
+                "reports": {
+                    slug(sp.name, kind): report(sess, hours, ctx, beachwatch, now.date(), sp)
+                    for kind, group in (("swim", BEACHES), ("pool", POOLS), ("surf", SURF_SPOTS))
+                    for sp in group
+                },
                 "ruled_out": {
                     slug(name, "pool" if any(p.name == name for p in POOLS) else "swim"): why
                     for name, why in sess.ruled_out.items()
