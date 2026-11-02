@@ -3,7 +3,7 @@
 import json
 
 from .beaches import BEACHES, COORDS, POOL_COORDS, POOLS, SURF_COORDS, SURF_SPOTS
-from .config import EVENT_THRESHOLD, FIRE_THRESHOLD
+from .config import CLOVELLY_TOLERANCE, EVENT_THRESHOLD, FAVOURITE, FIRE_THRESHOLD
 from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
 
 
@@ -124,6 +124,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
     return {
         "generated_at": now.isoformat(timespec="minutes"),
         "thresholds": {"post": EVENT_THRESHOLD, "fire": FIRE_THRESHOLD},
+        # The favourite wins close calls (R-TB1); the site ranks its list the same way as the headline
+        "favourite": {"id": slug(FAVOURITE, "swim"), "tolerance": CLOVELLY_TOLERANCE},
         "spots": spots,
         "sessions": out_sessions,
     }
