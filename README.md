@@ -1,39 +1,39 @@
 # beach bot
 
-bot look at weather. bot look at ocean. bot tell me when beach good.
+Checks the weather and ocean forecast and tells me when it's worth going to the beach. Eastern suburbs Sydney only. Clovelly is the favourite, so it wins ties.
 
-eastern suburbs sydney only. clovelly best beach. clovelly win ties.
+## What it does
 
-## what it do
+- Pulls the forecast from Open-Meteo (wind, swell, air and water temp, rain)
+- Checks Beachwatch for water quality
+- Scores every beach for a morning session (before work) and an evening session (after work), plus weekends
+- Anything 8/10 or better goes in a shared Google Calendar, and 9+ gets a 🔥
+- If the forecast turns, the event gets removed
+- Writes all the scores to a JSON file, which the map site in `docs/` reads
 
-- grab forecast from open-meteo (wind, swell, temp, rain, water temp)
-- grab beachwatch to see if water gross
-- score every beach for morning (before work) and evening (after work). weekends too
-- score 8/10 or more = goes in google calendar. 9+ gets a 🔥
-- forecast get worse = event go away
-- dump all scores to json, map site in `docs/` shows them
+Runs on Cloud Run three times a day: 4am, 3pm and 7pm.
 
-runs on cloud run 3 times a day. 4am, 3pm, 7pm.
+Map: https://lukewjudd.github.io/beach-bot/
 
-## run it
+## Running it
 
 ```bash
 pip install -r requirements.txt
-python beach_bot.py --all      # look at scores, touch nothing
-python beach_bot.py --sync     # actually update calendar
-python backtest.py             # how would it have gone since 2023
+python beach_bot.py --all      # show the scores, don't touch the calendar
+python beach_bot.py --sync     # update the calendar
+python backtest.py             # replay every session since 2023
 ```
 
-## deploy it
+## Deploying
 
-put `PROJECT_ID` and `CALENDAR_ID` in `.env` then
+Put `PROJECT_ID` and `CALENDAR_ID` in `.env`, then:
 
 ```bash
 ./deploy.sh
 ```
 
-full setup in `SETUP.md`. all the beach rules and where they came from in `beach-knowledge.md`.
+Full setup is in `SETUP.md`. The beach rules and where they came from are in `beach-knowledge.md`.
 
-## change it
+## Tweaking
 
-numbers at top of `beach_bot.py`. bar too high, make lower. bar too low, make higher.
+The thresholds are at the top of `beach_bot.py`. If it posts too much, raise the bar. If it's too quiet, lower it.
