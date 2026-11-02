@@ -1,6 +1,6 @@
 // Beach calls: renders scores.json as session tabs, a map and a ranked list.
 
-import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Map as LeafletMap, Marker } from "leaflet";
 import "./style.css";
 import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
 
@@ -15,11 +15,11 @@ const esc = (s: unknown) =>
 
 let data: Scores;
 let spotsById: Record<string, Spot>;
-// The map library is ~1MB, so it loads on the side: the forecast renders as soon as the scores arrive,
+// The map code loads on the side: the forecast renders as soon as the scores arrive,
 // and pins are added once the map is ready
 const mapModule = import("./map");
 let mapApi: typeof import("./map") | undefined;
-let map: MapLibreMap | undefined;
+let map: LeafletMap | undefined;
 let markers: Record<string, Marker> = {};
 let current = 0;
 let activeSpot: string | null = null;
@@ -218,9 +218,8 @@ function highlight(id: string, fromList: boolean) {
   document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === id));
   const m = markers[id];
   if (m && fromList) {
-    Object.values(markers).forEach((o) => o !== m && o.getPopup()?.isOpen() && o.togglePopup());
-    map?.easeTo({ center: m.getLngLat() });
-    if (!m.getPopup()?.isOpen()) m.togglePopup();
+    map?.panTo(m.getLatLng());
+    m.openPopup(); // Leaflet closes any other open popup
     $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }

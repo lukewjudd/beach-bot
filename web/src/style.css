@@ -141,9 +141,10 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .marker.none { background: var(--surface); color: var(--muted); border-color: var(--line); }
 #map { overflow: hidden; }
 .marker { cursor: pointer; }
-.maplibregl-popup-content { background: var(--surface); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; }
-.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--surface); }
-.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--surface); }
+.leaflet-container { font: inherit; background: var(--bg); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--text); }
+.leaflet-popup-content-wrapper { border-radius: 10px; }
+.leaflet-popup-content { margin: 10px 12px; font-size: 14px; }
 .popup .t { font-weight: 700; }
 .popup .m { color: var(--muted); font-size: 13px; }
 

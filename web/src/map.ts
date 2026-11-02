@@ -1,75 +1,63 @@
-// Self-hosted map: a Protomaps PMTiles extract of the eastern suburbs, with fonts and sprites, all in public/map/.
-// GitHub Pages serves byte ranges, so MapLibre reads tiles straight out of the one file.
+// Self-hosted map: a Protomaps PMTiles extract of the eastern suburbs in public/map/, drawn by Leaflet +
+// protomaps-leaflet (~77KB compressed, vs ~430KB for MapLibre). GitHub Pages serves byte ranges, so tiles are
+// read straight out of the one file.
 
-import { layers, namedFlavor } from "@protomaps/basemaps";
-import { addProtocol, LngLatBounds, Map as MapLibreMap, Marker, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import { Protocol } from "pmtiles";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { leafletLayer } from "protomaps-leaflet";
 import type { Spot } from "./types";
 
 const MAP_BASE = new URL(`${import.meta.env.BASE_URL}map/`, location.href).href;
-const MAP_BOUNDS: [[number, number], [number, number]] = [
-  [151.17, -34.01],
-  [151.32, -33.83],
-]; // must sit inside the extract's bbox
-
-// MapLibre 6 is ESM-only and loads its worker from a separate file; point it at the copy Vite emits
-setWorkerUrl(workerUrl);
-
+const MAP_BOUNDS = L.latLngBounds([-34.01, 151.17], [-33.83, 151.32]); // must sit inside the extract's bbox
 // Covers every spot, so the map can start loading before the scores arrive
-const SPOT_BOUNDS = new LngLatBounds([151.2505, -33.982], [151.284, -33.889]);
+const SPOT_BOUNDS = L.latLngBounds([-33.982, 151.2505], [-33.889, 151.284]);
 
-export function createMap(container: HTMLElement): MapLibreMap {
-  addProtocol("pmtiles", new Protocol().tile);
-  const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  const map = new MapLibreMap({
-    container,
-    style: {
-      version: 8,
-      // Not built with URL(): it would percent-encode the {fontstack}/{range} placeholders
-      glyphs: `${MAP_BASE}fonts/{fontstack}/{range}.pbf`,
-      sprite: `${MAP_BASE}sprites/${flavor}`,
-      sources: {
-        protomaps: {
-          type: "vector",
-          url: `pmtiles://${MAP_BASE}eastern-suburbs.pmtiles`,
-          attribution:
-            '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
-        },
-      },
-      layers: layers("protomaps", namedFlavor(flavor), { lang: "en" }),
-    },
+export function createMap(container: HTMLElement): L.Map {
+  const map = L.map(container, {
+    zoomControl: false,
+    scrollWheelZoom: false,
     maxBounds: MAP_BOUNDS,
-    minZoom: 10,
+    maxBoundsViscosity: 1,
+    minZoom: 11,
     maxZoom: 17,
-    cooperativeGestures: true, // one-finger scroll moves the page on phones, not the map
-    attributionControl: { compact: true },
+    zoomSnap: 0.25, // fit the coastline snugly rather than rounding down a whole zoom level
   });
-  map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+  L.control.zoom({ position: "bottomright" }).addTo(map);
+  const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const tiles = leafletLayer({
+    url: `${MAP_BASE}eastern-suburbs.pmtiles`,
+    flavor,
+    lang: "en",
+    maxDataZoom: 14, // the extract stops at z14; deeper zooms reuse those tiles
+    attribution:
+      '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+  });
+  tiles.addTo(map);
+  // Spinner until the first screenful of tiles is drawn
+  tiles.once("load", () => container.classList.add("ready"));
 
-  const fit = () => map.fitBounds(SPOT_BOUNDS, { padding: 32, duration: 0 });
+  const fit = () => map.fitBounds(SPOT_BOUNDS, { padding: [24, 24], animate: false });
   fit();
-  // Spinner until the first full render (tiles, fonts and sprites all in)
-  map.once("idle", () => container.classList.add("ready"));
   // The container can settle after first paint (fonts, grid); refit once it has its final size
   new ResizeObserver(() => {
-    map.resize();
+    map.invalidateSize();
     fit();
   }).observe(container);
   return map;
 }
 
-export function addPin(map: MapLibreMap, spot: Spot, pinClass: string, label: string, popupHtml: string, onClick: () => void) {
-  // MapLibre positions this outer element with a transform. Styling lives on the inner pin so our CSS
-  // (position, borders) can't fight that and make pins drift while zooming.
-  const el = document.createElement("div");
-  el.title = spot.name;
+export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, popupHtml: string, onClick: () => void) {
+  // Leaflet positions the outer icon element; styling lives on the inner pin so our CSS can't shift it
   const badge = { surf: "🏄", pool: "🏊", swim: "" }[spot.kind];
-  el.innerHTML = `<div class="${pinClass}">${label}${badge ? `<span class="badge">${badge}</span>` : ""}</div>`;
-  el.addEventListener("click", onClick);
-  return new Marker({ element: el })
-    .setLngLat([spot.lon, spot.lat])
-    .setPopup(new Popup({ offset: 18, closeButton: false }).setHTML(popupHtml))
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="${pinClass}">${label}${badge ? `<span class="badge">${badge}</span>` : ""}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -14],
+  });
+  return L.marker([spot.lat, spot.lon], { icon, title: spot.name, keyboard: true })
+    .bindPopup(popupHtml, { closeButton: false })
+    .on("click", onClick)
     .addTo(map);
 }
