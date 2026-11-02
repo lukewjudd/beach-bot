@@ -44,6 +44,8 @@ export interface Session {
     uv: number;
   };
   report: Record<string, number>;
+  /** Spots that are a no-go all session, and why (e.g. "waves over the walls") */
+  ruled_out?: Record<string, string>;
   scores: SpotScore[];
 }
 

@@ -153,7 +153,7 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
     const sc = byId[spot.id];
     if (!shown.has(spot.kind)) continue;
     const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
-    markers[spot.id] = mapApi.addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(spot, sc), () =>
+    markers[spot.id] = mapApi.addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(s, spot, sc), () =>
       highlight(spot.id, false),
     );
   }
@@ -174,7 +174,7 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
     .filter((p) => !byId[p.id] && p.kind !== "surf" && shown.has(p.kind))
     .map(
       (p) => `<li class="spot" data-id="${p.id}"><span class="pill r-low">–</span>
-        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${p.kind === "pool" ? "closed or too rough" : "too rough or unsafe"} this session</div></div><div></div></li>`,
+        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${esc(whyNot(s, p))}</div></div><div></div></li>`,
     );
   $("spots").innerHTML = [...scored, ...unsafe].join("");
   document
@@ -201,10 +201,15 @@ function render() {
   if (activeSpot) highlight(activeSpot, false);
 }
 
-function popup(spot: Spot, sc: SpotScore | undefined) {
+// The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
+function whyNot(s: Session, spot: Spot) {
+  const why = s.ruled_out?.[spot.id];
+  return why ? why.charAt(0).toUpperCase() + why.slice(1) : spot.kind === "pool" ? "Closed or too rough" : "Too rough";
+}
+
+function popup(s: Session, spot: Spot, sc: SpotScore | undefined) {
   if (!sc) {
-    const why = { surf: "Not working", pool: "Closed or too rough", swim: "Too rough or unsafe" }[spot.kind] + " this session";
-    return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${why}</div></div>`;
+    return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${esc(whyNot(s, spot))}</div></div>`;
   }
   return `<div class="popup">
     <div class="t">${prefix(spot)}${esc(spot.name)} · ${sc.rating}/10</div>
