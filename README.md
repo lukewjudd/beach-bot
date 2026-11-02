@@ -19,7 +19,7 @@ Map: https://lukewjudd.github.io/beach-bot/
 
 ```
 bot/       Python package: forecast, scoring, calendar, export (uv, ruff, pytest)
-web/       the map site: Vite + TypeScript + MapLibre, self-hosted Protomaps tiles
+web/       the map site: Vite + TypeScript + Leaflet, self-hosted Protomaps tiles
 deploy.sh  Cloud Run job, schedule and public bucket
 beach-knowledge.md  the beach rules and where they came from
 ```
