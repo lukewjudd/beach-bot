@@ -32,19 +32,42 @@ async function load() {
   render();
 }
 
+// Self-hosted map: a Protomaps PMTiles extract of the eastern suburbs, plus fonts and sprites, all in docs/map/.
+// GitHub Pages serves byte ranges, so MapLibre reads tiles straight out of the one file.
+const MAP_BASE = location.origin + location.pathname.replace(/[^/]*$/, "") + "map/";
+const MAP_BOUNDS = [[151.17, -34.01], [151.32, -33.83]];   // must sit inside the extract's bbox
+
 function initMap() {
-  map = L.map("map", { zoomControl: false, attributionControl: true, scrollWheelZoom: false });
-  // Stadia Maps: localhost works without a key; the live site is authorised by domain in the Stadia dashboard
-  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-  L.tileLayer(`https://tiles.stadiamaps.com/tiles/${dark ? "alidade_smooth_dark" : "alidade_smooth"}/{z}/{x}/{y}{r}.png`, {
-    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 20,
-  }).addTo(map);
-  L.control.zoom({ position: "bottomright" }).addTo(map);
-  const fit = () => map.fitBounds(L.latLngBounds(data.spots.map(s => [s.lat, s.lon])), { padding: [24, 24] });
+  const protocol = new pmtiles.Protocol();
+  maplibregl.addProtocol("pmtiles", protocol.tile);
+  const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  map = new maplibregl.Map({
+    container: "map",
+    style: {
+      version: 8,
+      glyphs: MAP_BASE + "fonts/{fontstack}/{range}.pbf",
+      sprite: MAP_BASE + "sprites/" + flavor,
+      sources: {
+        protomaps: {
+          type: "vector",
+          url: "pmtiles://" + MAP_BASE + "eastern-suburbs.pmtiles",
+          attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+        },
+      },
+      layers: basemaps.layers("protomaps", basemaps.namedFlavor(flavor), { lang: "en" }),
+    },
+    maxBounds: MAP_BOUNDS,
+    minZoom: 10,
+    maxZoom: 17,
+    cooperativeGestures: true,   // one-finger scroll moves the page on phones, not the map
+    attributionControl: { compact: true },
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  const bounds = data.spots.reduce((b, s) => b.extend([s.lon, s.lat]), new maplibregl.LngLatBounds());
+  const fit = () => map.fitBounds(bounds, { padding: 32, duration: 0 });
   fit();
   // The container can settle after first paint (fonts, grid); refit once it has its final size
-  new ResizeObserver(() => { map.invalidateSize(); fit(); }).observe(document.getElementById("map"));
+  new ResizeObserver(() => { map.resize(); fit(); }).observe(document.getElementById("map"));
 }
 
 function renderTabs() {
@@ -64,11 +87,9 @@ function renderTabs() {
   tabs.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "center", block: "nearest" });
 }
 
-function verdict(s) {
-  if (s.posted) return s.fire ? "🔥 One of the best sessions. Posted to the calendar." : "Worth going. Posted to the calendar.";
-  if (s.lead.rating >= 6) return "Decent, but not quite a beach call.";
-  return "Not worth the trip.";
-}
+// A best window only means something when the spot is worth going to
+const worth = score => score >= data.thresholds.post;
+const windowText = x => worth(x.score) && x.window ? `${x.window[0]}–${x.window[1]}` : "";
 
 function render() {
   const s = data.sessions[current];
@@ -76,14 +97,16 @@ function render() {
   const lead = s.lead;
   const leadSpot = data.spots.find(p => p.name === lead.name && s.scores.some(x => x.id === p.id && x.score === lead.score));
 
+  const icon = leadSpot?.kind === "surf" ? "🏄" : "🏖️";
   document.getElementById("hero").innerHTML = `
-    <div class="wind">💨 ${esc(c.wind_dir)} ${c.wind_kmh} km/h, gusts ${c.gust_kmh} · ${esc(c.wind_desc)}</div>
+    <div class="wind">💨 ${esc(c.wind_dir)} ${c.wind_kmh} km/h, gusting up to ${c.gust_kmh} km/h</div>
     <div class="headline">
-      <span class="big">${lead.rating}/10</span>
-      <span class="where">${leadSpot?.kind === "surf" ? "🏄" : "🏖️"} ${esc(lead.name || "–")}</span>
-      ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}
+      <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? "🔥 Worth it" : "Worth it") : "Not worth it"}</span>
+      ${s.posted
+        ? `<span class="where">${icon} ${esc(lead.name)} · ${lead.rating}/10</span>
+           ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
+        : `<span class="when">best option ${esc(lead.name || "–")} at ${lead.rating}/10</span>`}
     </div>
-    <div class="verdict">${verdict(s)}</div>
     <div class="chips">
       <span class="chip">Swell <b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s</span>
       <span class="chip">Air <b>${c.air_c}°</b></span>
@@ -99,16 +122,20 @@ function render() {
   Object.values(markers).forEach(m => m.remove());
   markers = {};
   const byId = Object.fromEntries(s.scores.map(x => [x.id, x]));
-  for (const spot of data.spots) {
+  // Lowest scores first so the best spots are drawn on top where markers overlap
+  const order = [...data.spots].sort((a, b) => (byId[a.id]?.score ?? -1) - (byId[b.id]?.score ?? -1));
+  for (const spot of order) {
     const sc = byId[spot.id];
     if (spot.kind === "surf" && !sc) continue;   // surf not working: no marker, so it can't be mistaken for the beach
-    const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
-    const badge = spot.kind === "surf" ? '<span class="badge">🏄</span>' : "";
-    const icon = L.divIcon({ className: "", html: `<div class="${cls}">${sc ? sc.rating : "–"}${badge}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
-    const m = L.marker([spot.lat, spot.lon], { icon, title: spot.name, zIndexOffset: sc ? sc.score * 10 : 0 }).addTo(map);
-    m.bindPopup(popup(spot, sc));
-    m.on("click", () => highlight(spot.id, false));
-    markers[spot.id] = m;
+    const el = document.createElement("div");
+    el.className = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
+    el.title = spot.name;
+    el.innerHTML = `${sc ? sc.rating : "–"}${spot.kind === "surf" ? '<span class="badge">🏄</span>' : ""}`;
+    el.addEventListener("click", () => highlight(spot.id, false));
+    markers[spot.id] = new maplibregl.Marker({ element: el })
+      .setLngLat([spot.lon, spot.lat])
+      .setPopup(new maplibregl.Popup({ offset: 18, closeButton: false }).setHTML(popup(spot, sc)))
+      .addTo(map);
   }
 
   document.getElementById("spots").innerHTML = ranked.map(x => {
@@ -117,7 +144,7 @@ function render() {
     return `<li class="spot" data-id="${x.id}">
       ${pill(x.rating)}
       <div><div class="name">${spot.kind === "surf" ? "🏄 " : ""}${esc(spot.name)}</div><div class="meta">${esc(meta)}</div></div>
-      <div class="win">${x.window ? esc(x.window.join("–")) : ""}</div>
+      <div class="win">${esc(windowText(x))}</div>
     </li>`;
   }).join("") + data.spots.filter(p => !byId[p.id] && p.kind === "swim").map(p =>
     `<li class="spot" data-id="${p.id}"><span class="pill r-low">–</span><div><div class="name">${esc(p.name)}</div><div class="meta">too rough or unsafe this session</div></div><div></div></li>`
@@ -136,7 +163,7 @@ function popup(spot, sc) {
   if (!sc) return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${spot.kind === "surf" ? "Not working this session" : "Too rough or unsafe this session"}</div></div>`;
   return `<div class="popup">
     <div class="t">${spot.kind === "surf" ? "🏄 " : ""}${esc(spot.name)} · ${sc.rating}/10</div>
-    ${sc.window ? `<div class="m">Best ${esc(sc.window[0])}–${esc(sc.window[1])}</div>` : ""}
+    ${windowText(sc) ? `<div class="m">Best ${esc(windowText(sc))}</div>` : ""}
     ${sc.notes.length ? `<div class="m">${esc(sc.notes.join(" · "))}</div>` : ""}
   </div>`;
 }
@@ -146,8 +173,9 @@ function highlight(id, fromList) {
   document.querySelectorAll(".spot").forEach(li => li.classList.toggle("active", li.dataset.id === id));
   const m = markers[id];
   if (m && fromList) {
-    map.panTo(m.getLatLng());
-    m.openPopup();
+    Object.values(markers).forEach(o => o !== m && o.getPopup().isOpen() && o.togglePopup());
+    map.easeTo({ center: m.getLngLat() });
+    if (!m.getPopup().isOpen()) m.togglePopup();
     document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }

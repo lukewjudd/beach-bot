@@ -71,6 +71,11 @@ Every run also uploads `scores.json` to the public bucket `<PROJECT>-beach-score
 To preview the site locally:
 ```bash
 python beach_bot.py --json docs/scores.json
-python3 -m http.server 8765 --directory docs
+npx http-server docs -p 8765 -c-1
 ```
-Then open http://localhost:8765. The map tiles come from Stadia Maps, which authorises the live site by its domain.
+Then open http://localhost:8765. Use a server that supports byte ranges (Python's built-in one doesn't), because the map reads tiles out of `docs/map/eastern-suburbs.pmtiles` with range requests.
+
+The map is a [Protomaps](https://protomaps.com) extract with self-hosted fonts and sprites, so there's no map provider or key. To rebuild it (the coastline doesn't change much, so roughly once a year):
+```bash
+pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles docs/map/eastern-suburbs.pmtiles --bbox=151.17,-34.01,151.32,-33.83 --maxzoom=14
+```
