@@ -82,7 +82,7 @@ COORDS = {
     "Little Bay": (-33.9799, 151.2514),
 }
 SURF_COORDS = {  # pushed further out to sea than the swim markers so the two don't overlap
-    "Bondi (south end)": (-33.8945, 151.2830),
+    "Bondi (south end)": (-33.8932, 151.2772),  # off the Icebergs end, not Ben Buckler (that's the north)
     "Maroubra": (-33.9480, 151.2665),
     "Bronte": (-33.9045, 151.2770),
     "Coogee": (-33.9215, 151.2670),
