@@ -1,9 +1,15 @@
-__pycache__/
-*.json
+# secrets and local config
 .env
+*service-account*.json
+*-key.json
+
+# generated
 backtest.csv
-docs/scores.json
-.claude/
-!docs/map/sprites/*.json
+web/public/scores.json
+web/dist/
+
+# tooling
+web/node_modules/
 .venv/
-!bot/tests/fixtures/*.json
+__pycache__/
+.claude/
