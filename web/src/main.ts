@@ -1,7 +1,6 @@
 // Beach calls: renders scores.json as session tabs, a map and a ranked list.
 
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
-import { addPin, createMap } from "./map";
 import "./style.css";
 import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
 
@@ -16,7 +15,11 @@ const esc = (s: unknown) =>
 
 let data: Scores;
 let spotsById: Record<string, Spot>;
-let map: MapLibreMap;
+// The map library is ~1MB, so it loads on the side: the forecast renders as soon as the scores arrive,
+// and pins are added once the map is ready
+const mapModule = import("./map");
+let mapApi: typeof import("./map") | undefined;
+let map: MapLibreMap | undefined;
 let markers: Record<string, Marker> = {};
 let current = 0;
 let activeSpot: string | null = null;
@@ -41,7 +44,11 @@ const windowText = (x: SpotScore) => (worth(x.score) && x.window ? `${x.window[0
 const isPast = (s: Session) => s.started && new Date(s.end) < new Date();
 
 async function load() {
-  map = createMap($("map")); // start the map straight away, in parallel with the scores
+  mapModule.then((m) => {
+    map = m.createMap($("map"));
+    mapApi = m;
+    if (data) render(); // scores got here first: add the pins now
+  });
   try {
     // Plain fetch so it picks up the <link rel="preload"> in index.html; the bucket's max-age keeps it fresh
     const res = await fetch(DATA_URL);
@@ -137,6 +144,7 @@ function renderHero(s: Session, leadSpot: Spot | undefined) {
 }
 
 function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string | undefined) {
+  if (!map || !mapApi) return; // map still loading; render() runs again when it's ready
   Object.values(markers).forEach((m) => m.remove());
   markers = {};
   // Lowest scores first so the best spots are drawn on top where pins overlap
@@ -145,7 +153,7 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
     const sc = byId[spot.id];
     if (!shown.has(spot.kind)) continue;
     const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
-    markers[spot.id] = addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(spot, sc), () =>
+    markers[spot.id] = mapApi.addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(spot, sc), () =>
       highlight(spot.id, false),
     );
   }
@@ -211,7 +219,7 @@ function highlight(id: string, fromList: boolean) {
   const m = markers[id];
   if (m && fromList) {
     Object.values(markers).forEach((o) => o !== m && o.getPopup()?.isOpen() && o.togglePopup());
-    map.easeTo({ center: m.getLngLat() });
+    map?.easeTo({ center: m.getLngLat() });
     if (!m.getPopup()?.isOpen()) m.togglePopup();
     $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
