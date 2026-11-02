@@ -87,3 +87,40 @@ SURF_COORDS = {  # pushed further out to sea than the swim markers so the two do
     "Bronte": (-33.9045, 151.2770),
     "Coogee": (-33.9215, 151.2670),
 }
+
+
+@dataclass
+class Pool:
+    """An ocean pool (beach-knowledge.md §2). Water quality follows the beach next to it (R-R5)."""
+
+    name: str
+    beach: Beach  # the beach whose water fills it
+    exposure: float  # how readily big swell washes over the walls (1 = fully exposed)
+    best_tide: str | None = None  # "low", "mid" or "mid_high"
+    cleaning_day: int | None = None  # weekday (Mon=0) it's drained for cleaning
+    cleaning_before_low: bool = False  # only closed in the ~4h before low tide (Bronte Baths)
+    opens: int | None = None  # opening hour, for pools with gates
+    closes_summer: int = 19  # 1 Oct - 12 Apr
+    closes_winter: int = 17
+
+
+_BEACH = {b.name: b for b in BEACHES}
+
+POOLS = [
+    Pool("Bondi Icebergs", _BEACH["Bondi (north end)"], 1.0, cleaning_day=3),  # R-P7: Thursdays
+    Pool("Bronte Baths", _BEACH["Bronte"], 0.8, cleaning_day=2, cleaning_before_low=True),  # R-P7: Wednesdays
+    Pool("Giles Baths", _BEACH["Coogee"], 0.8, best_tide="mid"),  # R-P5
+    Pool("Wylie's Baths", _BEACH["Coogee"], 0.6, best_tide="low", opens=7),  # R-P1, R-P8
+    Pool("Ross Jones Pool", _BEACH["Coogee"], 0.9, cleaning_day=0),  # R-P7: Mondays
+    Pool("Mahon Pool", _BEACH["Maroubra"], 1.0, best_tide="mid_high"),  # R-P3
+]
+# McIver's (women and children only), Ivor Rowe and South Maroubra rockpool (small wading pools) are left out
+
+POOL_COORDS = {
+    "Bondi Icebergs": (-33.8953, 151.2744),
+    "Bronte Baths": (-33.9052, 151.2693),
+    "Giles Baths": (-33.9202, 151.2606),
+    "Wylie's Baths": (-33.9256, 151.2594),
+    "Ross Jones Pool": (-33.9228, 151.2578),
+    "Mahon Pool": (-33.9430, 151.2639),
+}

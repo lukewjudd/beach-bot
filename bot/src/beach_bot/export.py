@@ -2,9 +2,9 @@
 
 import json
 
-from .beaches import BEACHES, COORDS, SURF_COORDS, SURF_SPOTS
+from .beaches import BEACHES, COORDS, POOL_COORDS, POOLS, SURF_COORDS, SURF_SPOTS
 from .config import EVENT_THRESHOLD, FIRE_THRESHOLD
-from .sessions import conditions, headline, hour_label, out_of_10, report, window_hours
+from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
 
 
 def slug(name, kind):
@@ -34,14 +34,24 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
         }
         for sp in SURF_SPOTS
     ]
+    spots += [
+        {
+            "id": slug(p.name, "pool"),
+            "name": p.name,
+            "kind": "pool",
+            "lat": POOL_COORDS[p.name][0],
+            "lon": POOL_COORDS[p.name][1],
+        }
+        for p in POOLS
+    ]
 
     out_sessions = []
     for sess in sessions:
         lead = headline(sess)
         keys = window_hours(sess, lead) if lead else sess.hours
         c = conditions(sess, hours, keys)
-        swim, surf = sess.best_swim, sess.surf[0] if sess.surf else None
-        best = max(swim[0] if swim else 0, surf[0] if surf else 0)
+        best = sess.best
+        kind = lead_kind(sess)
 
         def window(name, sess=sess):
             w = sess.windows.get(name)
@@ -55,6 +65,10 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
             {"id": slug(sp.name, "surf"), "score": sc, "rating": out_of_10(sc), "window": window(sp.name), "notes": []}
             for sc, sp in sess.surf
         ]
+        scores += [
+            {"id": slug(p.name, "pool"), "score": sc, "rating": out_of_10(sc), "window": window(p.name), "notes": notes}
+            for sc, p, notes in sess.pools
+        ]
         out_sessions.append(
             {
                 "key": sess.key,
@@ -66,6 +80,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
                 "posted": bool(sess.is_good),
                 "fire": best >= FIRE_THRESHOLD,
                 "lead": {
+                    "id": slug(lead, kind) if lead else None,
+                    "kind": kind,
                     "name": lead,
                     "score": best,
                     "rating": out_of_10(best),

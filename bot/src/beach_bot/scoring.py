@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from .beaches import Beach, SurfSpot
+from .beaches import Beach, Pool, SurfSpot
 from .forecast import Context
 from .geo import in_range, swell_sector, wind_kind
 
@@ -62,50 +62,13 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
         s -= 20 if b.name in ("Clovelly", "Bronte") else 40
         notes.append("southerly change")
 
-    # Water quality (§4.4). Beachwatch only forecasts today.
-    bw = beachwatch.get(b.beachwatch) if t[:10] == today.isoformat() else None
-    if bw == "Likely":
-        return None, ["pollution likely (Beachwatch)"]
-    if bw == "Possible":
-        s -= 30
-        notes.append("pollution possible")
-    if bw not in ("Unlikely", "Possible"):
-        r24, r48, r72 = ctx.rain(t, 0, 24), ctx.rain(t, 24, 48), ctx.rain(t, 0, 72)
-        if r24 >= b.rain_often:
-            return None, [f"{r24:.0f}mm rain in last 24h"]
-        if r24 >= b.rain_occ:
-            s -= 25
-            notes.append("recent rain")
-        if r48 >= b.rain_often:
-            s -= 15
-        if b.poor_grade and r72 >= 5:
-            return None, ["rain in last 3 days"]
-        if b.poor_grade and r72 >= 1:
-            s -= 20
-        if b.snorkel and ctx.rain(t, 0, 48) >= 10:  # R-R4
-            s -= 10
-
-    # Weather during the session
-    temp = h["temperature_2m"]
-    s += 15 if temp >= 26 else 10 if temp >= 23 else 5 if temp >= 21 else 0 if temp >= 19 else -8 if temp >= 17 else -15
-    if (h.get("precipitation") or 0) >= 0.5 or (h.get("precipitation_probability") or 0) >= 60:
-        s -= 20
-        notes.append("rain about")
-    elif (h.get("precipitation_probability") or 0) >= 40:
-        s -= 8
-    if (h.get("cloud_cover") or 0) >= 85:
-        s -= 5
-
-    # Water temperature and upwelling (§4.5)
-    sst = h.get("sea_surface_temperature")
-    # Warm water earns a bonus; cool water is only a note, never a penalty
-    if sst is not None:
-        if sst > 22:
-            s += 5
-        elif sst < 20:
-            notes.append("fresh water")
-    if ctx.ne_days(t) >= 3:
-        notes.append("cold upwelling likely")
+    q = water_quality(b, t, ctx, beachwatch, today, notes)
+    if q is None:
+        return None, notes
+    s += q
+    if b.snorkel and ctx.rain(t, 0, 48) >= 10 and not beachwatch_says(b, t, beachwatch, today):  # R-R4
+        s -= 10
+    s += weather(h, t, ctx, notes)
 
     # Bluebottles (R-B1)
     if month in (11, 12, 1, 2, 3):
@@ -125,6 +88,135 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     if b.hazard >= 6 and (hour < 7 or hour >= last_patrol):
         s -= 15
 
+    return max(0, min(100, s)), notes
+
+
+def beachwatch_says(b: Beach, t: str, beachwatch: dict, today: date):
+    """Beachwatch's pollution forecast for this beach, which only covers today."""
+    bw = beachwatch.get(b.beachwatch) if t[:10] == today.isoformat() else None
+    return bw if bw in ("Unlikely", "Possible", "Likely") else None
+
+
+def water_quality(b: Beach, t: str, ctx: Context, beachwatch: dict, today: date, notes: list):
+    """Points for water quality (§4.4), or None when it's a no-go. Beachwatch first, then the rain rules."""
+    bw = beachwatch_says(b, t, beachwatch, today)
+    if bw == "Likely":
+        notes.append("pollution likely (Beachwatch)")
+        return None
+    if bw == "Possible":
+        notes.append("pollution possible")
+        return -30
+    if bw == "Unlikely":
+        return 0
+    s = 0
+    r24, r48, r72 = ctx.rain(t, 0, 24), ctx.rain(t, 24, 48), ctx.rain(t, 0, 72)
+    if r24 >= b.rain_often:
+        notes.append(f"{r24:.0f}mm rain in last 24h")
+        return None
+    if r24 >= b.rain_occ:
+        s -= 25
+        notes.append("recent rain")
+    if r48 >= b.rain_often:
+        s -= 15
+    if b.poor_grade and r72 >= 5:
+        notes.append("rain in last 3 days")
+        return None
+    if b.poor_grade and r72 >= 1:
+        s -= 20
+    return s
+
+
+def weather(h: dict, t: str, ctx: Context, notes: list):
+    """Points for air temperature, rain, cloud and water temperature (§4.5)."""
+    s = 0
+    temp = h["temperature_2m"]
+    s += 15 if temp >= 26 else 10 if temp >= 23 else 5 if temp >= 21 else 0 if temp >= 19 else -8 if temp >= 17 else -15
+    if (h.get("precipitation") or 0) >= 0.5 or (h.get("precipitation_probability") or 0) >= 60:
+        s -= 20
+        notes.append("rain about")
+    elif (h.get("precipitation_probability") or 0) >= 40:
+        s -= 8
+    if (h.get("cloud_cover") or 0) >= 85:
+        s -= 5
+    # Warm water earns a bonus; cool water is only a note, never a penalty
+    sst = h.get("sea_surface_temperature")
+    if sst is not None:
+        if sst > 22:
+            s += 5
+        elif sst < 20:
+            notes.append("fresh water")
+    if ctx.ne_days(t) >= 3:
+        notes.append("cold upwelling likely")
+    return s
+
+
+def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """Returns (score, notes) for an ocean pool (beach-knowledge.md §2, rules R-P*). None = closed or unsafe.
+    Pools stay flat when the beaches are rough; what matters is swell over the walls near high tide."""
+    notes = []
+    s = 45
+    hs = h.get("wave_height") or 0
+    wind = h["wind_speed_10m"]
+    hour = int(t[11:13])
+    day = date.fromisoformat(t[:10])
+    tide = ctx.tide(t)  # (hours to nearest high, hours to nearest low), or None without tide data
+
+    # Cleaning days (R-P7) and opening hours (R-P8)
+    if p.cleaning_day == day.weekday():
+        if not p.cleaning_before_low:
+            return None, ["closed for cleaning"]
+        if tide and 0 <= tide[1] <= 4:
+            return None, ["closed for cleaning before low tide"]
+    if p.opens is not None:
+        summer = (day.month, day.day) >= (10, 1) or (day.month, day.day) <= (4, 12)
+        if hour < p.opens or hour >= (p.closes_summer if summer else p.closes_winter):
+            return None, ["closed"]
+
+    # Swell over the walls (R-P3)
+    near_high = tide is not None and abs(tide[0]) <= 2.5
+    surge = hs * p.exposure
+    if surge >= 2.5 and (near_high or tide is None):
+        return None, ["waves over the walls"]
+    if surge >= 3.2:
+        return None, ["waves over the walls"]
+    if surge >= 1.5 and near_high:
+        s -= 20
+        notes.append("washy at high tide")
+    elif surge >= 2.0:
+        s -= 10
+    if surge < 1.0:
+        s += 15
+    elif surge < 1.5:
+        s += 8
+
+    # Tide preferences (R-P1, R-P3, R-P5)
+    if tide is not None:
+        to_high, to_low = abs(tide[0]), abs(tide[1])
+        if p.best_tide == "low" and to_low <= 3:
+            s += 10
+            notes.append("low tide")
+        elif p.best_tide == "mid" and min(to_high, to_low) >= 1.5 and hs < 1.0:
+            s += 10
+            notes.append("mid tide")
+        elif p.best_tide == "mid_high" and to_high <= 3 and hs < 1.2:
+            s += 5
+            notes.append("wave pool fun")
+
+    # Wind: pools sit low behind rocks, so direction matters less than strength
+    if wind < 8:
+        s += 5
+    elif wind >= 28:
+        s -= 15
+    elif wind >= 20:
+        s -= 5
+    gust = h.get("wind_gusts_10m") or 0
+    s -= 10 if gust >= 45 else 5 if gust >= 35 else 0
+
+    q = water_quality(p.beach, t, ctx, beachwatch, today, notes)  # R-R5: pools share the beach's water
+    if q is None:
+        return None, notes
+    s += q
+    s += weather(h, t, ctx, notes)
     return max(0, min(100, s)), notes
 
 

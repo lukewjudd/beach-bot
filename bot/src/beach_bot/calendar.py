@@ -6,7 +6,9 @@ from datetime import datetime
 
 from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, TZ
 from .geo import wind_kind
-from .sessions import conditions, headline, hour_label, out_of_10, report, top_spots, window_hours
+from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
+
+ICONS = {"swim": "🏖️", "pool": "🏊", "surf": "🏄"}
 
 
 def event_body(sess, hours, ctx, beachwatch, today):
@@ -14,17 +16,16 @@ def event_body(sess, hours, ctx, beachwatch, today):
     keys = window_hours(sess, lead)
     c = conditions(sess, hours, keys)
     swim, surf = sess.best_swim, sess.best_surf
-    best = max(swim[0] if swim else 0, surf[0] if surf else 0)
+    best = sess.best
     fire = "🔥 " if best >= FIRE_THRESHOLD else ""
-    parts = []
-    if swim and swim[0] >= EVENT_THRESHOLD:
-        parts.append(f"🏖️ {swim[1].name}")
-    if surf:
+    kind = lead_kind(sess)
+    parts = [f"{ICONS[kind]} {lead}" + (f" {c['hs']:.1f}m" if kind == "surf" else "")] if lead else []
+    if kind == "surf" and swim and swim[0] >= EVENT_THRESHOLD:
+        parts.insert(0, f"🏖️ {swim[1].name}")
+    elif kind != "surf" and surf:
         parts.append(f"🏄 {surf[1].name} {c['hs']:.1f}m")
-    if not parts and swim:  # only seen in --all previews
-        parts.append(f"🏖️ {swim[1].name}")
-    b = swim[1] if swim else None
-    kind = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
+    b = swim[1] if swim and kind == "swim" else None  # wind direction only means something at a beach
+    rel = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
     wind_line = f"{c['wind_dir']} {c['wind']:.0f} km/h gust {c['gust']:.0f}"
     title = f"{fire}{out_of_10(best)}/10 {' · '.join(parts)} · 💨 {wind_line} · {c['air']:.0f}°"
     if c["sea"]:
@@ -32,7 +33,7 @@ def event_body(sess, hours, ctx, beachwatch, today):
 
     lines = [
         f"💨 Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
-        + (f" ({kind} at {b.name})" if b else ""),
+        + (f" ({rel} at {b.name})" if b else ""),
         f"⏰ Best window: {hour_label(keys[0], 0)}–{hour_label(keys[-1], 1)} at {lead}",
         f"Overall: {out_of_10(best)}/10",
         "",

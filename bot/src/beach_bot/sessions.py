@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import BEACHES, SURF_SPOTS
+from .beaches import BEACHES, POOLS, SURF_SPOTS
 from .config import (
     CLOVELLY_TOLERANCE,
     DAYS_AHEAD,
@@ -17,7 +17,7 @@ from .config import (
     WINDOW_HOURS,
 )
 from .geo import compass, swell_sector, wind_kind, wind_words
-from .scoring import score_surf_hour, score_swim_hour
+from .scoring import score_pool_hour, score_surf_hour, score_swim_hour
 
 
 @dataclass
@@ -29,6 +29,7 @@ class Session:
     hours: list
     swim: list = field(default_factory=list)  # [(score, beach, notes)] best first
     surf: list = field(default_factory=list)  # [(score, spot)] best first
+    pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
 
     @property
@@ -44,8 +45,17 @@ class Session:
         return self.surf[0] if self.surf and self.surf[0][0] >= SURF_THRESHOLD else None
 
     @property
+    def best_pool(self):
+        return self.pools[0] if self.pools else None
+
+    @property
+    def best(self):
+        """Top score across beaches, pools and surf: what decides worth it on the site and the calendar."""
+        return max([x[0] for x in (self.best_swim, self.best_pool, self.surf[0] if self.surf else None) if x] or [0])
+
+    @property
     def is_good(self):
-        return (self.best_swim and self.best_swim[0] >= EVENT_THRESHOLD) or self.best_surf is not None
+        return self.best >= EVENT_THRESHOLD
 
 
 def build_sessions(hours, sun, now, days=None):
@@ -100,6 +110,17 @@ def score_session(sess, hours, ctx, beachwatch, today):
             sess.swim.remove(fav)
             sess.swim.insert(0, fav)
 
+    for p in POOLS:
+        results = [score_pool_hour(p, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
+        best = best_window(sess, [r[0] for r in results])
+        if not best:
+            continue
+        sc, i = best
+        notes = sorted({x for _, ns in results[i : i + n] for x in ns})
+        sess.pools.append((round(sc), p, notes))
+        sess.windows[p.name] = (sess.hours[i], sess.hours[i + n - 1])
+    sess.pools.sort(key=lambda x: -x[0])
+
     for sp in SURF_SPOTS:
         best = best_window(sess, [score_surf_hour(sp, hours[t]) for t in sess.hours])
         if best:
@@ -118,11 +139,25 @@ def window_hours(sess, name):
 
 
 def headline(sess):
-    """The spot the event leads with: surf if it beats a postable swim, else the swim pick."""
-    swim, surf = sess.best_swim, sess.best_surf
-    if surf and (not swim or swim[0] < EVENT_THRESHOLD or surf[0] > swim[0]):
+    """The spot the event leads with. A beach wins close calls with a pool (Clovelly first, R-TB1),
+    and surf leads when it beats a postable swim."""
+    swim, pool, surf = sess.best_swim, sess.best_pool, sess.best_surf
+    lead = swim
+    if pool and (not swim or pool[0] > swim[0] + CLOVELLY_TOLERANCE):
+        lead = pool
+    if surf and (not lead or lead[0] < EVENT_THRESHOLD or surf[0] > lead[0]):
         return surf[1].name
-    return swim[1].name if swim else None
+    return lead[1].name if lead else None
+
+
+def lead_kind(sess):
+    """'swim', 'pool' or 'surf' for the headline spot."""
+    name = headline(sess)
+    if sess.best_surf and sess.best_surf[1].name == name:
+        return "surf"
+    if sess.best_pool and sess.best_pool[1].name == name and not (sess.best_swim and sess.best_swim[1].name == name):
+        return "pool"
+    return "swim"
 
 
 def conditions(sess, hours, keys=None):
@@ -216,8 +251,9 @@ def report(sess, hours, ctx, beachwatch, today):
 
 
 def top_spots(sess, n=3):
-    """Best swim and surf options merged into one ranked list."""
+    """Best beach, pool and surf options merged into one ranked list."""
     picks = [(sc, b.name, "swim" + (" / snorkel" if b.snorkel else ""), notes) for sc, b, notes in sess.swim]
+    picks += [(sc, p.name, "pool", notes) for sc, p, notes in sess.pools]
     picks += [(sc, sp.name, "surf", []) for sc, sp in sess.surf]
     picks.sort(key=lambda x: -(x[0] + (CLOVELLY_TOLERANCE + 0.5 if x[1] == FAVOURITE else 0)))  # R-TB1
     seen, out = set(), []

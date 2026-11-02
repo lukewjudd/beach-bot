@@ -124,3 +124,26 @@ class Context:
             if len(ne) >= len(w) / 2 and mean(h["wind_speed_10m"] for h in w) >= 15:
                 count += 1
         return count
+
+    def tide(self, t):
+        """(hours to the nearest high tide, hours to the nearest low tide) from `sea_level_height_msl`.
+        Positive = still to come. None when there's no tide data around this hour."""
+        if not hasattr(self, "_tides"):
+            levels = [self.hours[k].get("sea_level_height_msl") for k in self.times]
+            self._tides = []
+            for i in range(2, len(levels) - 2):
+                win = levels[i - 2 : i + 3]
+                if None in win:
+                    continue
+                if levels[i] == max(win) and levels[i] > levels[i + 1]:
+                    self._tides.append((i, "high"))
+                elif levels[i] == min(win) and levels[i] < levels[i + 1]:
+                    self._tides.append((i, "low"))
+        i = self.index[t]
+        nearest = {}
+        for j, kind in self._tides:
+            if abs(j - i) <= 8 and (kind not in nearest or abs(j - i) < abs(nearest[kind])):
+                nearest[kind] = j - i
+        if "high" not in nearest or "low" not in nearest:
+            return None
+        return nearest["high"], nearest["low"]
