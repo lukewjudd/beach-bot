@@ -56,17 +56,20 @@ BEACHES = [
 class SurfSpot:
     name: str
     facing: int
-    swell_dirs: tuple  # (from_deg, to_deg) the spot works in
-    min_hs: float
-    max_hs: float = 2.5
+    k: dict  # how much of the open-ocean swell reaches the break, by swell sector (§1a)
+    max_hs: float = 2.5  # above this (at the break) it closes out
     bonus_dirs: tuple = None  # swell direction range that gets a small bonus
 
 
 SURF_SPOTS = [
-    SurfSpot("Bondi (south end)", 140, (135, 200), 0.6, bonus_dirs=(157, 200)),  # R-SU1
-    SurfSpot("Maroubra", 90, (30, 150), 0.5, bonus_dirs=(67, 112)),  # R-SU2
-    SurfSpot("Bronte", 90, (67, 157), 0.8),  # R-SU3
-    SurfSpot("Coogee", 100, (67, 112), 1.5, max_hs=3.0),  # R-SU4
+    # R-SU1: a south swell magnet; Ben Buckler shadows the NE
+    SurfSpot("Bondi (south end)", 140, {"NE": 0.3, "E": 0.6, "SE": 0.9, "S": 1.0}, bonus_dirs=(157, 200)),
+    # R-SU2: most consistent in E swell; S swell mostly misses it
+    SurfSpot("Maroubra", 90, {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.6}, bonus_dirs=(67, 112)),
+    # R-SU3: E-SE reef and beachie, still works a bit in S
+    SurfSpot("Bronte", 90, {"NE": 0.8, "E": 1.0, "SE": 0.9, "S": 0.6}),
+    # R-SU4: Wedding Cake Island blocks SE/S; needs a solid E swell
+    SurfSpot("Coogee", 100, {"NE": 0.5, "E": 0.7, "SE": 0.3, "S": 0.2}, max_hs=3.0),
 ]
 
 # Map positions for the website (swim areas from beach-knowledge.md §1; surf markers sit just offshore)

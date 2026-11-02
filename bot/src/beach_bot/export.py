@@ -62,8 +62,14 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
             for sc, b, notes in sess.swim
         ]
         scores += [
-            {"id": slug(sp.name, "surf"), "score": sc, "rating": out_of_10(sc), "window": window(sp.name), "notes": []}
-            for sc, sp in sess.surf
+            {
+                "id": slug(sp.name, "surf"),
+                "score": sc,
+                "rating": out_of_10(sc),
+                "window": window(sp.name),
+                "notes": notes,
+            }
+            for sc, sp, notes in sess.surf
         ]
         scores += [
             {"id": slug(p.name, "pool"), "score": sc, "rating": out_of_10(sc), "window": window(p.name), "notes": notes}

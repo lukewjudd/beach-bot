@@ -221,30 +221,64 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
 
 
 def score_surf_hour(sp: SurfSpot, h: dict):
+    """Returns (score, notes) for surfing. Every spot always gets a score: flat or blown out is just low.
+    Size at the break sets the ceiling (no waves = 1/10 however nice the wind); the gap between waves
+    and the wind decide how much of that ceiling you get."""
+    notes = []
     hs = h.get("wave_height") or 0
     sdir = h.get("swell_wave_direction") or 0
     period = h.get("swell_wave_period") or 0
     wind = h["wind_speed_10m"]
-    if not (in_range(sdir, *sp.swell_dirs) and sp.min_hs <= hs <= sp.max_hs):
-        return None
-    kind = wind_kind(h["wind_direction_10m"], sp.facing)
-    if kind == "onshore" and wind >= 12:
-        return None
+    sector = swell_sector(sdir)
+    # Short-period swell arrives smaller and weaker than its offshore height suggests
+    reach = 0.6 if period < 6 else 0.75 if period < 8 else 0.9 if period < 10 else 1.0 if period < 12 else 1.2
+    size = hs * (sp.k[sector] if sector else 0.1) * reach
+
+    # Size at the break (§1a): ~1-1.8m is the sweet spot for these beachies and reefs
+    if size < 0.3:
+        size_pts, factor = 0, 0.1
+        notes.append("flat")
+    elif size < 0.5:
+        size_pts, factor = 8, 0.35
+        notes.append("tiny")
+    elif size < 0.8:
+        size_pts, factor = 18, 0.6
+        notes.append("small")
+    elif size < 1.0:
+        size_pts, factor = 18, 0.8
+    elif size < 1.4:
+        size_pts, factor = 25, 0.95
+    elif size <= 2.0:
+        size_pts, factor = 35, 1.0
+    elif size <= sp.max_hs:
+        size_pts, factor = 30, 0.95
+    else:
+        size_pts, factor = 8, 0.4
+        notes.append("closing out")
+
+    # Quality: gap between waves (short wind chop is mushy, groundswell is clean) and wind
+    q = 0 if period < 6 else 5 if period < 8 else 10 if period < 10 else 15 if period < 12 else 22 if period < 14 else 25
     if period < 6:
-        return None  # short-period wind chop, not worth paddling out
-    s = 40
-    s += 15 if 1.0 <= hs <= 1.8 else 8 if 0.8 <= hs <= 2.2 else 0
-    s += 15 if period >= 12 else 10 if period >= 10 else 0 if period >= 8 else -15
-    if kind == "offshore" and wind <= 20 or wind < 8:
-        s += 15
-    elif kind == "cross" and wind >= 18:
-        s -= 15
-    gust = h.get("wind_gusts_10m") or 0
-    s -= 10 if gust >= 40 else 0
+        notes.append("short, choppy swell")
+    kind = wind_kind(h["wind_direction_10m"], sp.facing)
+    if wind < 8:
+        q += 28
+    elif kind == "offshore":
+        q += 30 if wind <= 12 else 22 if wind <= 20 else 12
+    elif kind == "cross":
+        q += 15 if wind < 12 else 8 if wind < 20 else 3
+        notes.append("cross-shore wind")
+    else:
+        q += 6 if wind < 12 else 1 if wind < 20 else 0
+        notes.append("onshore wind")
+    if (h.get("wind_gusts_10m") or 0) >= 40:
+        q -= 5
     if sp.bonus_dirs and in_range(sdir, *sp.bonus_dirs):
-        s += 5
+        q += 5
     temp = h["temperature_2m"]
-    s += 5 if temp >= 24 else 0 if temp >= 18 else -5 if temp >= 14 else -10
+    q += 5 if temp >= 24 else 0 if temp >= 16 else -5
     if (h.get("precipitation_probability") or 0) >= 60:
-        s -= 10
-    return max(0, min(100, s))
+        q -= 5
+
+    s = 5 + size_pts + max(0, q) * factor
+    return max(10, min(100, round(s))), notes  # 1/10 is the floor

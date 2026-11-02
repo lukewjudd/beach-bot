@@ -28,7 +28,7 @@ class Session:
     end: datetime
     hours: list
     swim: list = field(default_factory=list)  # [(score, beach, notes)] best first
-    surf: list = field(default_factory=list)  # [(score, spot)] best first
+    surf: list = field(default_factory=list)  # [(score, spot, notes)] best first, every spot
     pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
 
@@ -122,11 +122,11 @@ def score_session(sess, hours, ctx, beachwatch, today):
     sess.pools.sort(key=lambda x: -x[0])
 
     for sp in SURF_SPOTS:
-        best = best_window(sess, [score_surf_hour(sp, hours[t]) for t in sess.hours])
-        if best:
-            sc, i = best
-            sess.surf.append((round(sc), sp))
-            sess.windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
+        results = [score_surf_hour(sp, hours[t]) for t in sess.hours]
+        sc, i = best_window(sess, [r[0] for r in results])  # never None: surf always scores
+        notes = sorted({x for _, ns in results[i : i + n] for x in ns})
+        sess.surf.append((round(sc), sp, notes))
+        sess.windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.surf.sort(key=lambda x: -x[0])
 
 
@@ -254,7 +254,7 @@ def top_spots(sess, n=3):
     """Best beach, pool and surf options merged into one ranked list."""
     picks = [(sc, b.name, "swim" + (" / snorkel" if b.snorkel else ""), notes) for sc, b, notes in sess.swim]
     picks += [(sc, p.name, "pool", notes) for sc, p, notes in sess.pools]
-    picks += [(sc, sp.name, "surf", []) for sc, sp in sess.surf]
+    picks += [(sc, sp.name, "surf", notes) for sc, sp, notes in sess.surf]
     picks.sort(key=lambda x: -(x[0] + (CLOVELLY_TOLERANCE + 0.5 if x[1] == FAVOURITE else 0)))  # R-TB1
     seen, out = set(), []
     for p in picks:
