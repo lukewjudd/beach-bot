@@ -6,3 +6,4 @@ docs/scores.json
 .claude/
 !docs/map/sprites/*.json
 .venv/
+!bot/tests/fixtures/*.json
