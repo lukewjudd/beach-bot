@@ -46,7 +46,7 @@ g storage buckets update "gs://$BUCKET" --cors-file "$CORS" >/dev/null
 rm "$CORS"
 
 echo "→ Building and deploying the job"
-g run jobs deploy beach-bot --source . --region "$REGION" \
+g run jobs deploy beach-bot --source bot --region "$REGION" \
   --service-account "$SA" --set-env-vars "BEACH_CALENDAR_ID=$CALENDAR_ID,BEACH_BUCKET=$BUCKET" \
   --max-retries 1 --task-timeout 300
 

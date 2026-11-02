@@ -5,3 +5,4 @@ backtest.csv
 docs/scores.json
 .claude/
 !docs/map/sprites/*.json
+.venv/

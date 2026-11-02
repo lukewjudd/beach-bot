@@ -1,0 +1,33 @@
+[project]
+name = "beach-bot"
+version = "0.1.0"
+description = "Picks the best eastern suburbs beach for each session and keeps a Google Calendar in sync."
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.31",
+    "google-api-python-client>=2.100",
+    "google-auth>=2.23",
+    "google-cloud-storage>=2.10",
+]
+
+[project.scripts]
+beach-bot = "beach_bot.cli:main"
+beach-backtest = "beach_bot.backtest:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E731"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

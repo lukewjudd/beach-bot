@@ -1,7 +1,7 @@
 """Replays beach_bot's scoring over past forecasts to see when the 8/10+ sessions would have been.
 
-  python backtest.py                 # 2023-01-01 to yesterday
-  python backtest.py 2024-10-01      # from a given date
+  beach-backtest                     # 2023-01-01 to yesterday
+  beach-backtest 2024-10-01          # from a given date
 
 Uses Open-Meteo's archived forecasts (what the bot would have seen at the time) and the same
 offshore marine point. Beachwatch has no history, so water quality falls back to the rain rules.
@@ -13,20 +13,22 @@ import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
-import beach_bot as bb
+from .config import FORECAST_POINT, MARINE_POINT
+from .forecast import Context, fetch_json, fetch_weather
+from .sessions import build_sessions, conditions, out_of_10, score_session
 
 
 def load_history(start, end):
     lead = (start - timedelta(days=4)).isoformat()   # look-back for rain and NE wind rules
-    wx = bb.fetch_weather("https://historical-forecast-api.open-meteo.com/v1/forecast", {
-        "latitude": bb.FORECAST_POINT[0], "longitude": bb.FORECAST_POINT[1],
+    wx = fetch_weather("https://historical-forecast-api.open-meteo.com/v1/forecast", {
+        "latitude": FORECAST_POINT[0], "longitude": FORECAST_POINT[1],
         "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
                   "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
         "daily": "sunrise,sunset", "timezone": "Australia/Sydney",
         "start_date": lead, "end_date": end.isoformat(),
     })
-    sea = bb.fetch_json("https://marine-api.open-meteo.com/v1/marine", {
-        "latitude": bb.MARINE_POINT[0], "longitude": bb.MARINE_POINT[1], "cell_selection": "sea",
+    sea = fetch_json("https://marine-api.open-meteo.com/v1/marine", {
+        "latitude": MARINE_POINT[0], "longitude": MARINE_POINT[1], "cell_selection": "sea",
         "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
                   "sea_surface_temperature,sea_level_height_msl",
         "timezone": "Australia/Sydney", "start_date": lead, "end_date": end.isoformat(),
@@ -48,19 +50,19 @@ def main():
     start = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date(2023, 1, 1)
     end = date.today() - timedelta(days=1)
     hours, sun = load_history(start, end)
-    ctx = bb.Context(hours)
+    ctx = Context(hours)
     days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
     days = [d for d in days if d.isoformat() in sun]
-    sessions = bb.build_sessions(hours, sun, None, days=days)
+    sessions = build_sessions(hours, sun, None, days=days)
 
     rows = []
     for s in sessions:
-        bb.score_session(s, hours, ctx, {}, date.min)   # no Beachwatch history
+        score_session(s, hours, ctx, {}, date.min)   # no Beachwatch history
         swim, surf = s.best_swim, (s.surf[0] if s.surf else None)
         best = max(swim[0] if swim else 0, surf[0] if surf else 0)
-        c = bb.conditions(s, hours)
+        c = conditions(s, hours)
         rows.append({
-            "date": s.day.isoformat(), "dow": f"{s.day:%a}", "slot": s.slot, "rating": bb.out_of_10(best),
+            "date": s.day.isoformat(), "dow": f"{s.day:%a}", "slot": s.slot, "rating": out_of_10(best),
             "score": best, "posted": s.is_good,
             "kind": "surf" if surf and (not swim or surf[0] > swim[0]) else "swim",
             "spot": surf[1].name if surf and (not swim or surf[0] > swim[0]) else swim[1].name if swim else "",
