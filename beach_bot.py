@@ -104,11 +104,11 @@ COORDS = {
     "Malabar": (-33.9644, 151.2523),
     "Little Bay": (-33.9799, 151.2514),
 }
-SURF_COORDS = {
-    "Bondi (south end)": (-33.8935, 151.2790),
-    "Maroubra": (-33.9470, 151.2615),
-    "Bronte": (-33.9040, 151.2725),
-    "Coogee": (-33.9210, 151.2625),
+SURF_COORDS = {   # pushed further out to sea than the swim markers so the two don't overlap
+    "Bondi (south end)": (-33.8945, 151.2830),
+    "Maroubra": (-33.9480, 151.2665),
+    "Bronte": (-33.9045, 151.2770),
+    "Coogee": (-33.9215, 151.2670),
 }
 
 # ---------------------------------------------------------------- helpers

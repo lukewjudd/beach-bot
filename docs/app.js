@@ -101,8 +101,10 @@ function render() {
   const byId = Object.fromEntries(s.scores.map(x => [x.id, x]));
   for (const spot of data.spots) {
     const sc = byId[spot.id];
+    if (spot.kind === "surf" && !sc) continue;   // surf not working: no marker, so it can't be mistaken for the beach
     const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
-    const icon = L.divIcon({ className: "", html: `<div class="${cls}">${sc ? sc.rating : "–"}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+    const badge = spot.kind === "surf" ? '<span class="badge">🏄</span>' : "";
+    const icon = L.divIcon({ className: "", html: `<div class="${cls}">${sc ? sc.rating : "–"}${badge}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
     const m = L.marker([spot.lat, spot.lon], { icon, title: spot.name, zIndexOffset: sc ? sc.score * 10 : 0 }).addTo(map);
     m.bindPopup(popup(spot, sc));
     m.on("click", () => highlight(spot.id, false));
