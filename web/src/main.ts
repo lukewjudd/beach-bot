@@ -205,13 +205,22 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
   renderConditions(s);
 }
 
-// Conditions at the spot you've picked, or the session's top pick
+// The session's top pick among the kinds you're showing: the overall pick if it's visible,
+// otherwise the best-scoring visible spot
+function topPick(s: Session): string | null {
+  if (s.lead.id && shown.has(spotsById[s.lead.id]?.kind)) return s.lead.id;
+  const best = s.scores.filter((x) => shown.has(spotsById[x.id].kind)).sort((a, b) => b.score - a.score)[0];
+  return best?.id ?? null;
+}
+
+// Conditions at the spot you've picked, or the top pick
 function renderConditions(s: Session) {
-  const id = activeSpot ?? s.lead.id;
+  if (activeSpot && !shown.has(spotsById[activeSpot]?.kind)) activeSpot = null; // its kind was filtered out
+  const id = activeSpot ?? topPick(s);
   const spot = id ? spotsById[id] : undefined;
   const picked = activeSpot !== null && spot !== undefined;
   $("conditions-title").innerHTML =
-    `Conditions at ${esc(spot?.name ?? s.lead.name ?? "the coast")}` +
+    `Conditions at ${esc(spot?.name ?? "the coast")}` +
     (picked ? ` <button class="link" id="conditions-reset">show top pick</button>` : "");
   document.getElementById("conditions-reset")?.addEventListener("click", () => {
     activeSpot = null;
