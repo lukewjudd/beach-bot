@@ -13,9 +13,10 @@ import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
+from .calendar import ICONS
 from .config import FORECAST_POINT, MARINE_POINT
 from .forecast import Context, fetch_json, fetch_weather
-from .sessions import build_sessions, conditions, out_of_10, score_session
+from .sessions import build_sessions, conditions, headline, lead_kind, out_of_10, score_session
 
 
 def load_history(start, end):
@@ -75,7 +76,7 @@ def main():
     for s in sessions:
         score_session(s, hours, ctx, {}, date.min)  # no Beachwatch history
         swim, surf = s.best_swim, (s.surf[0] if s.surf else None)
-        best = max(swim[0] if swim else 0, surf[0] if surf else 0)
+        best = s.best
         c = conditions(s, hours)
         rows.append(
             {
@@ -85,8 +86,8 @@ def main():
                 "rating": out_of_10(best),
                 "score": best,
                 "posted": s.is_good,
-                "kind": "surf" if surf and (not swim or surf[0] > swim[0]) else "swim",
-                "spot": surf[1].name if surf and (not swim or surf[0] > swim[0]) else swim[1].name if swim else "",
+                "kind": lead_kind(s),
+                "spot": headline(s) or "",
                 "swim": swim[1].name if swim else "",
                 "swim_score": swim[0] if swim else "",
                 "surf": surf[1].name if surf else "",
@@ -112,23 +113,24 @@ def main():
     for r in posted:
         by_month[r["date"][:7]]["all"] += 1
         by_month[r["date"][:7]]["fire"] += r["rating"] >= 9
-    print("Posted per month, averaged over years (🏖️ swim / 🏄 surf):")
+    print("Posted per month, averaged over years (🏖️ beach / 🏊 pool / 🏄 surf):")
     months = sorted({r["date"][:7] for r in rows})
     for m in sorted({m[5:] for m in months}):
         ms = [x for x in months if x[5:] == m]
-        sw = sum(1 for r in posted if r["date"][5:7] == m and r["kind"] == "swim") / len(ms)
-        su = sum(1 for r in posted if r["date"][5:7] == m and r["kind"] == "surf") / len(ms)
-        print(f"  {datetime.strptime(m, '%m'):%b}  🏖️ {sw:4.1f}  🏄 {su:4.1f}  {'▓' * round(sw)}{'░' * round(su)}")
+        n = {k: sum(1 for r in posted if r["date"][5:7] == m and r["kind"] == k) / len(ms) for k in ICONS}
+        bars = "".join(c * round(n[k]) for k, c in (("swim", "▓"), ("pool", "▒"), ("surf", "░")))
+        counts = "  ".join(f"{ICONS[k]} {n[k]:4.1f}" for k in ICONS)
+        print(f"  {datetime.strptime(m, '%m'):%b}  {counts}  {bars}")
 
     print("\nWinning spot on posted sessions:")
-    for name, n in Counter(("🏖️ " if r["kind"] == "swim" else "🏄 ") + r["spot"] for r in posted).most_common():
+    for name, n in Counter(f"{ICONS[r['kind']]} {r['spot']}" for r in posted).most_common():
         print(f"  {n:4}  {name}")
     print(
         "\nSlots:",
         dict(Counter(f"{'weekend' if r['dow'] in ('Sat', 'Sun') else 'weekday'} {r['slot']}" for r in posted)),
     )
 
-    for kind in ("swim", "surf"):
+    for kind in ICONS:
         print(f"\nTop 12 {kind} sessions:")
         for r in sorted((r for r in rows if r["kind"] == kind), key=lambda r: -r["score"])[:12]:
             print(
