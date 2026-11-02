@@ -1,0 +1,6 @@
+__pycache__/
+*.json
+.env
+backtest.csv
+docs/scores.json
+.claude/

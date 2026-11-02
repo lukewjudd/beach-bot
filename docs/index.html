@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beach Calls</title>
+  <meta name="description" content="Best beach sessions in Sydney's eastern suburbs, scored three times a day.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Beach calls</h1>
+      <p class="sub" id="updated">Eastern suburbs, Sydney</p>
+    </div>
+    <a class="legend-link" href="#about">How it works</a>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="Sessions"></nav>
+
+  <main>
+    <section class="hero" id="hero" aria-live="polite"></section>
+    <div class="layout">
+      <div id="map" role="region" aria-label="Map of beach scores"></div>
+      <section class="panel">
+        <h2>Spots</h2>
+        <ol class="spots" id="spots"></ol>
+        <h2>Conditions</h2>
+        <div class="report" id="report"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="about">
+    <p>Each morning (before 9am on weekdays, before 11am on weekends) and evening (after 5pm on weekdays, after 2pm on weekends) is scored out of 10. The score uses wind, swell, air and water temperature, rain, water quality and local knowledge of each beach, judged on that spot's best two hours. Sessions that score <b>8/10 or better</b> get posted to the calendar, and <b>9+</b> gets a 🔥. Scores refresh at about 4am, 3pm and 7pm.</p>
+    <p class="scale"><span class="pill r-low">1–5</span><span class="pill r-mid">6–7</span><span class="pill r-good">8</span><span class="pill r-great">9–10</span></p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
