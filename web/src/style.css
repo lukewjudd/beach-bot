@@ -141,10 +141,11 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .marker.none { background: var(--r-low); color: var(--on-pill); opacity: .7; }
 #map { overflow: hidden; }
 .marker { cursor: pointer; }
-.leaflet-container { font: inherit; background: var(--bg); }
-.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--text); }
-.leaflet-popup-content-wrapper { border-radius: 10px; }
-.leaflet-popup-content { margin: 10px 12px; font-size: 14px; }
+/* #map prefix: Leaflet's own stylesheet loads after ours (with the map code), so ours needs to outrank it */
+#map.leaflet-container { font: inherit; background: var(--bg); }
+#map .leaflet-popup-content-wrapper, #map .leaflet-popup-tip { background: var(--surface); color: var(--text); }
+#map .leaflet-popup-content-wrapper { border-radius: 10px; }
+#map .leaflet-popup-content { margin: 10px 12px; font-size: 14px; }
 .popup .t { font-weight: 700; }
 .popup .m { color: var(--muted); font-size: 13px; }
 

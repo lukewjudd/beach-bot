@@ -16,7 +16,7 @@ const SPOT_BOUNDS = L.latLngBounds([-33.982, 151.2505], [-33.889, 151.284]);
 export function createMap(container: HTMLElement): L.Map {
   const map = L.map(container, {
     zoomControl: false,
-    scrollWheelZoom: false,
+    scrollWheelZoom: true, // the page fits the screen, so the wheel has nothing else to scroll
     maxBounds: MAP_BOUNDS,
     maxBoundsViscosity: 1,
     minZoom: 11,

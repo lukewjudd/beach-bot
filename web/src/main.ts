@@ -198,7 +198,8 @@ function render() {
   renderHero(s, leadSpot);
   renderPins(s, byId, leadSpot?.id);
   renderSpots(s, byId);
-  if (activeSpot) highlight(activeSpot, false);
+  // Keep the chosen spot highlighted in the list across tabs, without flying the map around again
+  if (activeSpot) document.querySelector(`.spot[data-id="${activeSpot}"]`)?.classList.add("active");
 }
 
 // The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
@@ -222,11 +223,11 @@ function highlight(id: string, fromList: boolean) {
   activeSpot = id;
   document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === id));
   const m = markers[id];
-  if (m && fromList) {
-    map?.panTo(m.getLatLng());
-    m.openPopup(); // Leaflet closes any other open popup
-    $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
+  if (!m) return;
+  // Fly in to the spot (never zooming back out if you're already closer), from the list or the pin itself
+  map?.flyTo(m.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
+  m.openPopup(); // Leaflet closes any other open popup
+  if (fromList) $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 load();
