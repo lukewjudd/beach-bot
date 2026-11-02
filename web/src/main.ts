@@ -144,7 +144,6 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
   for (const spot of order) {
     const sc = byId[spot.id];
     if (!shown.has(spot.kind)) continue;
-    if (spot.kind === "surf" && !sc) continue; // surf not working: no pin, so it can't be mistaken for the beach
     const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
     markers[spot.id] = addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(spot, sc), () =>
       highlight(spot.id, false),
