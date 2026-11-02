@@ -15,7 +15,8 @@ CALENDAR_ID=${CALENDAR_ID:?set CALENDAR_ID to the Beach calendar id}
 REGION=${REGION:-us-central1}   # free tier region; the schedule still runs on Sydney time
 SA_NAME=beach-bot
 SA="$SA_NAME@$PROJECT.iam.gserviceaccount.com"
-BUCKET="$PROJECT-beach-scores"   # public: holds scores.json for the map site
+BUCKET="$PROJECT-scores-syd"     # public: holds scores.json for the map site
+BUCKET_REGION=australia-southeast1  # Sydney, next to the people loading it (~20ms vs ~600ms from the US)
 
 ACCOUNT=$(gcloud config get-value account 2>/dev/null)
 echo "Deploying to project '$PROJECT' as $ACCOUNT"
@@ -37,7 +38,7 @@ g projects add-iam-policy-binding "$PROJECT" --condition None \
 
 echo "→ Public scores bucket"
 g storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 \
-  || g storage buckets create "gs://$BUCKET" --location "$REGION" --uniform-bucket-level-access
+  || g storage buckets create "gs://$BUCKET" --location "$BUCKET_REGION" --uniform-bucket-level-access
 g storage buckets add-iam-policy-binding "gs://$BUCKET" --member allUsers --role roles/storage.objectViewer >/dev/null
 g storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$SA" --role roles/storage.objectAdmin >/dev/null
 CORS=$(mktemp)
