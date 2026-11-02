@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Beach Calls</title>
   <meta name="description" content="Best beach sessions in Sydney's eastern suburbs, scored three times a day.">
+  <!-- Start fetching the scores alongside the JS rather than after it -->
+  <link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
+  <link rel="preload" href="%VITE_SCORES_URL%" as="fetch" crossorigin>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
 </head>
 <body>
@@ -16,7 +19,9 @@
   <nav class="tabs" id="tabs" aria-label="Sessions"></nav>
 
   <main>
-    <section class="hero" id="hero" aria-live="polite"></section>
+    <section class="hero" id="hero" aria-live="polite">
+      <div class="loading"><span class="spinner" aria-hidden="true"></span> Checking the forecast…</div>
+    </section>
     <div class="layout">
       <div id="map" role="region" aria-label="Map of beach scores"></div>
       <section class="panel">

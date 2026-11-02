@@ -5,12 +5,8 @@ import { addPin, createMap } from "./map";
 import "./style.css";
 import type { Scores, Session, Spot, SpotScore } from "./types";
 
-// Local dev reads public/scores.json (write it with `beach-bot --json ../web/public/scores.json`)
-const DATA_URL =
-  new URLSearchParams(location.search).get("data") ??
-  (import.meta.env.DEV
-    ? `${import.meta.env.BASE_URL}scores.json`
-    : "https://storage.googleapis.com/beach-bot-513422-beach-scores/scores.json");
+// Set in .env.production / .env.development; ?data= overrides it
+const DATA_URL = new URLSearchParams(location.search).get("data") ?? import.meta.env.VITE_SCORES_URL;
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
 const ratingClass = (r: number) => (r >= 9 ? "r-great" : r >= 8 ? "r-good" : r >= 6 ? "r-mid" : "r-low");
@@ -31,8 +27,10 @@ const windowText = (x: SpotScore) => (worth(x.score) && x.window ? `${x.window[0
 const isPast = (s: Session) => s.started && new Date(s.end) < new Date();
 
 async function load() {
+  map = createMap($("map")); // start the map straight away, in parallel with the scores
   try {
-    const res = await fetch(DATA_URL, { cache: "no-cache" });
+    // Plain fetch so it picks up the <link rel="preload"> in index.html; the bucket's max-age keeps it fresh
+    const res = await fetch(DATA_URL);
     if (!res.ok) throw new Error(String(res.status));
     data = await res.json();
   } catch (e) {
@@ -50,7 +48,6 @@ async function load() {
 
   const upcoming = data.sessions.findIndex((s) => !isPast(s));
   current = upcoming === -1 ? 0 : upcoming;
-  map = createMap($("map"), data.spots);
   renderTabs();
   render();
 }

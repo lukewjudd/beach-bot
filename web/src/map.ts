@@ -17,7 +17,10 @@ const MAP_BOUNDS: [[number, number], [number, number]] = [
 // MapLibre 6 is ESM-only and loads its worker from a separate file; point it at the copy Vite emits
 setWorkerUrl(workerUrl);
 
-export function createMap(container: HTMLElement, spots: Spot[]): MapLibreMap {
+// Covers every spot, so the map can start loading before the scores arrive
+const SPOT_BOUNDS = new LngLatBounds([151.2505, -33.982], [151.284, -33.889]);
+
+export function createMap(container: HTMLElement): MapLibreMap {
   addProtocol("pmtiles", new Protocol().tile);
   const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const map = new MapLibreMap({
@@ -45,9 +48,10 @@ export function createMap(container: HTMLElement, spots: Spot[]): MapLibreMap {
   });
   map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
 
-  const bounds = spots.reduce((b, s) => b.extend([s.lon, s.lat]), new LngLatBounds());
-  const fit = () => map.fitBounds(bounds, { padding: 32, duration: 0 });
+  const fit = () => map.fitBounds(SPOT_BOUNDS, { padding: 32, duration: 0 });
   fit();
+  // Spinner until the first full render (tiles, fonts and sprites all in)
+  map.once("idle", () => container.classList.add("ready"));
   // The container can settle after first paint (fonts, grid); refit once it has its final size
   new ResizeObserver(() => {
     map.resize();
