@@ -65,7 +65,8 @@ export function addPin(map: MapLibreMap, spot: Spot, pinClass: string, label: st
   // (position, borders) can't fight that and make pins drift while zooming.
   const el = document.createElement("div");
   el.title = spot.name;
-  el.innerHTML = `<div class="${pinClass}">${label}${spot.kind === "surf" ? '<span class="badge">🏄</span>' : ""}</div>`;
+  const badge = { surf: "🏄", pool: "🏊", swim: "" }[spot.kind];
+  el.innerHTML = `<div class="${pinClass}">${label}${badge ? `<span class="badge">${badge}</span>` : ""}</div>`;
   el.addEventListener("click", onClick);
   return new Marker({ element: el })
     .setLngLat([spot.lon, spot.lat])

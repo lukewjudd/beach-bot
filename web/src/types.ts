@@ -1,6 +1,6 @@
 // Shape of scores.json, written by the bot (bot/src/beach_bot/export.py) on every run.
 
-export type SpotKind = "swim" | "surf";
+export type SpotKind = "swim" | "pool" | "surf";
 
 export interface Spot {
   id: string;
@@ -29,7 +29,7 @@ export interface Session {
   /** Worth it: the same rule the calendar uses, so the site and calendar always agree */
   posted: boolean;
   fire: boolean;
-  lead: { name: string | null; score: number; rating: number; window: [string, string] | null };
+  lead: { id: string | null; kind: SpotKind; name: string | null; score: number; rating: number; window: [string, string] | null };
   conditions: {
     wind_kmh: number;
     wind_dir: string;

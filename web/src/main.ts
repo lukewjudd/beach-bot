@@ -3,7 +3,7 @@
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { addPin, createMap } from "./map";
 import "./style.css";
-import type { Scores, Session, Spot, SpotScore } from "./types";
+import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
 
 // Set in .env.production / .env.development; ?data= overrides it
 const DATA_URL = new URLSearchParams(location.search).get("data") ?? import.meta.env.VITE_SCORES_URL;
@@ -20,6 +20,20 @@ let map: MapLibreMap;
 let markers: Record<string, Marker> = {};
 let current = 0;
 let activeSpot: string | null = null;
+
+const ICON: Record<SpotKind, string> = { swim: "🏖️", pool: "🏊", surf: "🏄" };
+const KIND_LABEL: Record<SpotKind, string> = { swim: "Beaches", pool: "Pools", surf: "Surf" };
+
+// Which kinds of spot to show on the map and in the list; remembered per browser
+let shown = new Set<SpotKind>(["swim", "pool", "surf"]);
+try {
+  const saved = JSON.parse(localStorage.getItem("shown") ?? "null");
+  if (Array.isArray(saved)) shown = new Set(saved);
+} catch {
+  // private mode or blocked storage: just show everything
+}
+const spotMeta = (spot: Spot) => (spot.kind === "swim" ? (spot.snorkel ? "swim / snorkel" : "swim") : spot.kind);
+const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${ICON[spot.kind]} `);
 
 // Worth it uses the calendar's own bar, and a best window only means something for spots that clear it
 const worth = (score: number) => score >= data.thresholds.post;
@@ -49,7 +63,32 @@ async function load() {
   const upcoming = data.sessions.findIndex((s) => !isPast(s));
   current = upcoming === -1 ? 0 : upcoming;
   renderTabs();
+  renderFilters();
   render();
+}
+
+function renderFilters() {
+  const el = $("filters");
+  el.innerHTML = (Object.keys(KIND_LABEL) as SpotKind[])
+    .map(
+      (k) =>
+        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${ICON[k]} ${KIND_LABEL[k]}</button>`,
+    )
+    .join("");
+  el.querySelectorAll<HTMLButtonElement>(".filter").forEach((b) =>
+    b.addEventListener("click", () => {
+      const k = b.dataset.kind as SpotKind;
+      if (shown.has(k)) shown.delete(k);
+      else shown.add(k);
+      b.setAttribute("aria-pressed", String(shown.has(k)));
+      try {
+        localStorage.setItem("shown", JSON.stringify([...shown]));
+      } catch {
+        // not remembered, still works for this visit
+      }
+      render();
+    }),
+  );
 }
 
 function renderTabs() {
@@ -77,7 +116,7 @@ function renderTabs() {
 function renderHero(s: Session, leadSpot: Spot | undefined) {
   const c = s.conditions;
   const lead = s.lead;
-  const icon = leadSpot?.kind === "surf" ? "🏄" : "🏖️";
+  const icon = ICON[leadSpot?.kind ?? "swim"];
   const verdict = s.posted
     ? `<span class="where">${icon} ${esc(lead.name)} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
@@ -104,6 +143,7 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
   const order = [...data.spots].sort((a, b) => (byId[a.id]?.score ?? -1) - (byId[b.id]?.score ?? -1));
   for (const spot of order) {
     const sc = byId[spot.id];
+    if (!shown.has(spot.kind)) continue;
     if (spot.kind === "surf" && !sc) continue; // surf not working: no pin, so it can't be mistaken for the beach
     const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
     markers[spot.id] = addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(spot, sc), () =>
@@ -113,21 +153,21 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
 }
 
 function renderSpots(s: Session, byId: Record<string, SpotScore>) {
-  const ranked = [...s.scores].sort((a, b) => b.score - a.score);
+  const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort((a, b) => b.score - a.score);
   const scored = ranked.map((x) => {
     const spot = spotsById[x.id];
-    const meta = [spot.kind === "surf" ? "surf" : spot.snorkel ? "swim / snorkel" : "swim", ...x.notes].join(" · ");
+    const meta = [spotMeta(spot), ...x.notes].join(" · ");
     return `<li class="spot" data-id="${x.id}">
       ${pill(x.rating)}
-      <div><div class="name">${spot.kind === "surf" ? "🏄 " : ""}${esc(spot.name)}</div><div class="meta">${esc(meta)}</div></div>
+      <div><div class="name">${prefix(spot)}${esc(spot.name)}</div><div class="meta">${esc(meta)}</div></div>
       <div class="win">${esc(windowText(x))}</div>
     </li>`;
   });
   const unsafe = data.spots
-    .filter((p) => !byId[p.id] && p.kind === "swim")
+    .filter((p) => !byId[p.id] && p.kind !== "surf" && shown.has(p.kind))
     .map(
       (p) => `<li class="spot" data-id="${p.id}"><span class="pill r-low">–</span>
-        <div><div class="name">${esc(p.name)}</div><div class="meta">too rough or unsafe this session</div></div><div></div></li>`,
+        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${p.kind === "pool" ? "closed or too rough" : "too rough or unsafe"} this session</div></div><div></div></li>`,
     );
   $("spots").innerHTML = [...scored, ...unsafe].join("");
   document
@@ -146,9 +186,7 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
 
 function render() {
   const s = data.sessions[current];
-  const leadSpot = data.spots.find(
-    (p) => p.name === s.lead.name && s.scores.some((x) => x.id === p.id && x.score === s.lead.score),
-  );
+  const leadSpot = s.lead.id ? spotsById[s.lead.id] : undefined;
   const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
   renderHero(s, leadSpot);
   renderPins(s, byId, leadSpot?.id);
@@ -158,11 +196,11 @@ function render() {
 
 function popup(spot: Spot, sc: SpotScore | undefined) {
   if (!sc) {
-    const why = spot.kind === "surf" ? "Not working this session" : "Too rough or unsafe this session";
+    const why = { surf: "Not working", pool: "Closed or too rough", swim: "Too rough or unsafe" }[spot.kind] + " this session";
     return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${why}</div></div>`;
   }
   return `<div class="popup">
-    <div class="t">${spot.kind === "surf" ? "🏄 " : ""}${esc(spot.name)} · ${sc.rating}/10</div>
+    <div class="t">${prefix(spot)}${esc(spot.name)} · ${sc.rating}/10</div>
     ${windowText(sc) ? `<div class="m">Best ${esc(windowText(sc))}</div>` : ""}
     ${sc.notes.length ? `<div class="m">${esc(sc.notes.join(" · "))}</div>` : ""}
   </div>`;
