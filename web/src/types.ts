@@ -55,6 +55,7 @@ export interface Session {
 export interface Scores {
   generated_at: string;
   thresholds: { post: number; fire: number };
+  favourite?: { id: string; tolerance: number };
   spots: Spot[];
   sessions: Session[];
 }

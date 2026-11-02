@@ -50,6 +50,10 @@ const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${ICON[spot.kind]} 
 // Worth it uses the calendar's own bar, and a best window only means something for spots that clear it
 const worth = (score: number) => score >= data.thresholds.post;
 const windowText = (x: SpotScore) => (worth(x.score) && x.window ? `${x.window[0]}–${x.window[1]}` : "");
+// Ranking used everywhere on the page: score, with the favourite winning close calls like the headline does
+const rankScore = (x: SpotScore) =>
+  x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0);
+const byRank = (a: SpotScore, b: SpotScore) => rankScore(b) - rankScore(a);
 const isPast = (s: Session) => s.started && new Date(s.end) < new Date();
 
 async function load() {
@@ -181,7 +185,7 @@ function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string 
 }
 
 function renderSpots(s: Session, byId: Record<string, SpotScore>) {
-  const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort((a, b) => b.score - a.score);
+  const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank);
   const scored = ranked.map((x) => {
     const spot = spotsById[x.id];
     const meta = [spotMeta(spot), ...x.notes].join(" · ");
@@ -209,7 +213,7 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
 // otherwise the best-scoring visible spot
 function topPick(s: Session): string | null {
   if (s.lead.id && shown.has(spotsById[s.lead.id]?.kind)) return s.lead.id;
-  const best = s.scores.filter((x) => shown.has(spotsById[x.id].kind)).sort((a, b) => b.score - a.score)[0];
+  const best = s.scores.filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank)[0];
   return best?.id ?? null;
 }
 
@@ -224,9 +228,10 @@ function renderConditions(s: Session) {
     (picked ? ` <button class="link" id="conditions-reset">show top pick</button>` : "");
   document.getElementById("conditions-reset")?.addEventListener("click", () => {
     activeSpot = null;
-    document.querySelectorAll(".spot.active").forEach((li) => li.classList.remove("active"));
-    map?.closePopup();
+    const top = topPick(s);
+    document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === top));
     renderConditions(s);
+    if (top) focusPin(top); // take the map to it too
   });
   const rep = (id && s.reports?.[id]) || s.report;
   $("report").innerHTML = Object.entries(rep)
@@ -273,12 +278,16 @@ function highlight(id: string, fromList: boolean) {
   activeSpot = id;
   document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === id));
   renderConditions(data.sessions[current]);
-  const m = markers[id];
-  if (!m) return;
-  // Fly in to the spot (never zooming back out if you're already closer), from the list or the pin itself
-  map?.flyTo(m.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
-  m.openPopup(); // Leaflet closes any other open popup
+  focusPin(id);
   if (fromList) $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// Fly in to a spot (never zooming back out if you're already closer) and open its popup
+function focusPin(id: string) {
+  const m = markers[id];
+  if (!m || !map) return;
+  map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
+  m.openPopup(); // Leaflet closes any other open popup
 }
 
 load();
