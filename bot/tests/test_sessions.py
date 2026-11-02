@@ -2,6 +2,7 @@ from datetime import date
 
 from conftest import make_forecast, score
 
+from beach_bot.beaches import BEACHES
 from beach_bot.calendar import event_body
 from beach_bot.export import export_scores
 from beach_bot.forecast import Context
@@ -120,3 +121,18 @@ def test_conditions_are_per_spot_where_they_should_be():
     assert clovelly["Calm water"] > maroubra["Calm water"]
     assert clovelly["Wind"] > maroubra["Wind"]  # cross-shore at Clovelly, onshore at Maroubra
     assert clovelly["Water temp"] == maroubra["Water temp"]  # one sea temperature for the coast
+
+
+def test_beachwatch_wins_over_the_rain_rules_for_water_quality():
+    def a_little_rain(t, h):
+        if t.startswith("2026-11-02"):
+            h["precipitation"] = 0.3  # ~7mm two days before: Coogee's Poor-grade rule would mark it down
+        return h
+
+    hours, sun = make_forecast(WED, a_little_rain)
+    sessions, ctx = score(hours, sun, WED)
+    am = sessions["am"]
+    coogee = next(b for b in BEACHES if b.name == "Coogee")  # ruled out for swimming by the rain, still reported
+
+    assert report(am, hours, ctx, {}, WED, coogee)["Water quality"] < 10  # no Beachwatch forecast
+    assert report(am, hours, ctx, {"Coogee Beach": "Unlikely"}, WED, coogee)["Water quality"] == 10

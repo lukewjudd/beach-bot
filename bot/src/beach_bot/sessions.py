@@ -259,7 +259,9 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     quality = {"Likely": 2, "Possible": 5, "Unlikely": 10}.get(
         bw, 10 if rain24 < b.rain_occ else 6 if rain24 < b.rain_often else 3
     )
-    if b.poor_grade and quality == 10 and ctx.rain(sess.hours[0], 0, 72) >= 1:  # R-R3: slow to clear
+    # R-R3: Poor-graded sites take up to 3 days to clear after rain. Only when Beachwatch has no forecast
+    # (it covers today only); its own forecast always wins.
+    if bw is None and b.poor_grade and quality == 10 and ctx.rain(sess.hours[0], 0, 72) >= 1:
         quality = 6
 
     clamp = lambda x: max(1, min(10, x))  # noqa: E731
