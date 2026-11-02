@@ -100,7 +100,7 @@ class Pool:
     beach: Beach  # the beach whose water fills it
     exposure: float  # how readily big swell washes over the walls (1 = fully exposed)
     best_tide: str | None = None  # "low", "mid" or "mid_high"
-    cleaning_day: int | None = None  # weekday (Mon=0) it's drained for cleaning
+    cleaning_day: int | None = None  # weekday (Mon=0) it's drained for cleaning, for a few hours
     cleaning_before_low: bool = False  # only closed in the ~4h before low tide (Bronte Baths)
     opens: int | None = None  # opening hour, for pools with gates
     closes_summer: int = 19  # 1 Oct - 12 Apr

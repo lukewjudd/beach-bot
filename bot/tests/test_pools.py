@@ -49,12 +49,23 @@ def test_wylies_is_shut_before_7am():
     assert first[11:13] >= "07"
 
 
-def test_cleaning_days_close_pools():
-    hours, sun = make_forecast(MON, with_tide(high_at_hour=12))
-    sessions, _ = score(hours, sun, MON)
+def test_a_cleaning_day_is_a_warning_when_the_window_isnt_known():
+    monday, _ = score(*make_forecast(MON, with_tide(high_at_hour=12)), MON)
+    tuesday, _ = score(*make_forecast(date(2026, 11, 3), with_tide(high_at_hour=12)), date(2026, 11, 3))
 
-    assert pool(sessions["am"], "Ross Jones Pool") is None  # drained on Mondays
-    assert pool(sessions["am"], "Giles Baths") is not None
+    ross_jones = pool(monday["am"], "Ross Jones Pool")  # cleaned for a few hours on Mondays
+    assert ross_jones[0] < pool(tuesday["am"], "Ross Jones Pool")[0]
+    assert "may be shut for cleaning (Mondays)" in ross_jones[2]
+
+
+def test_ruled_out_spots_say_why():
+    def huge(t, h):
+        h["wave_height"] = 3.5
+        return h
+
+    sessions, _ = score(*make_forecast(WED, with_tide(high_at_hour=7, then=huge)), WED)
+
+    assert sessions["am"].ruled_out["Mahon Pool"] == "waves over the walls"
 
 
 def test_a_pool_can_make_a_session_worth_it_when_the_beaches_are_blown_out():

@@ -31,6 +31,7 @@ class Session:
     surf: list = field(default_factory=list)  # [(score, spot, notes)] best first, every spot
     pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
+    ruled_out: dict = field(default_factory=dict)  # spot name -> why it's a no-go all session
 
     @property
     def key(self):
@@ -92,12 +93,19 @@ def best_window(sess, scores):
     return best
 
 
+def main_reason(results):
+    """The most common reason across the hours that were a no-go."""
+    reasons = [ns[0] for sc, ns in results if sc is None and ns]
+    return max(set(reasons), key=reasons.count) if reasons else "not swimmable"
+
+
 def score_session(sess, hours, ctx, beachwatch, today):
     n = min(WINDOW_HOURS, len(sess.hours))
     for b in BEACHES:
         results = [score_swim_hour(b, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         best = best_window(sess, [r[0] for r in results])
         if not best:
+            sess.ruled_out[b.name] = main_reason(results)
             continue
         sc, i = best
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
@@ -114,6 +122,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
         results = [score_pool_hour(p, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         best = best_window(sess, [r[0] for r in results])
         if not best:
+            sess.ruled_out[p.name] = main_reason(results)
             continue
         sc, i = best
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})

@@ -107,6 +107,10 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
                     "uv": round(c["uv"]),
                 },
                 "report": report(sess, hours, ctx, beachwatch, now.date()),
+                "ruled_out": {
+                    slug(name, "pool" if any(p.name == name for p in POOLS) else "swim"): why
+                    for name, why in sess.ruled_out.items()
+                },
                 "scores": scores,
             }
         )

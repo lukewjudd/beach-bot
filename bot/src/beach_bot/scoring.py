@@ -161,16 +161,19 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
     day = date.fromisoformat(t[:10])
     tide = ctx.tide(t)  # (hours to nearest high, hours to nearest low), or None without tide data
 
-    # Cleaning days (R-P7) and opening hours (R-P8)
+    # Cleaning days (R-P7) and opening hours (R-P8). Only Bronte's cleaning window is known (the ~4h before low
+    # tide); for the others it's a few hours sometime that day, so it's a warning rather than a closure.
     if p.cleaning_day == day.weekday():
-        if not p.cleaning_before_low:
-            return None, ["closed for cleaning"]
-        if tide and 0 <= tide[1] <= 4:
-            return None, ["closed for cleaning before low tide"]
+        if p.cleaning_before_low:
+            if tide and 0 <= tide[1] <= 4:
+                return None, ["closed for cleaning before low tide"]
+        else:
+            s -= 15
+            notes.append(f"may be shut for cleaning ({day:%A}s)")
     if p.opens is not None:
         summer = (day.month, day.day) >= (10, 1) or (day.month, day.day) <= (4, 12)
         if hour < p.opens or hour >= (p.closes_summer if summer else p.closes_winter):
-            return None, ["closed"]
+            return None, [f"closed until {p.opens}am" if hour < p.opens else "closed for the day"]
 
     # Swell over the walls (R-P3)
     near_high = tide is not None and abs(tide[0]) <= 2.5
