@@ -96,6 +96,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
                 "conditions": {
                     "wind_kmh": round(c["wind"]),
                     "wind_dir": c["wind_dir"],
+                    "wind_deg": round(c["wind_deg"]),  # direction it blows FROM, for the map's wind animation
                     "gust_kmh": round(c["gust"]),
                     "wind_desc": c["wind_desc"],
                     "swell_m": round(c["hs"], 1),
