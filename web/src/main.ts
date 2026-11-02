@@ -20,6 +20,7 @@ let spotsById: Record<string, Spot>;
 const mapModule = import("./map");
 let mapApi: typeof import("./map") | undefined;
 let map: LeafletMap | undefined;
+let wind: import("./wind").Wind | undefined;
 let markers: Record<string, Marker> = {};
 let current = 0;
 let activeSpot: string | null = null;
@@ -35,6 +36,14 @@ try {
 } catch {
   // private mode or blocked storage: just show everything
 }
+// Wind trails on the map, on unless turned off (remembered per browser)
+let windOn = true;
+try {
+  windOn = localStorage.getItem("wind") !== "off";
+} catch {
+  // storage blocked: default on
+}
+
 const spotMeta = (spot: Spot) => (spot.kind === "swim" ? (spot.snorkel ? "swim / snorkel" : "swim") : spot.kind);
 const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${ICON[spot.kind]} `);
 
@@ -47,6 +56,8 @@ async function load() {
   mapModule.then((m) => {
     map = m.createMap($("map"));
     mapApi = m;
+    wind = m.windLayer(map);
+    wind.show(windOn);
     if (data) render(); // scores got here first: add the pins now
   });
   try {
@@ -76,13 +87,24 @@ async function load() {
 
 function renderFilters() {
   const el = $("filters");
-  el.innerHTML = (Object.keys(KIND_LABEL) as SpotKind[])
-    .map(
-      (k) =>
-        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${ICON[k]} ${KIND_LABEL[k]}</button>`,
-    )
-    .join("");
-  el.querySelectorAll<HTMLButtonElement>(".filter").forEach((b) =>
+  el.innerHTML =
+    (Object.keys(KIND_LABEL) as SpotKind[])
+      .map(
+        (k) =>
+          `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${ICON[k]} ${KIND_LABEL[k]}</button>`,
+      )
+      .join("") + `<button class="filter wind-toggle" aria-pressed="${windOn}" id="wind-toggle">💨 Wind</button>`;
+  $("wind-toggle").addEventListener("click", (e) => {
+    windOn = !windOn;
+    (e.currentTarget as HTMLElement).setAttribute("aria-pressed", String(windOn));
+    try {
+      localStorage.setItem("wind", windOn ? "on" : "off");
+    } catch {
+      // not remembered, still works for this visit
+    }
+    wind?.show(windOn);
+  });
+  el.querySelectorAll<HTMLButtonElement>(".filter[data-kind]").forEach((b) =>
     b.addEventListener("click", () => {
       const k = b.dataset.kind as SpotKind;
       if (shown.has(k)) shown.delete(k);
@@ -213,6 +235,8 @@ function render() {
   const leadSpot = s.lead.id ? spotsById[s.lead.id] : undefined;
   const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
   renderHero(s, leadSpot);
+  const c = s.conditions;
+  if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
   renderPins(s, byId, leadSpot?.id);
   renderSpots(s, byId);
   // Keep the chosen spot highlighted in the list across tabs, without flying the map around again

@@ -7,6 +7,8 @@ import "leaflet/dist/leaflet.css";
 import { leafletLayer } from "protomaps-leaflet";
 import type { Spot } from "./types";
 
+export { windLayer } from "./wind";
+
 // In the public bucket next to scores.json (see deploy.sh for why not GitHub Pages)
 const TILES_URL = import.meta.env.VITE_TILES_URL;
 const MAP_BOUNDS = L.latLngBounds([-34.01, 151.17], [-33.83, 151.32]); // must sit inside the extract's bbox

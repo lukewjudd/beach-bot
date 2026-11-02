@@ -33,6 +33,7 @@ export interface Session {
   conditions: {
     wind_kmh: number;
     wind_dir: string;
+    wind_deg?: number;
     gust_kmh: number;
     wind_desc: string;
     swell_m: number;
