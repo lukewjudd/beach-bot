@@ -5,8 +5,17 @@ from datetime import date, datetime, timedelta
 from statistics import mean
 
 from .beaches import BEACHES, SURF_SPOTS
-from .config import (CLOVELLY_TOLERANCE, DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE, SURF_THRESHOLD, TZ,
-                     WEEKDAY_SESSIONS, WEEKEND_SESSIONS, WINDOW_HOURS)
+from .config import (
+    CLOVELLY_TOLERANCE,
+    DAYS_AHEAD,
+    EVENT_THRESHOLD,
+    FAVOURITE,
+    SURF_THRESHOLD,
+    TZ,
+    WEEKDAY_SESSIONS,
+    WEEKEND_SESSIONS,
+    WINDOW_HOURS,
+)
 from .geo import compass, swell_sector, wind_kind, wind_words
 from .scoring import score_surf_hour, score_swim_hour
 
@@ -18,13 +27,13 @@ class Session:
     start: datetime
     end: datetime
     hours: list
-    swim: list = field(default_factory=list)    # [(score, beach, notes)] best first
-    surf: list = field(default_factory=list)    # [(score, spot)] best first
+    swim: list = field(default_factory=list)  # [(score, beach, notes)] best first
+    surf: list = field(default_factory=list)  # [(score, spot)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
 
     @property
     def key(self):
-        return f"beach{self.day:%Y%m%d}{self.slot}"   # valid Google event id (base32hex)
+        return f"beach{self.day:%Y%m%d}{self.slot}"  # valid Google event id (base32hex)
 
     @property
     def best_swim(self):
@@ -64,7 +73,7 @@ def best_window(sess, scores):
     n = min(WINDOW_HOURS, len(scores))
     best = None
     for i in range(len(scores) - n + 1):
-        win = scores[i:i + n]
+        win = scores[i : i + n]
         if None in win:
             continue
         sc = 0.6 * mean(win) + 0.4 * min(win)
@@ -81,11 +90,11 @@ def score_session(sess, hours, ctx, beachwatch, today):
         if not best:
             continue
         sc, i = best
-        notes = sorted({x for _, ns in results[i:i + n] for x in ns})
+        notes = sorted({x for _, ns in results[i : i + n] for x in ns})
         sess.swim.append((round(sc), b, notes))
         sess.windows[b.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.swim.sort(key=lambda x: -x[0])
-    if sess.swim and sess.swim[0][1].name != FAVOURITE:               # R-TB1
+    if sess.swim and sess.swim[0][1].name != FAVOURITE:  # R-TB1
         fav = next((x for x in sess.swim if x[1].name == FAVOURITE), None)
         if fav and fav[0] >= sess.swim[0][0] - CLOVELLY_TOLERANCE:
             sess.swim.remove(fav)
@@ -105,7 +114,7 @@ def window_hours(sess, name):
     if name not in sess.windows:
         return sess.hours
     first, last = sess.windows[name]
-    return sess.hours[sess.hours.index(first):sess.hours.index(last) + 1]
+    return sess.hours[sess.hours.index(first) : sess.hours.index(last) + 1]
 
 
 def headline(sess):
@@ -123,7 +132,9 @@ def conditions(sess, hours, keys=None):
     return {
         "air": max(h["temperature_2m"] for h in hs),
         "sea": next((h["sea_surface_temperature"] for h in hs if h.get("sea_surface_temperature")), None),
-        "wind": wind, "wind_deg": wdir, "wind_dir": compass(wdir),
+        "wind": wind,
+        "wind_deg": wdir,
+        "wind_dir": compass(wdir),
         "wind_desc": wind_words(max(wind, max(h["wind_gusts_10m"] for h in hs) * 0.6)),
         "gust": max(h["wind_gusts_10m"] for h in hs),
         "hs": mean(h.get("wave_height") or 0 for h in hs),
@@ -140,7 +151,7 @@ def hour_label(key, add):
 
 
 def out_of_10(score):
-    return max(1, min(10, int(score // 10)))   # 80-89 -> 8, so 8/10 always means it cleared the bar
+    return max(1, min(10, int(score // 10)))  # 80-89 -> 8, so 8/10 always means it cleared the bar
 
 
 def report(sess, hours, ctx, beachwatch, today):
@@ -165,7 +176,21 @@ def report(sess, hours, ctx, beachwatch, today):
     surf = out_of_10(sess.surf[0][0]) if sess.surf else 1
 
     sea = c["sea"] or 20
-    water = 10 if sea >= 22 else 9 if sea >= 21 else 8 if sea >= 20 else 7 if sea >= 19 else 6 if sea >= 18 else 5 if sea >= 17 else 3
+    water = (
+        10
+        if sea >= 22
+        else 9
+        if sea >= 21
+        else 8
+        if sea >= 20
+        else 7
+        if sea >= 19
+        else 6
+        if sea >= 18
+        else 5
+        if sea >= 17
+        else 3
+    )
     if ctx.ne_days(sess.hours[0]) >= 3:
         water -= 1
 
@@ -176,18 +201,25 @@ def report(sess, hours, ctx, beachwatch, today):
     bw = beachwatch.get(b.beachwatch) if sess.day == today else None
     rain24 = ctx.rain(sess.hours[0], 0, 24)
     quality = {"Likely": 2, "Possible": 5, "Unlikely": 10}.get(
-        bw, 10 if rain24 < b.rain_occ else 6 if rain24 < b.rain_often else 3)
+        bw, 10 if rain24 < b.rain_occ else 6 if rain24 < b.rain_often else 3
+    )
 
-    clamp = lambda x: max(1, min(10, x))   # noqa: E731
-    return {"Wind": clamp(w), "Calm water": clamp(calm), "Surf": clamp(surf), "Water temp": clamp(water),
-            "Weather": clamp(weather), "Water quality": clamp(quality)}
+    clamp = lambda x: max(1, min(10, x))  # noqa: E731
+    return {
+        "Wind": clamp(w),
+        "Calm water": clamp(calm),
+        "Surf": clamp(surf),
+        "Water temp": clamp(water),
+        "Weather": clamp(weather),
+        "Water quality": clamp(quality),
+    }
 
 
 def top_spots(sess, n=3):
     """Best swim and surf options merged into one ranked list."""
     picks = [(sc, b.name, "swim" + (" / snorkel" if b.snorkel else ""), notes) for sc, b, notes in sess.swim]
     picks += [(sc, sp.name, "surf", []) for sc, sp in sess.surf]
-    picks.sort(key=lambda x: -(x[0] + (CLOVELLY_TOLERANCE + 0.5 if x[1] == FAVOURITE else 0)))   # R-TB1
+    picks.sort(key=lambda x: -(x[0] + (CLOVELLY_TOLERANCE + 0.5 if x[1] == FAVOURITE else 0)))  # R-TB1
     seen, out = set(), []
     for p in picks:
         if p[1] not in seen:

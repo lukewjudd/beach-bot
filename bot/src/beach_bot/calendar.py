@@ -21,7 +21,7 @@ def event_body(sess, hours, ctx, beachwatch, today):
         parts.append(f"🏖️ {swim[1].name}")
     if surf:
         parts.append(f"🏄 {surf[1].name} {c['hs']:.1f}m")
-    if not parts and swim:   # only seen in --all previews
+    if not parts and swim:  # only seen in --all previews
         parts.append(f"🏖️ {swim[1].name}")
     b = swim[1] if swim else None
     kind = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
@@ -46,7 +46,8 @@ def event_body(sess, hours, ctx, beachwatch, today):
     lines += [
         "",
         f"Swell: {c['hs']:.1f}m {c['swell_dir']} @ {c['period']:.0f}s (open ocean)",
-        f"Air max {c['air']:.0f}°" + (f" · water {c['sea']:.0f}°" if c["sea"] else "")
+        f"Air max {c['air']:.0f}°"
+        + (f" · water {c['sea']:.0f}°" if c["sea"] else "")
         + f" · rain chance {c['rain_prob']:.0f}% · UV {c['uv']:.0f}",
         "",
         f"Updated {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if conditions drop.",
@@ -58,17 +59,19 @@ def calendar_service():
     import google.auth
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
+
     scopes = ["https://www.googleapis.com/auth/calendar.events"]
-    if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):   # key file, e.g. for local testing
+    if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):  # key file, e.g. for local testing
         info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
         creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
-    else:   # on Cloud Run: the job's own service account, no key needed
+    else:  # on Cloud Run: the job's own service account, no key needed
         creds, _ = google.auth.default(scopes=scopes)
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
 
 
 def sync(sessions, hours, ctx, beachwatch, now):
     from googleapiclient.errors import HttpError
+
     svc = calendar_service()
     cal = os.environ["BEACH_CALENDAR_ID"]
     # Fails loudly if the calendar isn't shared with the bot (a missing event alone looks like a 404)
@@ -76,7 +79,7 @@ def sync(sessions, hours, ctx, beachwatch, now):
     print(f"calendar ok, {sum(s.is_good for s in sessions)} good session(s)")
     for sess in sessions:
         if sess.start <= now:
-            continue   # never touch a session that has started
+            continue  # never touch a session that has started
         try:
             existing = svc.events().get(calendarId=cal, eventId=sess.key).execute()
         except HttpError as e:
@@ -93,13 +96,16 @@ def sync(sessions, hours, ctx, beachwatch, now):
 
         title, desc = event_body(sess, hours, ctx, beachwatch, now.date())
         body = {
-            "id": sess.key, "summary": title, "description": desc, "status": "confirmed",
+            "id": sess.key,
+            "summary": title,
+            "description": desc,
+            "status": "confirmed",
             "location": sess.best_swim[1].name + ", NSW" if sess.best_swim else None,
             "start": {"dateTime": sess.start.isoformat(), "timeZone": "Australia/Sydney"},
             "end": {"dateTime": sess.end.isoformat(), "timeZone": "Australia/Sydney"},
-            "transparency": "transparent",   # don't show as busy
+            "transparency": "transparent",  # don't show as busy
         }
-        if existing:   # includes previously deleted ones; ids can't be re-inserted
+        if existing:  # includes previously deleted ones; ids can't be re-inserted
             svc.events().update(calendarId=cal, eventId=sess.key, body=body).execute()
             print(f"{'updated ' if live else 'restored'} {sess.key}  {title}")
         else:

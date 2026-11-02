@@ -30,9 +30,11 @@ def main():
         flag = "✅" if sess.is_good else "  "
         swim = sess.best_swim
         surf = sess.surf[0] if sess.surf else None
-        print(f"{flag} {sess.start:%a %d %b} {sess.slot}  "
-              f"swim: {swim[1].name if swim else '-'} {swim[0] if swim else ''}  "
-              f"surf: {surf[1].name + ' ' + str(surf[0]) if surf else '-'}")
+        print(
+            f"{flag} {sess.start:%a %d %b} {sess.slot}  "
+            f"swim: {swim[1].name if swim else '-'} {swim[0] if swim else ''}  "
+            f"surf: {surf[1].name + ' ' + str(surf[0]) if surf else '-'}"
+        )
         if sess.is_good or args.all:
             title, desc = event_body(sess, hours, ctx, beachwatch, now.date())
             print(f"     → {title}")

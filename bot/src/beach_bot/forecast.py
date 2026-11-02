@@ -11,7 +11,7 @@ from .config import DAYS_AHEAD, FORECAST_POINT, MARINE_POINT
 
 
 def fetch_json(url, params):
-    r = requests.get(url, params=params, timeout=180)   # multi-year backtest requests are slow
+    r = requests.get(url, params=params, timeout=180)  # multi-year backtest requests are slow
     r.raise_for_status()
     return r.json()
 
@@ -30,7 +30,7 @@ def fetch_weather(url, params):
         if k == "wind_direction_10m":
             ws_l, ws_s = land["hourly"]["wind_speed_10m"], sea["hourly"]["wind_speed_10m"]
             vals = []
-            for a, b, sa, sb in zip(lv, sv, ws_l, ws_s):
+            for a, b, sa, sb in zip(lv, sv, ws_l, ws_s, strict=True):
                 if None in (a, b, sa, sb):
                     vals.append(a if a is not None else b)
                     continue
@@ -39,28 +39,42 @@ def fetch_weather(url, params):
                 vals.append(round(math.degrees(math.atan2(x, y)) % 360))
             out["hourly"][k] = vals
         else:
-            out["hourly"][k] = [a if b is None else b if a is None else (a + b) / 2 for a, b in zip(lv, sv)]
+            out["hourly"][k] = [
+                a if b is None else b if a is None else (a + b) / 2 for a, b in zip(lv, sv, strict=True)
+            ]
     return out
 
 
 def load_data():
-    wx = fetch_weather("https://api.open-meteo.com/v1/forecast", {
-        "latitude": FORECAST_POINT[0], "longitude": FORECAST_POINT[1],
-        "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
-                  "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
-        "daily": "sunrise,sunset",
-        "timezone": "Australia/Sydney", "past_days": 4, "forecast_days": DAYS_AHEAD + 1,
-    })
-    sea = fetch_json("https://marine-api.open-meteo.com/v1/marine", {
-        "latitude": MARINE_POINT[0], "longitude": MARINE_POINT[1], "cell_selection": "sea",
-        "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
-                  "sea_surface_temperature,sea_level_height_msl",
-        "timezone": "Australia/Sydney", "past_days": 4, "forecast_days": DAYS_AHEAD + 1,
-    })
+    wx = fetch_weather(
+        "https://api.open-meteo.com/v1/forecast",
+        {
+            "latitude": FORECAST_POINT[0],
+            "longitude": FORECAST_POINT[1],
+            "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
+            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
+            "daily": "sunrise,sunset",
+            "timezone": "Australia/Sydney",
+            "past_days": 4,
+            "forecast_days": DAYS_AHEAD + 1,
+        },
+    )
+    sea = fetch_json(
+        "https://marine-api.open-meteo.com/v1/marine",
+        {
+            "latitude": MARINE_POINT[0],
+            "longitude": MARINE_POINT[1],
+            "cell_selection": "sea",
+            "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
+            "sea_surface_temperature,sea_level_height_msl",
+            "timezone": "Australia/Sydney",
+            "past_days": 4,
+            "forecast_days": DAYS_AHEAD + 1,
+        },
+    )
     try:
         bw = fetch_json("https://api.beachwatch.nsw.gov.au/public/sites/geojson", {})
-        beachwatch = {f["properties"]["siteName"]: f["properties"].get("pollutionForecast")
-                      for f in bw["features"]}
+        beachwatch = {f["properties"]["siteName"]: f["properties"].get("pollutionForecast") for f in bw["features"]}
     except Exception as e:  # undocumented API: fall back to rain rules
         print(f"Beachwatch unavailable ({e}); using rain thresholds", file=sys.stderr)
         beachwatch = {}
@@ -71,8 +85,10 @@ def load_data():
     for i, t in enumerate(sea["hourly"]["time"]):
         if t in hours:
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
-    sun = {d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
-           for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"])}
+    sun = {
+        d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
+        for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
+    }
     return hours, sun, beachwatch
 
 

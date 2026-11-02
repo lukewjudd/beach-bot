@@ -22,7 +22,7 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     # Swell at the beach (§4.2, R-S7)
     sector = swell_sector(sdir)
     hb = hs * (b.k[sector] if sector else 0.1) * (1.3 if period >= 12 else 1)
-    if b.name == "Clovelly" and hs > 2.5 and sector in ("E", "SE"):   # R-S3
+    if b.name == "Clovelly" and hs > 2.5 and sector in ("E", "SE"):  # R-S3
         return None, ["too much swell in the inlet"]
     if b.name == "Gordons Bay" and hs > 1.2 and sector in ("NE", "E", "SE"):  # R-S5
         return None, ["waves in the bay"]
@@ -51,14 +51,14 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     if wind < 8:
         s += 5
     elif wind >= 20:
-        s -= 5   # blowy on the sand even where the water is sheltered
+        s -= 5  # blowy on the sand even where the water is sheltered
     gust = h.get("wind_gusts_10m") or 0
     s -= 15 if gust >= 45 else 8 if gust >= 35 else 0
-    if 0 <= wdir <= 70 and b.name == "Bondi (north end)":                # R-W6
+    if 0 <= wdir <= 70 and b.name == "Bondi (north end)":  # R-W6
         s += 10
-    if 160 <= wdir <= 200 and b.name == "Bondi (north end)":             # R-W7
+    if 160 <= wdir <= 200 and b.name == "Bondi (north end)":  # R-W7
         s -= 15
-    if (h.get("wind_gusts_10m") or 0) >= 54 and 160 <= wdir <= 250:      # R-W5
+    if (h.get("wind_gusts_10m") or 0) >= 54 and 160 <= wdir <= 250:  # R-W5
         s -= 20 if b.name in ("Clovelly", "Bronte") else 40
         notes.append("southerly change")
 
@@ -82,7 +82,7 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
             return None, ["rain in last 3 days"]
         if b.poor_grade and r72 >= 1:
             s -= 20
-        if b.snorkel and ctx.rain(t, 0, 48) >= 10:                        # R-R4
+        if b.snorkel and ctx.rain(t, 0, 48) >= 10:  # R-R4
             s -= 10
 
     # Weather during the session
@@ -113,8 +113,9 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
         ne = sum(20 <= d <= 70 for d in dirs) > len(dirs) / 2 if dirs else False
         south = sum(135 <= d <= 200 for d in dirs) > len(dirs) / 2 if dirs else False
         if (ne or south) and w24 >= 20:
-            pen = {"Maroubra": 20, "Coogee": 10, "Bronte": 10, "Tamarama": 10,
-                   "Clovelly": 3 if ne else 8}.get(b.name, 5)
+            pen = {"Maroubra": 20, "Coogee": 10, "Bronte": 10, "Tamarama": 10, "Clovelly": 3 if ne else 8}.get(
+                b.name, 5
+            )
             s -= pen * (2 if w24 >= 30 else 1)
             if pen >= 8:
                 notes.append("bluebottles possible")
@@ -138,7 +139,7 @@ def score_surf_hour(sp: SurfSpot, h: dict):
     if kind == "onshore" and wind >= 12:
         return None
     if period < 6:
-        return None   # short-period wind chop, not worth paddling out
+        return None  # short-period wind chop, not worth paddling out
     s = 40
     s += 15 if 1.0 <= hs <= 1.8 else 8 if 0.8 <= hs <= 2.2 else 0
     s += 15 if period >= 12 else 10 if period >= 10 else 0 if period >= 8 else -15

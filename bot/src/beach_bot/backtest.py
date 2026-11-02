@@ -19,20 +19,33 @@ from .sessions import build_sessions, conditions, out_of_10, score_session
 
 
 def load_history(start, end):
-    lead = (start - timedelta(days=4)).isoformat()   # look-back for rain and NE wind rules
-    wx = fetch_weather("https://historical-forecast-api.open-meteo.com/v1/forecast", {
-        "latitude": FORECAST_POINT[0], "longitude": FORECAST_POINT[1],
-        "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
-                  "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
-        "daily": "sunrise,sunset", "timezone": "Australia/Sydney",
-        "start_date": lead, "end_date": end.isoformat(),
-    })
-    sea = fetch_json("https://marine-api.open-meteo.com/v1/marine", {
-        "latitude": MARINE_POINT[0], "longitude": MARINE_POINT[1], "cell_selection": "sea",
-        "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
-                  "sea_surface_temperature,sea_level_height_msl",
-        "timezone": "Australia/Sydney", "start_date": lead, "end_date": end.isoformat(),
-    })
+    lead = (start - timedelta(days=4)).isoformat()  # look-back for rain and NE wind rules
+    wx = fetch_weather(
+        "https://historical-forecast-api.open-meteo.com/v1/forecast",
+        {
+            "latitude": FORECAST_POINT[0],
+            "longitude": FORECAST_POINT[1],
+            "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
+            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
+            "daily": "sunrise,sunset",
+            "timezone": "Australia/Sydney",
+            "start_date": lead,
+            "end_date": end.isoformat(),
+        },
+    )
+    sea = fetch_json(
+        "https://marine-api.open-meteo.com/v1/marine",
+        {
+            "latitude": MARINE_POINT[0],
+            "longitude": MARINE_POINT[1],
+            "cell_selection": "sea",
+            "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
+            "sea_surface_temperature,sea_level_height_msl",
+            "timezone": "Australia/Sydney",
+            "start_date": lead,
+            "end_date": end.isoformat(),
+        },
+    )
     hours = {}
     for i, t in enumerate(wx["hourly"]["time"]):
         row = {k: v[i] for k, v in wx["hourly"].items() if k != "time"}
@@ -41,8 +54,11 @@ def load_history(start, end):
     for i, t in enumerate(sea["hourly"]["time"]):
         if t in hours:
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
-    sun = {d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
-           for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"]) if r and s}
+    sun = {
+        d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
+        for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
+        if r and s
+    }
     return hours, sun
 
 
@@ -57,28 +73,40 @@ def main():
 
     rows = []
     for s in sessions:
-        score_session(s, hours, ctx, {}, date.min)   # no Beachwatch history
+        score_session(s, hours, ctx, {}, date.min)  # no Beachwatch history
         swim, surf = s.best_swim, (s.surf[0] if s.surf else None)
         best = max(swim[0] if swim else 0, surf[0] if surf else 0)
         c = conditions(s, hours)
-        rows.append({
-            "date": s.day.isoformat(), "dow": f"{s.day:%a}", "slot": s.slot, "rating": out_of_10(best),
-            "score": best, "posted": s.is_good,
-            "kind": "surf" if surf and (not swim or surf[0] > swim[0]) else "swim",
-            "spot": surf[1].name if surf and (not swim or surf[0] > swim[0]) else swim[1].name if swim else "",
-            "swim": swim[1].name if swim else "", "swim_score": swim[0] if swim else "",
-            "surf": surf[1].name if surf else "", "surf_score": surf[0] if surf else "",
-            "air": round(c["air"]), "water": round(c["sea"]) if c["sea"] else "",
-            "wind": f"{c['wind_dir']} {c['wind']:.0f}/{c['gust']:.0f}", "swell": f"{c['hs']:.1f}m {c['swell_dir']} {c['period']:.0f}s",
-        })
+        rows.append(
+            {
+                "date": s.day.isoformat(),
+                "dow": f"{s.day:%a}",
+                "slot": s.slot,
+                "rating": out_of_10(best),
+                "score": best,
+                "posted": s.is_good,
+                "kind": "surf" if surf and (not swim or surf[0] > swim[0]) else "swim",
+                "spot": surf[1].name if surf and (not swim or surf[0] > swim[0]) else swim[1].name if swim else "",
+                "swim": swim[1].name if swim else "",
+                "swim_score": swim[0] if swim else "",
+                "surf": surf[1].name if surf else "",
+                "surf_score": surf[0] if surf else "",
+                "air": round(c["air"]),
+                "water": round(c["sea"]) if c["sea"] else "",
+                "wind": f"{c['wind_dir']} {c['wind']:.0f}/{c['gust']:.0f}",
+                "swell": f"{c['hs']:.1f}m {c['swell_dir']} {c['period']:.0f}s",
+            }
+        )
     with open("backtest.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=rows[0].keys())
         w.writeheader()
         w.writerows(rows)
 
     posted = [r for r in rows if r["posted"]]
-    print(f"{len(rows)} sessions from {start} to {end}; {len(posted)} would have posted "
-          f"({len(posted) / len(rows):.1%}), {sum(r['rating'] >= 9 for r in posted)} with 🔥\n")
+    print(
+        f"{len(rows)} sessions from {start} to {end}; {len(posted)} would have posted "
+        f"({len(posted) / len(rows):.1%}), {sum(r['rating'] >= 9 for r in posted)} with 🔥\n"
+    )
 
     by_month = defaultdict(Counter)
     for r in posted:
@@ -95,13 +123,18 @@ def main():
     print("\nWinning spot on posted sessions:")
     for name, n in Counter(("🏖️ " if r["kind"] == "swim" else "🏄 ") + r["spot"] for r in posted).most_common():
         print(f"  {n:4}  {name}")
-    print("\nSlots:", dict(Counter(f"{'weekend' if r['dow'] in ('Sat', 'Sun') else 'weekday'} {r['slot']}" for r in posted)))
+    print(
+        "\nSlots:",
+        dict(Counter(f"{'weekend' if r['dow'] in ('Sat', 'Sun') else 'weekday'} {r['slot']}" for r in posted)),
+    )
 
     for kind in ("swim", "surf"):
         print(f"\nTop 12 {kind} sessions:")
         for r in sorted((r for r in rows if r["kind"] == kind), key=lambda r: -r["score"])[:12]:
-            print(f"  {r['rating']}/10 {r['score']:>3}  {r['dow']} {r['date']} {r['slot']}  {r['spot']:<18} "
-                  f"air {r['air']}° water {r['water']}°  wind {r['wind']}  swell {r['swell']}")
+            print(
+                f"  {r['rating']}/10 {r['score']:>3}  {r['dow']} {r['date']} {r['slot']}  {r['spot']:<18} "
+                f"air {r['air']}° water {r['water']}°  wind {r['wind']}  swell {r['swell']}"
+            )
 
 
 if __name__ == "__main__":

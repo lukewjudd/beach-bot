@@ -1,5 +1,6 @@
 """Compass and wind-direction helpers."""
 
+
 def angle_diff(a, b):
     d = abs(a - b) % 360
     return 360 - d if d > 180 else d
