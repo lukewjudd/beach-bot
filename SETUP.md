@@ -74,7 +74,7 @@ cd bot && uv run beach-bot --json ../web/public/scores.json
 cd web && npm install && npm run dev
 ```
 
-The map is a [Protomaps](https://protomaps.com) extract in `web/public/map/`, drawn with Leaflet + protomaps-leaflet, so there's no map provider or key. It reads tiles out of the one `.pmtiles` file with byte-range requests, which GitHub Pages supports. To rebuild it (the coastline doesn't change much, so roughly once a year):
+The map is a [Protomaps](https://protomaps.com) extract in `map/`, drawn with Leaflet + protomaps-leaflet, so there's no map provider or key. `deploy.sh` uploads it to the public bucket, and the site reads tiles out of the one `.pmtiles` file with byte-range requests. (Not from GitHub Pages: its CDN fetches the whole file on a cache miss, which made the first tiles slow.) To rebuild it (the coastline doesn't change much, so roughly once a year):
 ```bash
-pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles web/public/map/eastern-suburbs.pmtiles --bbox=151.17,-34.01,151.32,-33.83 --maxzoom=14
+pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles map/eastern-suburbs.pmtiles --bbox=151.17,-34.01,151.32,-33.83 --maxzoom=14
 ```

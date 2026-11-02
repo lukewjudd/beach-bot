@@ -42,9 +42,16 @@ g storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 \
 g storage buckets add-iam-policy-binding "gs://$BUCKET" --member allUsers --role roles/storage.objectViewer >/dev/null
 g storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$SA" --role roles/storage.objectAdmin >/dev/null
 CORS=$(mktemp)
-echo '[{"origin": ["*"], "method": ["GET"], "responseHeader": ["Content-Type"], "maxAgeSeconds": 3600}]' > "$CORS"
+# Range/Content-Range/ETag let the map read tiles out of the .pmtiles file with byte-range requests
+echo '[{"origin": ["*"], "method": ["GET", "HEAD"], "responseHeader": ["Content-Type", "Range", "Content-Range", "ETag"], "maxAgeSeconds": 3600}]' > "$CORS"
 g storage buckets update "gs://$BUCKET" --cors-file "$CORS" >/dev/null
 rm "$CORS"
+
+echo "→ Map tiles"
+# Served from the bucket rather than GitHub Pages: Pages' CDN fetches the whole 4.8MB file on a cache miss
+# (~1.6s for the first tile), while the bucket answers every range request directly (~150ms from Sydney)
+g storage cp map/eastern-suburbs.pmtiles "gs://$BUCKET/map/eastern-suburbs.pmtiles" \
+  --content-type application/octet-stream --cache-control "public, max-age=86400" >/dev/null
 
 echo "→ Building and deploying the job"
 g run jobs deploy beach-bot --source bot --region "$REGION" \

@@ -1,13 +1,14 @@
-// Self-hosted map: a Protomaps PMTiles extract of the eastern suburbs in public/map/, drawn by Leaflet +
-// protomaps-leaflet (~77KB compressed, vs ~430KB for MapLibre). GitHub Pages serves byte ranges, so tiles are
-// read straight out of the one file.
+// Self-hosted map: a Protomaps PMTiles extract of the eastern suburbs (map/ in the repo, uploaded to the bucket
+// by deploy.sh), drawn by Leaflet + protomaps-leaflet (~80KB compressed, vs ~440KB for MapLibre). Tiles are
+// read straight out of the one file with byte-range requests.
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { leafletLayer } from "protomaps-leaflet";
 import type { Spot } from "./types";
 
-const MAP_BASE = new URL(`${import.meta.env.BASE_URL}map/`, location.href).href;
+// In the public bucket next to scores.json (see deploy.sh for why not GitHub Pages)
+const TILES_URL = import.meta.env.VITE_TILES_URL;
 const MAP_BOUNDS = L.latLngBounds([-34.01, 151.17], [-33.83, 151.32]); // must sit inside the extract's bbox
 // Covers every spot, so the map can start loading before the scores arrive
 const SPOT_BOUNDS = L.latLngBounds([-33.982, 151.2505], [-33.889, 151.284]);
@@ -25,7 +26,7 @@ export function createMap(container: HTMLElement): L.Map {
   L.control.zoom({ position: "bottomright" }).addTo(map);
   const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const tiles = leafletLayer({
-    url: `${MAP_BASE}eastern-suburbs.pmtiles`,
+    url: TILES_URL,
     flavor,
     lang: "en",
     maxDataZoom: 14, // the extract stops at z14; deeper zooms reuse those tiles
