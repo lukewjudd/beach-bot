@@ -36,12 +36,12 @@ try {
 } catch {
   // private mode or blocked storage: just show everything
 }
-// Wind trails on the map, on unless turned off (remembered per browser)
-let windOn = true;
+// Wind trails on the map, off until turned on (remembered per browser)
+let windOn = false;
 try {
-  windOn = localStorage.getItem("wind") !== "off";
+  windOn = localStorage.getItem("wind") === "on";
 } catch {
-  // storage blocked: default on
+  // storage blocked: default off
 }
 
 const spotMeta = (spot: Spot) => (spot.kind === "swim" ? (spot.snorkel ? "swim / snorkel" : "swim") : spot.kind);

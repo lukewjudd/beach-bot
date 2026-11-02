@@ -11,7 +11,7 @@
   --r-great: #0b6e4f;
   --on-pill: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .05);
-  --wind: rgba(20, 60, 80, .4);
+  --wind: rgba(255, 255, 255, .75);
   color-scheme: light;
 }
 
@@ -29,7 +29,7 @@
     --r-great: #4fd29b;
     --on-pill: #0d1417;
     --shadow: none;
-    --wind: rgba(235, 245, 250, .42);
+    --wind: rgba(255, 255, 255, .5);
     color-scheme: dark;
   }
 }
@@ -47,7 +47,7 @@
   --r-great: #4fd29b;
   --on-pill: #0d1417;
   --shadow: none;
-  --wind: rgba(235, 245, 250, .42);
+  --wind: rgba(255, 255, 255, .5);
   color-scheme: dark;
 }
 
