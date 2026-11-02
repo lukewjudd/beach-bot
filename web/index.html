@@ -25,9 +25,12 @@
     <div class="layout">
       <div id="map" role="region" aria-label="Map of beach scores"></div>
       <section class="panel">
-        <div class="filters" id="filters" role="group" aria-label="Show"></div>
-        <h2>Conditions</h2>
-        <div class="report" id="report"></div>
+        <!-- Pinned while the spots list scrolls, so picking a spot visibly changes the conditions -->
+        <div class="pinned">
+          <div class="filters" id="filters" role="group" aria-label="Show"></div>
+          <h2 id="conditions-title">Conditions</h2>
+          <div class="report" id="report"></div>
+        </div>
         <h2>Spots</h2>
         <ol class="spots" id="spots"></ol>
       </section>

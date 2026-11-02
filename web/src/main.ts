@@ -112,7 +112,6 @@ function renderTabs() {
   tabs.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) =>
     b.addEventListener("click", () => {
       current = Number(b.dataset.i);
-      activeSpot = null;
       tabs.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t === b)));
       render();
     }),
@@ -181,7 +180,25 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
     .querySelectorAll<HTMLElement>(".spot")
     .forEach((li) => li.addEventListener("click", () => highlight(li.dataset.id as string, true)));
 
-  $("report").innerHTML = Object.entries(s.report)
+  renderConditions(s);
+}
+
+// Conditions at the spot you've picked, or the session's top pick
+function renderConditions(s: Session) {
+  const id = activeSpot ?? s.lead.id;
+  const spot = id ? spotsById[id] : undefined;
+  const picked = activeSpot !== null && spot !== undefined;
+  $("conditions-title").innerHTML =
+    `Conditions at ${esc(spot?.name ?? s.lead.name ?? "the coast")}` +
+    (picked ? ` <button class="link" id="conditions-reset">show top pick</button>` : "");
+  document.getElementById("conditions-reset")?.addEventListener("click", () => {
+    activeSpot = null;
+    document.querySelectorAll(".spot.active").forEach((li) => li.classList.remove("active"));
+    map?.closePopup();
+    renderConditions(s);
+  });
+  const rep = (id && s.reports?.[id]) || s.report;
+  $("report").innerHTML = Object.entries(rep)
     .map(
       ([k, v]) => `
     <div class="bar"><span>${esc(k)}</span>
@@ -222,6 +239,7 @@ function popup(s: Session, spot: Spot, sc: SpotScore | undefined) {
 function highlight(id: string, fromList: boolean) {
   activeSpot = id;
   document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === id));
+  renderConditions(data.sessions[current]);
   const m = markers[id];
   if (!m) return;
   // Fly in to the spot (never zooming back out if you're already closer), from the list or the pin itself
