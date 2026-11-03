@@ -94,8 +94,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .hero {
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow);
 }
-.hero .wind { font-size: 17px; font-weight: 600; }
-.hero .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.hero .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero .where { font-size: 18px; font-weight: 600; }
 .hero .when { color: var(--muted); }
 .flag { font-size: 20px; font-weight: 800; letter-spacing: -.01em; padding: 2px 10px; border-radius: 8px; }

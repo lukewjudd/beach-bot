@@ -149,17 +149,18 @@ function renderHero(s: Session, leadSpot: Spot | undefined) {
   const c = s.conditions;
   const lead = s.lead;
   const icon = ICON[leadSpot?.kind ?? "swim"];
+  // Only name a spot when it's worth going: "best option at 3/10" reads like a recommendation
   const verdict = s.posted
     ? `<span class="where">${icon} ${esc(lead.name)} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
-    : `<span class="when">best option ${esc(lead.name ?? "–")} at ${lead.rating}/10</span>`;
+    : "";
   $("hero").innerHTML = `
-    <div class="wind">💨 ${esc(c.wind_dir)} ${c.wind_kmh} km/h, gusting up to ${c.gust_kmh} km/h</div>
     <div class="headline">
       <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? "🔥 Worth it" : "Worth it") : "Not worth it"}</span>
       ${verdict}
     </div>
     <div class="chips">
+      <span class="chip">💨 <b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
       <span class="chip">Swell <b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s</span>
       <span class="chip">Air <b>${c.air_c}°</b></span>
       ${c.water_c != null ? `<span class="chip">Water <b>${c.water_c}°</b></span>` : ""}
