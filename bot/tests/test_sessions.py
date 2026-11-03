@@ -71,7 +71,7 @@ def test_cool_water_is_noted_but_not_penalised():
     cool, _ = score(*make_forecast(WED, water(18.5)), WED)
 
     assert cool["am"].best_swim[0] == warmish["am"].best_swim[0]
-    assert "fresh water" in cool["am"].best_swim[2]
+    assert "cold water" in cool["am"].best_swim[2]
 
 
 def test_the_site_and_calendar_agree_on_what_is_worth_it(real_forecast):

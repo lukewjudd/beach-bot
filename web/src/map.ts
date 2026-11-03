@@ -54,13 +54,29 @@ export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, 
   const badge = { surf: "🏄", pool: "🏊", swim: "" }[spot.kind];
   const icon = L.divIcon({
     className: "",
-    html: `<div class="${pinClass}">${label}${badge ? `<span class="badge">${badge}</span>` : ""}</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -14],
+    html: `<div class="${pinClass}">${label}${badge ? `<span class="badge" aria-hidden="true">${badge}</span>` : ""}</div>`,
+    iconSize: [34, 34], // big enough to tap
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -16],
   });
   return L.marker([spot.lat, spot.lon], { icon, title: spot.name, keyboard: true })
     .bindPopup(popupHtml, { closeButton: false })
     .on("click", onClick)
     .addTo(map);
+}
+
+// The wind trails' on/off switch, in the map's top-right corner
+export function windButton(map: L.Map, on: boolean, toggle: () => boolean) {
+  const Control = L.Control.extend({
+    onAdd() {
+      const b = L.DomUtil.create("button", "filter wind-toggle");
+      b.type = "button";
+      b.innerHTML = `<span aria-hidden="true">💨</span> Wind`;
+      b.setAttribute("aria-pressed", String(on));
+      L.DomEvent.disableClickPropagation(b); // a tap on the button isn't a tap on the map
+      L.DomEvent.on(b, "click", () => b.setAttribute("aria-pressed", String(toggle())));
+      return b;
+    },
+  });
+  new Control({ position: "topright" }).addTo(map);
 }

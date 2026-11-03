@@ -9,7 +9,9 @@ const DATA_URL = new URLSearchParams(location.search).get("data") ?? import.meta
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
 const ratingClass = (r: number) => (r >= 9 ? "r-great" : r >= 8 ? "r-good" : r >= 6 ? "r-mid" : "r-low");
-const pill = (r: number) => `<span class="pill ${ratingClass(r)}">${r}</span>`;
+const pill = (r: number) => `<span class="pill ${ratingClass(r)}" aria-label="${r} out of 10">${r}</span>`;
+// Emoji are decoration next to words: screen readers would otherwise read "beach with umbrella Beaches"
+const emoji = (e: string) => `<span aria-hidden="true">${e}</span>`;
 const esc = (s: unknown) =>
   String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 
@@ -45,7 +47,13 @@ try {
 }
 
 const spotMeta = (spot: Spot) => (spot.kind === "swim" ? (spot.snorkel ? "swim / snorkel" : "swim") : spot.kind);
-const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${ICON[spot.kind]} `);
+const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${emoji(ICON[spot.kind])} `);
+// Notes that should change your mind stand out from the nice-to-knows ("wave pool fun")
+const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach/i;
+const notesHtml = (notes: string[]) =>
+  notes
+    .map((n) => (WARN.test(n) ? `<span class="warn">${emoji("⚠")} ${esc(n)}</span>` : esc(n)))
+    .join(" · ");
 
 // Worth it uses the calendar's own bar, and a best window only means something for spots that clear it
 const worth = (score: number) => score >= data.thresholds.post;
@@ -62,6 +70,7 @@ async function load() {
     mapApi = m;
     wind = m.windLayer(map);
     wind.show(windOn);
+    m.windButton(map, windOn, toggleWind); // it's a map layer, so its switch lives on the map
     if (data) render(); // scores got here first: add the pins now
   });
   try {
@@ -74,13 +83,8 @@ async function load() {
     return;
   }
   spotsById = Object.fromEntries(data.spots.map((s) => [s.id, s]));
-  const updated = new Date(data.generated_at).toLocaleString("en-AU", {
-    weekday: "short",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "Australia/Sydney",
-  });
-  $("updated").textContent = `Eastern suburbs, Sydney · updated ${updated}`;
+  renderUpdated();
+  setInterval(renderUpdated, 60_000);
 
   const upcoming = data.sessions.findIndex((s) => !isPast(s));
   current = upcoming === -1 ? 0 : upcoming;
@@ -89,25 +93,41 @@ async function load() {
   render();
 }
 
+// "updated 25 min ago", amber once it's older than two runs (the bot runs hourly)
+function renderUpdated() {
+  const at = new Date(data.generated_at);
+  const mins = Math.max(0, Math.round((Date.now() - at.getTime()) / 60_000));
+  const ago =
+    mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : mins < 48 * 60 ? `${Math.round(mins / 60)}h ago` : "days ago";
+  const exact = at.toLocaleString("en-AU", {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Australia/Sydney",
+  });
+  const el = $("updated");
+  el.innerHTML = `Eastern suburbs, Sydney · <span class="${mins > 120 ? "stale" : ""}" title="${esc(exact)}">updated ${ago}</span>`;
+}
+
+function toggleWind() {
+  windOn = !windOn;
+  try {
+    localStorage.setItem("wind", windOn ? "on" : "off");
+  } catch {
+    // not remembered, still works for this visit
+  }
+  wind?.show(windOn);
+  return windOn;
+}
+
 function renderFilters() {
   const el = $("filters");
-  el.innerHTML =
-    (Object.keys(KIND_LABEL) as SpotKind[])
-      .map(
-        (k) =>
-          `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${ICON[k]} ${KIND_LABEL[k]}</button>`,
-      )
-      .join("") + `<button class="filter wind-toggle" aria-pressed="${windOn}" id="wind-toggle">💨 Wind</button>`;
-  $("wind-toggle").addEventListener("click", (e) => {
-    windOn = !windOn;
-    (e.currentTarget as HTMLElement).setAttribute("aria-pressed", String(windOn));
-    try {
-      localStorage.setItem("wind", windOn ? "on" : "off");
-    } catch {
-      // not remembered, still works for this visit
-    }
-    wind?.show(windOn);
-  });
+  el.innerHTML = (Object.keys(KIND_LABEL) as SpotKind[])
+    .map(
+      (k) =>
+        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${emoji(ICON[k])} ${KIND_LABEL[k]}</button>`,
+    )
+    .join("");
   el.querySelectorAll<HTMLButtonElement>(".filter[data-kind]").forEach((b) =>
     b.addEventListener("click", () => {
       const k = b.dataset.kind as SpotKind;
@@ -127,11 +147,13 @@ function renderFilters() {
 function renderTabs() {
   const tabs = $("tabs");
   tabs.setAttribute("role", "tablist");
-  tabs.innerHTML = data.sessions
+  // Sessions that have finished are gone; one that's on now stays
+  const live = data.sessions.map((s, i) => ({ s, i })).filter(({ s }) => !isPast(s));
+  tabs.innerHTML = (live.length ? live : data.sessions.map((s, i) => ({ s, i })))
     .map(
-      (s, i) => `
-    <button class="tab ${isPast(s) ? "past" : ""}" role="tab" aria-selected="${i === current}" data-i="${i}">
-      ${esc(s.label)} ${pill(s.lead.rating)}${s.fire ? " 🔥" : ""}
+      ({ s, i }) => `
+    <button class="tab" role="tab" aria-selected="${i === current}" data-i="${i}">
+      ${esc(s.label)} ${pill(s.lead.rating)}${s.fire ? ` ${emoji("🔥")}` : ""}
     </button>`,
     )
     .join("");
@@ -151,16 +173,16 @@ function renderHero(s: Session, leadSpot: Spot | undefined) {
   const icon = ICON[leadSpot?.kind ?? "swim"];
   // Only name a spot when it's worth going: "best option at 3/10" reads like a recommendation
   const verdict = s.posted
-    ? `<span class="where">${icon} ${esc(lead.name)} · ${lead.rating}/10</span>
+    ? `<span class="where">${emoji(icon)} ${esc(lead.name)} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
     : "";
   $("hero").innerHTML = `
     <div class="headline">
-      <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? "🔥 Worth it" : "Worth it") : "Not worth it"}</span>
+      <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? `${emoji("🔥")} Worth it` : "Worth it") : "Not worth it"}</span>
       ${verdict}
     </div>
     <div class="chips">
-      <span class="chip">💨 <b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
+      <span class="chip">${emoji("💨")} <span class="sr-only">Wind</span><b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
       <span class="chip">Swell <b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s</span>
       <span class="chip">Air <b>${c.air_c}°</b></span>
       ${c.water_c != null ? `<span class="chip">Water <b>${c.water_c}°</b></span>` : ""}
@@ -189,23 +211,28 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
   const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank);
   const scored = ranked.map((x) => {
     const spot = spotsById[x.id];
-    const meta = [spotMeta(spot), ...x.notes].join(" · ");
-    return `<li class="spot" data-id="${x.id}">
+    const meta = notesHtml([spotMeta(spot), ...x.notes]);
+    return `<li class="spot" data-id="${x.id}" tabindex="0" role="button">
       ${pill(x.rating)}
-      <div><div class="name">${prefix(spot)}${esc(spot.name)}</div><div class="meta">${esc(meta)}</div></div>
+      <div><div class="name">${prefix(spot)}${esc(spot.name)}</div><div class="meta">${meta}</div></div>
       <div class="win">${esc(windowText(x))}</div>
     </li>`;
   });
   const unsafe = data.spots
     .filter((p) => !byId[p.id] && p.kind !== "surf" && shown.has(p.kind))
     .map(
-      (p) => `<li class="spot" data-id="${p.id}"><span class="pill r-low">–</span>
-        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${esc(whyNot(s, p))}</div></div><div></div></li>`,
+      (p) => `<li class="spot" data-id="${p.id}" tabindex="0" role="button"><span class="pill r-low" aria-label="ruled out">–</span>
+        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${notesHtml([whyNot(s, p)])}</div></div><div></div></li>`,
     );
   $("spots").innerHTML = [...scored, ...unsafe].join("");
-  document
-    .querySelectorAll<HTMLElement>(".spot")
-    .forEach((li) => li.addEventListener("click", () => highlight(li.dataset.id as string, true)));
+  document.querySelectorAll<HTMLElement>(".spot").forEach((li) => {
+    li.addEventListener("click", () => highlight(li.dataset.id as string, true));
+    li.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      highlight(li.dataset.id as string, true);
+    });
+  });
 
   renderConditions(s);
 }
@@ -218,23 +245,27 @@ function topPick(s: Session): string | null {
   return best?.id ?? null;
 }
 
-// Conditions at the spot you've picked, or the top pick
+// Conditions at the spot you've picked, or the top pick. When nothing's worth going to there's no top pick
+// to name, so it shows the typical beach instead.
 function renderConditions(s: Session) {
   if (activeSpot && !shown.has(spotsById[activeSpot]?.kind)) activeSpot = null; // its kind was filtered out
-  const id = activeSpot ?? topPick(s);
+  const coast = !activeSpot && !s.posted && s.coast;
+  const id = coast ? null : (activeSpot ?? topPick(s));
   const spot = id ? spotsById[id] : undefined;
   const picked = activeSpot !== null && spot !== undefined;
+  const back = s.posted ? "show top pick" : "show the whole coast";
   $("conditions-title").innerHTML =
-    `Conditions at ${esc(spot?.name ?? "the coast")}` +
-    (picked ? ` <button class="link" id="conditions-reset">show top pick</button>` : "");
+    (spot ? `Conditions at ${esc(spot.name)}` : "Conditions on the coast") +
+    (picked ? ` <button class="link" id="conditions-reset">${back}</button>` : "");
   document.getElementById("conditions-reset")?.addEventListener("click", () => {
     activeSpot = null;
-    const top = topPick(s);
+    const top = s.posted ? topPick(s) : null;
     document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === top));
     renderConditions(s);
     if (top) focusPin(top); // take the map to it too
+    else map?.closePopup();
   });
-  const rep = (id && s.reports?.[id]) || s.report;
+  const rep = coast ? (s.coast as Record<string, number>) : (id && s.reports?.[id]) || s.report;
   $("report").innerHTML = Object.entries(rep)
     .map(
       ([k, v]) => `
@@ -252,7 +283,7 @@ function render() {
   renderHero(s, leadSpot);
   const c = s.conditions;
   if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
-  renderPins(s, byId, leadSpot?.id);
+  renderPins(s, byId, s.posted ? leadSpot?.id : undefined); // no "top pick" ring when nothing's worth it
   renderSpots(s, byId);
   // Keep the chosen spot highlighted in the list across tabs, without flying the map around again
   if (activeSpot) document.querySelector(`.spot[data-id="${activeSpot}"]`)?.classList.add("active");
@@ -261,17 +292,17 @@ function render() {
 // The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
 function whyNot(s: Session, spot: Spot) {
   const why = s.ruled_out?.[spot.id];
-  return why ? why.charAt(0).toUpperCase() + why.slice(1) : spot.kind === "pool" ? "Closed or too rough" : "Too rough";
+  return why ? why.charAt(0).toUpperCase() + why.slice(1) : "Not scored";
 }
 
 function popup(s: Session, spot: Spot, sc: SpotScore | undefined) {
   if (!sc) {
-    return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${esc(whyNot(s, spot))}</div></div>`;
+    return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${notesHtml([whyNot(s, spot)])}</div></div>`;
   }
   return `<div class="popup">
     <div class="t">${prefix(spot)}${esc(spot.name)} · ${sc.rating}/10</div>
     ${windowText(sc) ? `<div class="m">Best ${esc(windowText(sc))}</div>` : ""}
-    ${sc.notes.length ? `<div class="m">${esc(sc.notes.join(" · "))}</div>` : ""}
+    ${sc.notes.length ? `<div class="m">${notesHtml(sc.notes)}</div>` : ""}
   </div>`;
 }
 

@@ -5,9 +5,9 @@
   --muted: #5d6a72;
   --line: #e2ded5;
   --accent: #0e6e8c;
-  --r-low: #a7adb2;
-  --r-mid: #d8a23a;
-  --r-good: #2a9d6f;
+  --r-low: #6b757c; /* pill colours all clear 4.5:1 with white text */
+  --r-mid: #a0670d;
+  --r-good: #1b7f57;
   --r-great: #0b6e4f;
   --on-pill: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .05);
@@ -23,7 +23,7 @@
     --muted: #97a4ab;
     --line: #2b363b;
     --accent: #5cc3e0;
-    --r-low: #5b656b;
+    --r-low: #8a949b;
     --r-mid: #c99434;
     --r-good: #34b37f;
     --r-great: #4fd29b;
@@ -41,7 +41,7 @@
   --muted: #97a4ab;
   --line: #2b363b;
   --accent: #5cc3e0;
-  --r-low: #5b656b;
+  --r-low: #8a949b;
   --r-mid: #c99434;
   --r-good: #34b37f;
   --r-great: #4fd29b;
@@ -76,10 +76,9 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .tab {
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); background: var(--surface); color: var(--text);
-  border-radius: 999px; padding: 6px 8px 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  border-radius: 999px; padding: 6px 8px 6px 12px; min-height: 44px; font: inherit; font-size: 14px; cursor: pointer;
 }
 .tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.tab.past { opacity: .55; }
 
 .pill {
   display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 22px;
@@ -134,12 +133,12 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 
 /* Map markers */
 .marker {
-  display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
   color: var(--on-pill); font-weight: 800; font-size: 13px; border: 2px solid var(--surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, .3); font-family: system-ui, sans-serif;
 }
 .marker { position: relative; }
-.marker.surf { border-radius: 8px; width: 28px; height: 28px; }
+.marker.surf { border-radius: 8px; width: 32px; height: 32px; }
 .marker .badge {
   position: absolute; top: -9px; right: -11px; font-size: 13px; line-height: 1;
   background: var(--surface); border-radius: 50%; padding: 1px; box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
@@ -178,7 +177,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .filter {
   border: 1px solid var(--line); background: var(--surface); color: var(--muted);
-  border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  border-radius: 999px; padding: 5px 14px; min-height: 44px; font: inherit; font-size: 14px; cursor: pointer;
 }
 .filter[aria-pressed="true"] { color: var(--text); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .marker.pool { border-radius: 8px; }
@@ -189,4 +188,11 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 
 /* Wind trails: above the tiles, below the pins, never in the way of clicks */
 .wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
-.wind-toggle { margin-left: auto; }
+#map .wind-toggle { box-shadow: var(--shadow); }
+#map .wind-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent), var(--shadow); }
+
+/* Notes that should change your mind */
+.warn { color: var(--r-mid); }
+#updated .stale { color: var(--r-mid); font-weight: 600; }
+.spot:focus-visible, .tab:focus-visible, .filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

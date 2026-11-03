@@ -4,6 +4,19 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-04
 
+### Site tidy-up (from a UI review)
+- Score pills meet contrast: darker grey, amber and green (4.5:1 or better).
+- Tabs and filters are 44px tall and map pins are bigger, so they're easier to tap.
+- When nothing's worth it, the conditions panel shows the whole coast (the typical beach across all of them) instead of naming a spot.
+- Warning notes (pollution, rain, murky water, closures, storms) are amber with a ⚠, so they stand out from things like "wave pool fun".
+- The Wind trails switch lives on the map now.
+- Finished sessions drop off the tabs.
+- "Updated" shows how long ago ("updated 25 min ago") and goes amber after two hours.
+- Spots can be picked with the keyboard, pills read as "3 out of 10" to screen readers, and decorative emoji are hidden from them.
+- "fresh water" is now "cold water", since fresh water sounds like runoff.
+- No "top pick" ring on the map when nothing's worth it.
+
+
 After a night of thunderstorms (about 22mm at Sydney Airport), the 4am run still gave Little Bay 6/10.
 
 ### Fixed

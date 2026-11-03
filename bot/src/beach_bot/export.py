@@ -4,7 +4,7 @@ import json
 
 from .beaches import BEACHES, COORDS, POOL_COORDS, POOLS, SURF_COORDS, SURF_SPOTS
 from .config import CLOVELLY_TOLERANCE, EVENT_THRESHOLD, FAVOURITE, FIRE_THRESHOLD
-from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
+from .sessions import coast_report, conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
 
 
 def slug(name, kind):
@@ -109,6 +109,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
                     "uv": round(c["uv"]),
                 },
                 "report": report(sess, hours, ctx, beachwatch, now.date()),
+                "coast": coast_report(sess, hours, ctx, beachwatch, now.date()),
                 # Conditions at each spot, so the site can show the one you've picked
                 "reports": {
                     slug(sp.name, kind): report(sess, hours, ctx, beachwatch, now.date(), sp)

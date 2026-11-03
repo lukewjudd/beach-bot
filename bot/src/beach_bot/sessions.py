@@ -278,6 +278,13 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     }
 
 
+def coast_report(sess, hours, ctx, beachwatch, today):
+    """The typical beach this session: the median of each row across every beach. Shown on the site when
+    nothing's worth going to, so it doesn't single out a spot."""
+    reports = [report(sess, hours, ctx, beachwatch, today, b) for b in BEACHES]
+    return {k: sorted(r[k] for r in reports)[len(reports) // 2] for k in reports[0]}
+
+
 def top_spots(sess, n=3):
     """Best beach, pool and surf options merged into one ranked list."""
     picks = [(sc, b.name, "swim" + (" / snorkel" if b.snorkel else ""), notes) for sc, b, notes in sess.swim]

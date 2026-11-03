@@ -160,7 +160,7 @@ def weather(h: dict, t: str, ctx: Context, notes: list):
         if sst > 22:
             s += 5
         elif sst < 20:
-            notes.append("fresh water")
+            notes.append("cold water")
     if ctx.ne_days(t) >= 3:
         notes.append("cold upwelling likely")
     return s
