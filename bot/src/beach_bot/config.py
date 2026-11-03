@@ -13,6 +13,7 @@ SURF_THRESHOLD = EVENT_THRESHOLD
 CLOVELLY_TOLERANCE = 5  # R-TB1: Clovelly wins if within this many points
 WINDOW_HOURS = 2  # sessions are judged on their best stretch this long, not the whole slot
 FAVOURITE = "Clovelly"
+SITE_URL = "https://lukewjudd.github.io/beach-bot/"  # linked at the bottom of every event
 
 WEEKDAY_SESSIONS = {"am": (None, 9), "pm": (17, None)}  # None = sunrise/sunset
 WEEKEND_SESSIONS = {"am": (None, 11), "pm": (14, None)}

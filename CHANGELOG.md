@@ -6,6 +6,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ### Calendar
 - Event titles and descriptions drop the 🏖️ 🏊 🏄 💨 ⏰ emoji; only 🔥 stays for 9/10+. Surf spots say "surf" after the name, e.g. `8/10 Clovelly · Maroubra surf 1.4m · NE 12 km/h gust 20 · 24°/21° water`.
+- Events end with a link to the map site, and say they're removed below 7/10.
 
 ### Site tidy-up (from a UI review)
 - "Not worth it" gets one line on why, without naming a spot: the reason most spots are ruled out ("pollution likely at 12 of 15 beaches and pools"), or else the weakest conditions.

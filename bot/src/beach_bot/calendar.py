@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 
-from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, KEEP_THRESHOLD, TZ
+from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, TZ
 from .geo import wind_kind
 from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
 
@@ -50,7 +50,8 @@ def event_body(sess, hours, ctx, beachwatch, today):
         + (f" · water {c['sea']:.0f}°" if c["sea"] else "")
         + f" · rain chance {c['rain_prob']:.0f}% · UV {c['uv']:.0f}",
         "",
-        f"Updated {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if conditions drop.",
+        f"Updated {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if it drops below 7/10.",
+        f"Map and every spot's score: {SITE_URL}",
     ]
     return title, "\n".join(lines)
 
