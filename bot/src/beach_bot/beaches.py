@@ -105,6 +105,12 @@ class Pool:
     opens: int | None = None  # opening hour, for pools with gates
     closes_summer: int = 19  # 1 Oct - 12 Apr
     closes_winter: int = 17
+    facing_override: int | None = None  # where it faces, when that differs from its beach
+
+    @property
+    def facing(self):
+        """For on/offshore wind: you're sitting on the deck in the same breeze as the beach next door."""
+        return self.facing_override if self.facing_override is not None else self.beach.facing
 
 
 _BEACH = {b.name: b for b in BEACHES}
@@ -118,7 +124,8 @@ BEACH_FOR_SURF = {
 }
 
 POOLS = [
-    Pool("Bondi Icebergs", _BEACH["Bondi (north end)"], 1.0, cleaning_day=3),  # R-P7: Thursdays
+    # R-P7: Thursdays. Sits at Bondi's south end facing east, not the south-east of the north end
+    Pool("Bondi Icebergs", _BEACH["Bondi (north end)"], 1.0, cleaning_day=3, facing_override=90),
     Pool("Bronte Baths", _BEACH["Bronte"], 0.8, cleaning_day=2, cleaning_before_low=True),  # R-P7: Wednesdays
     Pool("Giles Baths", _BEACH["Coogee"], 0.8, best_tide="mid"),  # R-P5
     Pool("Wylie's Baths", _BEACH["Coogee"], 0.6, best_tide="low", opens=7),  # R-P1, R-P8

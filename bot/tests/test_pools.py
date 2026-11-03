@@ -79,3 +79,28 @@ def test_a_pool_can_make_a_session_worth_it_when_the_beaches_are_blown_out():
     am = sessions["am"]
     assert am.best_swim[0] < am.best_pool[0]
     assert am.is_good == (am.best >= 80)
+
+
+def test_pools_feel_the_same_breeze_as_their_beach():
+    def breeze(direction):
+        def tweak(t, h):
+            h.update(wind_speed_10m=18, wind_direction_10m=direction, wind_gusts_10m=26)
+            return h
+
+        return tweak
+
+    onshore, ctx = score(*make_forecast(WED, breeze(60)), WED)  # NE sea breeze: onshore at Coogee
+    offshore, _ = score(*make_forecast(WED, breeze(270)), WED)  # westerly: offshore
+
+    assert pool(onshore["pm"], "Ross Jones Pool")[0] < pool(offshore["pm"], "Ross Jones Pool")[0]
+
+    # The conditions row matches the beach it sits on
+    from beach_bot.beaches import POOLS
+    from beach_bot.sessions import report
+
+    hours = make_forecast(WED, breeze(60))[0]
+    rj = next(p for p in POOLS if p.name == "Ross Jones Pool")
+    assert (
+        report(onshore["pm"], hours, ctx, {}, WED, rj)["Wind"]
+        == report(onshore["pm"], hours, ctx, {}, WED, rj.beach)["Wind"]
+    )

@@ -13,10 +13,11 @@ import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
-from .calendar import ICONS
 from .config import FORECAST_POINT, MARINE_POINT
 from .forecast import Context, fetch_json, fetch_weather
 from .sessions import build_sessions, conditions, headline, lead_kind, out_of_10, score_session
+
+ICONS = {"swim": "🏖️", "pool": "🏊", "surf": "🏄"}  # terminal output only
 
 
 def load_history(start, end):

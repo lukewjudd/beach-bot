@@ -4,6 +4,10 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-04
 
+### Pools and wind
+- Pools now feel the wind direction like the beach next to them, at about half the weight (the walls keep the chop out, but you're on the deck in the same breeze). Ross Jones scored 8 for wind in an onshore NE while Coogee beach scored 6; they now match. Icebergs faces east rather than Bondi's south-east.
+- Fixed the backtest, which broke when the calendar emoji went, and added a test so CI catches that.
+
 ### Calendar
 - Event titles and descriptions drop the 🏖️ 🏊 🏄 💨 ⏰ emoji; only 🔥 stays for 9/10+. Surf spots say "surf" after the name, e.g. `8/10 Clovelly · Maroubra surf 1.4m · NE 12 km/h gust 20 · 24°/21° water`.
 - Events end with a link to the map site, and say they're removed below 7/10.

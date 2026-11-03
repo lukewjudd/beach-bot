@@ -223,7 +223,15 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
             s += 5
             notes.append("wave pool fun")
 
-    # Wind: pools sit low behind rocks, so direction matters less than strength
+    # Wind: the walls keep the chop out, so direction counts for about half what it does at the beach,
+    # but you're still on the deck in the same breeze
+    kind = wind_kind(h["wind_direction_10m"], p.facing)
+    if kind == "offshore" and wind <= 25:
+        s += 5
+    elif kind == "onshore" and wind >= 28:
+        s -= 15
+    elif kind == "onshore" and wind >= 15:
+        s -= 8
     if wind < 8:
         s += 5
     elif wind >= 28:

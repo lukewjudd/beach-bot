@@ -207,7 +207,7 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     keys = window_hours(sess, spot.name)
     c = conditions(sess, hours, keys)
     hs_list = [hours[t] for t in keys]
-    facing = None if isinstance(spot, Pool) else spot.facing  # pools sit behind rocks: no on/offshore
+    facing = spot.facing  # pools take their beach's (see Pool.facing)
     water_beach = spot.beach if isinstance(spot, Pool) else BEACH_FOR_SURF.get(spot.name, spot)
 
     wind = c["wind"]
