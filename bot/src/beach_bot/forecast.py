@@ -1,14 +1,18 @@
 """Fetching forecasts (Open-Meteo, Beachwatch) and look-backs over the hourly series."""
 
+import io
+import json
 import math
 import re
 import sys
-from datetime import datetime
+import tarfile
+import urllib.request
+from datetime import datetime, timedelta
 from statistics import mean, quantiles
 
 import requests
 
-from .config import DAYS_AHEAD, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
+from .config import BOM_OBS_URL, BOM_STATIONS, DAYS_AHEAD, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
 
 
 def fetch_json(url, params):
@@ -90,6 +94,7 @@ def load_data():
         if t in hours:
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
     past_rain(hours, datetime.now(TZ))
+    gauge_rain(hours)
     sun = {
         d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
         for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
@@ -114,10 +119,10 @@ def fresh_forecasts(features, today):
 
 
 def past_rain(hours, now):
-    """Swap the past rain for a wetter read across several models. One model smears storms out: on the night
-    of 3 Nov 2026 the default had 6mm where Sydney Airport measured 22mm, so the rain rules never kicked in.
-    The 75th percentile of six models had 12.5mm there and barely moves on ordinary days. Leaning wet is
-    the safe side for water quality, since it's the runoff that matters."""
+    """Fallback for when the BOM gauges are down: a wetter read of past rain across several models. One model
+    smears storms out: on the night of 3 Nov 2026 the default had 6mm where Sydney Airport measured 22mm, so the
+    rain rules never kicked in. The 75th percentile of six models had 12.5mm there and barely moves on ordinary
+    days. Leaning wet is the safe side for water quality, since it's the runoff that matters."""
     try:
         wx = fetch_weather(
             "https://api.open-meteo.com/v1/forecast",
@@ -140,6 +145,49 @@ def past_rain(hours, now):
         if t in hours and t <= cutoff:
             vals = [h[f"precipitation_{m}"][i] or 0 for m in RAIN_MODELS]
             hours[t]["precipitation"] = quantiles(vals, n=4, method="inclusive")[2]
+
+
+def gauge_rain(hours):
+    """Rain that's actually fallen, from BOM's rain gauges, over the top of the modelled rain. Storms are patchy
+    (on 3 Nov 2026 Observatory Hill had 50mm and the airport 22mm), so it takes the wetter station: for water
+    quality it's the runoff that matters. Comes from BOM's public FTP, which is how BOM shares data for automated
+    use: one bundle with the last ~72h of half-hourly readings for every NSW station."""
+    try:
+        with urllib.request.urlopen(BOM_OBS_URL, timeout=60) as r:
+            bundle = tarfile.open(fileobj=io.BytesIO(r.read()), mode="r:gz")
+        gauges = []
+        for station in BOM_STATIONS:
+            f = bundle.extractfile(f"IDN60910.{station}.json")
+            gauges.append(hourly_rain(json.load(f)["observations"]["data"]))
+    except Exception as e:  # keep the modelled rain
+        print(f"BOM rain gauges unavailable ({e}); using modelled rain", file=sys.stderr)
+        return
+    gauges = [g for g in gauges if g]
+    if not gauges:
+        return
+    first, last = max(min(g) for g in gauges), min(max(g) for g in gauges)  # hours every gauge covers
+    for t, h in hours.items():
+        if first <= t <= last:
+            h["precipitation"] = max(g.get(t, 0) for g in gauges)
+
+
+def hourly_rain(observations):
+    """BOM's half-hourly "rain since 9am" readings -> mm per hour, keyed like Open-Meteo (the hour ending at t)."""
+    obs = sorted(observations, key=lambda o: o["aifstime_local"])
+    hourly, prev = {}, None
+    for o in obs:
+        try:
+            total = float(o["rain_trace"])
+        except (TypeError, ValueError):  # "-" when the gauge didn't report
+            continue
+        at = datetime.strptime(o["aifstime_local"], "%Y%m%d%H%M%S")
+        if prev is not None:
+            fell = total if total < prev else total - prev  # the count resets at 9am
+            end = at if at.minute == 0 else at.replace(minute=0) + timedelta(hours=1)
+            key = end.strftime("%Y-%m-%dT%H:%M")
+            hourly[key] = hourly.get(key, 0) + fell
+        prev = total
+    return hourly
 
 
 class Context:

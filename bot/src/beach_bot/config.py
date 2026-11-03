@@ -19,7 +19,10 @@ WEEKEND_SESSIONS = {"am": (None, 11), "pm": (14, None)}
 
 FORECAST_POINT = (-33.914, 151.267)  # Clovelly; weather is a blend of the land and sea cells either side
 MARINE_POINT = (-33.92, 151.33)  # one offshore point; beaches differ via k below
-# Past rain is read across these models (75th percentile); one model alone under-reads storms
+# BOM rain gauges (Observatory Hill, Sydney Airport), from the NSW observations bundle on BOM's public FTP
+BOM_OBS_URL = "ftp://ftp.bom.gov.au/anon/gen/fwo/IDN60910.tgz"
+BOM_STATIONS = ("94768", "94767")
+# Past rain the gauges don't cover is read across these models (75th percentile); one model alone under-reads storms
 RAIN_MODELS = ("best_match", "ecmwf_ifs025", "icon_seamless", "gem_seamless", "jma_seamless", "ukmo_seamless")
 
 # Lightning: thunderstorm weather codes, or lots of storm energy (CAPE) with rain likely

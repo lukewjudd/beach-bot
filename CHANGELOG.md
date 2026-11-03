@@ -8,7 +8,7 @@ After a night of thunderstorms (about 22mm at Sydney Airport), the 4am run still
 
 ### Fixed
 - **Stale Beachwatch forecasts.** Beachwatch publishes around 6am, so the 4am run read the previous day's "pollution unlikely" from before the storm, and that overrode the rain rules. Only forecasts issued today are used now; otherwise it goes off recent rain.
-- **Rain that's already fallen is read across six weather models** (the 75th percentile each hour) instead of one. The default model had 6mm for that night; the blend has 12.5mm, enough to trip the rain rules. BOM's gauge feeds would be better but don't allow automated access.
+- **Rain that's already fallen comes from BOM's rain gauges** at Observatory Hill and Sydney Airport (whichever is wetter), via BOM's public FTP. The model had 6mm for that night; the gauges had 50mm at Observatory Hill and 22mm at the airport. If BOM is down, past rain falls back to the 75th percentile across six weather models, which leans wet (12.5mm that night).
 - **Thunderstorms rule out swimming and pools**, and drop surf spots to 1/10. Storm risk is a thunderstorm weather code, or high storm energy (CAPE ≥ 1000) with rain likely.
 - **Surf spots now count water quality**, so a surf spot can't rank well straight after heavy rain.
 

@@ -4,7 +4,7 @@ from datetime import date
 
 from conftest import make_forecast, score
 
-from beach_bot.forecast import fresh_forecasts
+from beach_bot.forecast import fresh_forecasts, hourly_rain
 from beach_bot.sessions import report
 
 WED = date(2026, 11, 4)
@@ -71,6 +71,22 @@ def test_yesterdays_beachwatch_forecast_is_ignored():
         },  # 6am Wed
     ]
     assert fresh_forecasts(features, WED) == {"Coogee Beach": "Likely"}
+
+
+def test_bom_rain_since_9am_becomes_hourly_rain():
+    obs = [
+        {"aifstime_local": "20261103183000", "rain_trace": "0.4"},
+        {"aifstime_local": "20261103190000", "rain_trace": "12.6"},
+        {"aifstime_local": "20261103193000", "rain_trace": "13.4"},
+        {"aifstime_local": "20261104083000", "rain_trace": "22.4"},
+        {"aifstime_local": "20261104090000", "rain_trace": "-"},
+        {"aifstime_local": "20261104093000", "rain_trace": "0.2"},  # the count resets at 9am
+    ]
+    rain = hourly_rain(obs)
+
+    assert round(rain["2026-11-03T19:00"], 1) == 12.2
+    assert round(rain["2026-11-03T20:00"], 1) == 0.8
+    assert round(rain["2026-11-04T10:00"], 1) == 0.2
 
 
 def test_swimming_spots_show_calm_water_and_surf_spots_show_surf_quality():
