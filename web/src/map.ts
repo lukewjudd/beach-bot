@@ -51,10 +51,11 @@ export function createMap(container: HTMLElement): L.Map {
 
 export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, popupHtml: string, onClick: () => void) {
   // Leaflet positions the outer icon element; styling lives on the inner pin so our CSS can't shift it
-  const badge = { surf: "🏄", pool: "🏊", swim: "" }[spot.kind];
+  // Kind is shown by the pin's shape (see .marker.pool / .marker.surf); the label sits in its own span so a
+  // diamond can turn it back upright
   const icon = L.divIcon({
     className: "",
-    html: `<div class="${pinClass}">${label}${badge ? `<span class="badge" aria-hidden="true">${badge}</span>` : ""}</div>`,
+    html: `<div class="${pinClass}"><span class="n">${label}</span></div>`,
     iconSize: [34, 34], // big enough to tap
     iconAnchor: [17, 17],
     popupAnchor: [0, -16],
@@ -71,7 +72,7 @@ export function windButton(map: L.Map, on: boolean, toggle: () => boolean) {
     onAdd() {
       const b = L.DomUtil.create("button", "filter wind-toggle");
       b.type = "button";
-      b.innerHTML = `<span aria-hidden="true">💨</span> Wind`;
+      b.textContent = "Wind";
       b.setAttribute("aria-pressed", String(on));
       L.DomEvent.disableClickPropagation(b); // a tap on the button isn't a tap on the map
       L.DomEvent.on(b, "click", () => b.setAttribute("aria-pressed", String(toggle())));

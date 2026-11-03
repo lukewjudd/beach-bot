@@ -27,7 +27,9 @@ let markers: Record<string, Marker> = {};
 let current = 0;
 let activeSpot: string | null = null;
 
-const ICON: Record<SpotKind, string> = { swim: "🏖️", pool: "🏊", surf: "🏄" };
+// Each kind has its own pin shape (circle, rounded square, diamond); the filters double as the legend
+const shape = (k: SpotKind) => `<span class="shape ${k}" aria-hidden="true"></span>`;
+const TAG: Record<SpotKind, string> = { swim: "Beach", pool: "Pool", surf: "Surf" };
 const KIND_LABEL: Record<SpotKind, string> = { swim: "Beaches", pool: "Pools", surf: "Surf" };
 
 // Which kinds of spot to show on the map and in the list; remembered per browser
@@ -46,8 +48,9 @@ try {
   // storage blocked: default off
 }
 
-const spotMeta = (spot: Spot) => (spot.kind === "swim" ? (spot.snorkel ? "swim / snorkel" : "swim") : spot.kind);
-const prefix = (spot: Spot) => (spot.kind === "swim" ? "" : `${emoji(ICON[spot.kind])} `);
+// What kind of spot it is, as labels on the right of its card
+const tags = (spot: Spot) =>
+  `<span class="tag">${TAG[spot.kind]}</span>` + (spot.snorkel ? `<span class="tag">Snorkel</span>` : "");
 // Notes that should change your mind stand out from the nice-to-knows ("wave pool fun")
 const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach/i;
 const notesHtml = (notes: string[]) =>
@@ -125,7 +128,7 @@ function renderFilters() {
   el.innerHTML = (Object.keys(KIND_LABEL) as SpotKind[])
     .map(
       (k) =>
-        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${emoji(ICON[k])} ${KIND_LABEL[k]}</button>`,
+        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${shape(k)} ${KIND_LABEL[k]}</button>`,
     )
     .join("");
   el.querySelectorAll<HTMLButtonElement>(".filter[data-kind]").forEach((b) =>
@@ -170,19 +173,18 @@ function renderTabs() {
 function renderHero(s: Session, leadSpot: Spot | undefined) {
   const c = s.conditions;
   const lead = s.lead;
-  const icon = ICON[leadSpot?.kind ?? "swim"];
   // Only name a spot when it's worth going: "best option at 3/10" reads like a recommendation
   const verdict = s.posted
-    ? `<span class="where">${emoji(icon)} ${esc(lead.name)} · ${lead.rating}/10</span>
+    ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
-    : "";
+    : `<span class="why">${esc(whyNotWorth(s))}</span>`;
   $("hero").innerHTML = `
     <div class="headline">
       <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? `${emoji("🔥")} Worth it` : "Worth it") : "Not worth it"}</span>
       ${verdict}
     </div>
     <div class="chips">
-      <span class="chip">${emoji("💨")} <span class="sr-only">Wind</span><b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
+      <span class="chip">Wind <b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
       <span class="chip">Swell <b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s</span>
       <span class="chip">Air <b>${c.air_c}°</b></span>
       ${c.water_c != null ? `<span class="chip">Water <b>${c.water_c}°</b></span>` : ""}
@@ -211,18 +213,19 @@ function renderSpots(s: Session, byId: Record<string, SpotScore>) {
   const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank);
   const scored = ranked.map((x) => {
     const spot = spotsById[x.id];
-    const meta = notesHtml([spotMeta(spot), ...x.notes]);
+    const meta = notesHtml(x.notes);
     return `<li class="spot" data-id="${x.id}" tabindex="0" role="button">
       ${pill(x.rating)}
-      <div><div class="name">${prefix(spot)}${esc(spot.name)}</div><div class="meta">${meta}</div></div>
-      <div class="win">${esc(windowText(x))}</div>
+      <div><div class="name">${esc(spot.name)}</div>${meta ? `<div class="meta">${meta}</div>` : ""}</div>
+      <div class="side">${tags(spot)}${windowText(x) ? `<span class="win">${esc(windowText(x))}</span>` : ""}</div>
     </li>`;
   });
   const unsafe = data.spots
     .filter((p) => !byId[p.id] && p.kind !== "surf" && shown.has(p.kind))
     .map(
       (p) => `<li class="spot" data-id="${p.id}" tabindex="0" role="button"><span class="pill r-low" aria-label="ruled out">–</span>
-        <div><div class="name">${prefix(p)}${esc(p.name)}</div><div class="meta">${notesHtml([whyNot(s, p)])}</div></div><div></div></li>`,
+        <div><div class="name">${esc(p.name)}</div><div class="meta">${notesHtml([whyNot(s, p)])}</div></div>
+        <div class="side">${tags(p)}</div></li>`,
     );
   $("spots").innerHTML = [...scored, ...unsafe].join("");
   document.querySelectorAll<HTMLElement>(".spot").forEach((li) => {
@@ -289,6 +292,24 @@ function render() {
   if (activeSpot) document.querySelector(`.spot[data-id="${activeSpot}"]`)?.classList.add("active");
 }
 
+// One line on why a session isn't worth it: the reason most spots are ruled out, or else the weakest conditions.
+// Says what's wrong without naming a spot.
+function whyNotWorth(s: Session) {
+  const top = `Nothing above ${s.lead.rating}/10`;
+  const reasons = Object.entries(s.ruled_out ?? {}).map(([, why]) => why);
+  const counts = new Map<string, number>();
+  reasons.forEach((r) => counts.set(r, (counts.get(r) ?? 0) + 1));
+  const [reason, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
+  const swimmable = data.spots.filter((p) => p.kind !== "surf").length;
+  if (n >= 3) return `${top} · ${reason} at ${n} of ${swimmable} beaches and pools`;
+  const weak = Object.entries(s.coast ?? s.report)
+    .filter(([, v]) => v <= 4)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 2)
+    .map(([k, v]) => `${k.toLowerCase()} ${v}/10`);
+  return weak.length ? `${top} · ${weak.join(", ")}` : top;
+}
+
 // The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
 function whyNot(s: Session, spot: Spot) {
   const why = s.ruled_out?.[spot.id];
@@ -297,10 +318,10 @@ function whyNot(s: Session, spot: Spot) {
 
 function popup(s: Session, spot: Spot, sc: SpotScore | undefined) {
   if (!sc) {
-    return `<div class="popup"><div class="t">${esc(spot.name)}</div><div class="m">${notesHtml([whyNot(s, spot)])}</div></div>`;
+    return `<div class="popup"><div class="t">${esc(spot.name)} <span class="tag">${TAG[spot.kind]}</span></div><div class="m">${notesHtml([whyNot(s, spot)])}</div></div>`;
   }
   return `<div class="popup">
-    <div class="t">${prefix(spot)}${esc(spot.name)} · ${sc.rating}/10</div>
+    <div class="t">${esc(spot.name)} · ${sc.rating}/10 <span class="tag">${TAG[spot.kind]}</span></div>
     ${windowText(sc) ? `<div class="m">Best ${esc(windowText(sc))}</div>` : ""}
     ${sc.notes.length ? `<div class="m">${notesHtml(sc.notes)}</div>` : ""}
   </div>`;
