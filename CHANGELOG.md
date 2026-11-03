@@ -7,7 +7,7 @@ What changed and why, newest first. Dates are Sydney time.
 ### Site tidy-up (from a UI review)
 - "Not worth it" gets one line on why, without naming a spot: the reason most spots are ruled out ("pollution likely at 12 of 15 beaches and pools"), or else the weakest conditions.
 - Spot cards show what kind of spot it is (Beach, Pool, Surf, Snorkel) as labels on the right, instead of "swim · ..." at the start of the notes.
-- No more kind emoji. Pins are shaped by kind instead (beach circle, pool rounded square, surf diamond), and the Beaches / Pools / Surf filters show the matching shape as the legend. The wind chip and button just say "Wind".
+- No more kind emoji. Pins are shaped by kind instead (beach circle, pool rounded square, surf diamond), and the Beaches / Pools / Surf filters show the matching shape as the legend. The wind chip just says "Wind", and the wind trails switch is a plain square button above the map's zoom buttons.
 - Score pills meet contrast: darker grey, amber and green (4.5:1 or better).
 - Tabs and filters are 44px tall and map pins are bigger, so they're easier to tap.
 - When nothing's worth it, the conditions panel shows the whole coast (the typical beach across all of them) instead of naming a spot.

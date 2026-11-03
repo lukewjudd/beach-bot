@@ -66,18 +66,20 @@ export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, 
     .addTo(map);
 }
 
-// The wind trails' on/off switch, in the map's top-right corner
+// The wind trails' on/off switch: a plain square button stacked above the zoom buttons, out of the way
 export function windButton(map: L.Map, on: boolean, toggle: () => boolean) {
   const Control = L.Control.extend({
     onAdd() {
-      const b = L.DomUtil.create("button", "filter wind-toggle");
+      const bar = L.DomUtil.create("div", "leaflet-bar wind-toggle");
+      const b = L.DomUtil.create("button", "", bar);
       b.type = "button";
       b.textContent = "Wind";
+      b.title = "Show wind trails";
       b.setAttribute("aria-pressed", String(on));
-      L.DomEvent.disableClickPropagation(b); // a tap on the button isn't a tap on the map
+      L.DomEvent.disableClickPropagation(bar); // a tap on the button isn't a tap on the map
       L.DomEvent.on(b, "click", () => b.setAttribute("aria-pressed", String(toggle())));
-      return b;
+      return bar;
     },
   });
-  new Control({ position: "topright" }).addTo(map);
+  new Control({ position: "bottomright" }).addTo(map);
 }

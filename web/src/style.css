@@ -192,8 +192,13 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 
 /* Wind trails: above the tiles, below the pins, never in the way of clicks */
 .wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
-#map .wind-toggle { box-shadow: var(--shadow); }
-#map .wind-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent), var(--shadow); }
+/* Wind trails switch: same square as Leaflet's zoom buttons */
+#map .wind-toggle button {
+  display: block; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 4px;
+  background: #fff; color: #333; font: 600 9px/30px system-ui, sans-serif; cursor: pointer;
+}
+#map .wind-toggle button:hover { background: #f4f4f4; }
+#map .wind-toggle button[aria-pressed="true"] { color: var(--accent); }
 
 /* Notes that should change your mind */
 .warn { color: var(--r-mid); }
