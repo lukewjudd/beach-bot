@@ -101,3 +101,26 @@ def test_swimming_spots_show_calm_water_and_surf_spots_show_surf_quality():
 
     assert "Calm water" in beach and "Surf quality" not in beach
     assert "Surf quality" in surf and "Calm water" not in surf
+
+
+def test_snorkelling_is_only_good_when_the_water_is_clear():
+    def wet(t, h):
+        if "2026-11-03T00:00" <= t < "2026-11-03T04:00":
+            h["precipitation"] = 3.0  # 12mm the night before last: Clovelly is swimmable, but cloudy
+        return h
+
+    def notes(sessions, name):
+        return next(n for _, b, n in sessions["am"].swim if b.name == name)
+
+    dry, _ = score(*make_forecast(WED), WED)
+    rained, _ = score(*make_forecast(WED, wet), WED)
+
+    assert "good snorkelling" in notes(dry, "Clovelly")
+    assert "good snorkelling" not in notes(rained, "Clovelly")
+    assert "murky for snorkelling" in notes(rained, "Clovelly")
+
+
+def test_a_ruled_out_spot_gives_the_reason_not_its_other_notes():
+    sessions, _ = score(*make_forecast(WED), WED, beachwatch={"Clovelly Beach": "Likely"})
+
+    assert sessions["am"].ruled_out["Clovelly"] == "pollution likely (Beachwatch)"

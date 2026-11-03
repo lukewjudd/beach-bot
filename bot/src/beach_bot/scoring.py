@@ -42,9 +42,6 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
         s += 15
     elif hb > 0.8:
         s -= 20
-    if b.snorkel and hs < 1.0:
-        s += 5
-        notes.append("good snorkelling")
 
     # Wind (§4.1)
     kind = wind_kind(wdir, b.facing)
@@ -74,10 +71,19 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
 
     q = water_quality(b, t, ctx, beachwatch, today, notes)
     if q is None:
-        return None, notes
+        return None, notes[-1:]  # just the reason it's a no-go
     s += q
-    if b.snorkel and ctx.rain(t, 0, 48) >= 10 and not beachwatch_says(b, t, beachwatch, today):  # R-R4
-        s -= 10
+
+    # Snorkelling (R-S4, R-R4): small swell, and clear water. Rain and runoff cloud it for a couple of days.
+    if b.snorkel:
+        murky = ctx.rain(t, 0, 48) >= 10 or beachwatch_says(b, t, beachwatch, today) == "Possible"
+        if murky:
+            notes.append("murky for snorkelling")
+            if not beachwatch_says(b, t, beachwatch, today):
+                s -= 10
+        elif hs < 1.0 and not (kind == "onshore" and wind >= 15):
+            s += 5
+            notes.append("good snorkelling")
     s += weather(h, t, ctx, notes)
 
     # Bluebottles (R-B1)
@@ -229,7 +235,7 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
 
     q = water_quality(p.beach, t, ctx, beachwatch, today, notes)  # R-R5: pools share the beach's water
     if q is None:
-        return None, notes
+        return None, notes[-1:]  # just the reason it's a no-go
     s += q
     s += weather(h, t, ctx, notes)
     return max(0, min(100, s)), notes
