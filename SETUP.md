@@ -1,6 +1,6 @@
 # Beach bot setup
 
-The bot runs on Google Cloud at 4am, 3pm and 7pm Sydney time. Each run scores every morning and evening session for the next 2 days, picks the best eastern suburbs beach for each, and adds, updates or removes events in a shared "Beach 🌊" Google Calendar. Only sessions that score **8/10 or better** get an event, so the calendar stays quiet apart from the best days. A 9/10 or 10/10 session gets a 🔥.
+The bot runs on Google Cloud every hour from 4:15am to 9:15pm Sydney time. Each run scores every morning and evening session for the next 2 days, picks the best eastern suburbs beach for each, and adds, updates or removes events in a shared "Beach 🌊" Google Calendar. Only sessions that score **8/10 or better** get an event, so the calendar stays quiet apart from the best days. An event stays until the session drops below 7/10, so it doesn't come and go with every run. A 9/10 or 10/10 session gets a 🔥.
 
 ## 1. Create the calendar (2 min)
 1. In Google Calendar on the web, go to **Settings → Add calendar → Create new calendar** and name it `Beach 🌊`.

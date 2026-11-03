@@ -62,7 +62,7 @@ g run jobs add-iam-policy-binding beach-bot --region "$REGION" \
   --member "serviceAccount:$SA" --role roles/run.invoker >/dev/null
 
 echo "→ Schedule"
-SCHED=(--location "$REGION" --schedule "0 4,15,19 * * *" --time-zone "Australia/Sydney"
+SCHED=(--location "$REGION" --schedule "15 4-21 * * *" --time-zone "Australia/Sydney"
   --uri "https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/beach-bot:run"
   --http-method POST --oauth-service-account-email "$SA")
 g scheduler jobs create http beach-bot-schedule "${SCHED[@]}" 2>/dev/null \
