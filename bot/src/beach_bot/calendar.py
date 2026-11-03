@@ -8,8 +8,6 @@ from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, KEEP_THRESHOLD, TZ
 from .geo import wind_kind
 from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
 
-ICONS = {"swim": "🏖️", "pool": "🏊", "surf": "🏄"}
-
 
 def event_body(sess, hours, ctx, beachwatch, today):
     lead = headline(sess)
@@ -19,22 +17,23 @@ def event_body(sess, hours, ctx, beachwatch, today):
     best = sess.best
     fire = "🔥 " if best >= FIRE_THRESHOLD else ""
     kind = lead_kind(sess)
-    parts = [f"{ICONS[kind]} {lead}" + (f" {c['hs']:.1f}m" if kind == "surf" else "")] if lead else []
+    # Surf spots share names with beaches, so they say "surf"; pool names already say Pool or Baths
+    parts = [lead + (f" surf {c['hs']:.1f}m" if kind == "surf" else "")] if lead else []
     if kind == "surf" and swim and swim[0] >= EVENT_THRESHOLD:
-        parts.insert(0, f"🏖️ {swim[1].name}")
+        parts.insert(0, swim[1].name)
     elif kind != "surf" and surf:
-        parts.append(f"🏄 {surf[1].name} {c['hs']:.1f}m")
+        parts.append(f"{surf[1].name} surf {c['hs']:.1f}m")
     b = swim[1] if swim and kind == "swim" else None  # wind direction only means something at a beach
     rel = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
     wind_line = f"{c['wind_dir']} {c['wind']:.0f} km/h gust {c['gust']:.0f}"
-    title = f"{fire}{out_of_10(best)}/10 {' · '.join(parts)} · 💨 {wind_line} · {c['air']:.0f}°"
+    title = f"{fire}{out_of_10(best)}/10 {' · '.join(parts)} · {wind_line} · {c['air']:.0f}°"
     if c["sea"]:
         title += f"/{c['sea']:.0f}° water"
 
     lines = [
-        f"💨 Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
+        f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
         + (f" ({rel} at {b.name})" if b else ""),
-        f"⏰ Best window: {hour_label(keys[0], 0)}–{hour_label(keys[-1], 1)} at {lead}",
+        f"Best window: {hour_label(keys[0], 0)}–{hour_label(keys[-1], 1)} at {lead}",
         f"Overall: {out_of_10(best)}/10",
         "",
     ]

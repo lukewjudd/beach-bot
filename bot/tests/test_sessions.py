@@ -19,7 +19,7 @@ def test_calm_warm_morning_is_worth_it_at_clovelly():
     assert am.is_good
     assert am.best_swim[1].name == "Clovelly"
     title, _ = event_body(am, hours, ctx, {}, WED)
-    assert f"{out_of_10(am.best_swim[0])}/10 🏖️ Clovelly" in title
+    assert f"{out_of_10(am.best_swim[0])}/10 Clovelly" in title
 
 
 def test_a_chilly_first_hour_doesnt_sink_a_good_morning():
