@@ -1,13 +1,14 @@
 """Fetching forecasts (Open-Meteo, Beachwatch) and look-backs over the hourly series."""
 
 import math
+import re
 import sys
 from datetime import datetime
-from statistics import mean
+from statistics import mean, quantiles
 
 import requests
 
-from .config import DAYS_AHEAD, FORECAST_POINT, MARINE_POINT
+from .config import DAYS_AHEAD, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
 
 
 def fetch_json(url, params):
@@ -27,6 +28,9 @@ def fetch_weather(url, params):
         if k == "time":
             continue
         sv = sea["hourly"][k]
+        if k == "weather_code":  # codes aren't quantities: keep the worse of the two (95+ = thunderstorm)
+            out["hourly"][k] = [max(a or 0, b or 0) for a, b in zip(lv, sv, strict=True)]
+            continue
         if k == "wind_direction_10m":
             ws_l, ws_s = land["hourly"]["wind_speed_10m"], sea["hourly"]["wind_speed_10m"]
             vals = []
@@ -52,7 +56,7 @@ def load_data():
             "latitude": FORECAST_POINT[0],
             "longitude": FORECAST_POINT[1],
             "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
-            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
+            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index,weather_code,cape",
             "daily": "sunrise,sunset",
             "timezone": "Australia/Sydney",
             "past_days": 4,
@@ -74,7 +78,7 @@ def load_data():
     )
     try:
         bw = fetch_json("https://api.beachwatch.nsw.gov.au/public/sites/geojson", {})
-        beachwatch = {f["properties"]["siteName"]: f["properties"].get("pollutionForecast") for f in bw["features"]}
+        beachwatch = fresh_forecasts(bw["features"], datetime.now(TZ).date())
     except Exception as e:  # undocumented API: fall back to rain rules
         print(f"Beachwatch unavailable ({e}); using rain thresholds", file=sys.stderr)
         beachwatch = {}
@@ -85,11 +89,57 @@ def load_data():
     for i, t in enumerate(sea["hourly"]["time"]):
         if t in hours:
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
+    past_rain(hours, datetime.now(TZ))
     sun = {
         d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
         for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
     }
     return hours, sun, beachwatch
+
+
+def fresh_forecasts(features, today):
+    """Beachwatch pollution forecasts that were issued today. The feed updates around 6am, so an early run
+    sees yesterday's call, which can say "Unlikely" from before a storm; that one is dropped (rain rules apply)."""
+    out = {}
+    for f in features:
+        p = f["properties"]
+        stamp = p.get("pollutionForecastTimeStamp")
+        if not stamp:
+            continue
+        # .NET writes 7 decimal places, which fromisoformat won't take
+        issued = datetime.fromisoformat(re.sub(r"\.\d+", "", stamp)).astimezone(TZ).date()
+        if issued == today:
+            out[p["siteName"]] = p.get("pollutionForecast")
+    return out
+
+
+def past_rain(hours, now):
+    """Swap the past rain for a wetter read across several models. One model smears storms out: on the night
+    of 3 Nov 2026 the default had 6mm where Sydney Airport measured 22mm, so the rain rules never kicked in.
+    The 75th percentile of six models had 12.5mm there and barely moves on ordinary days. Leaning wet is
+    the safe side for water quality, since it's the runoff that matters."""
+    try:
+        wx = fetch_weather(
+            "https://api.open-meteo.com/v1/forecast",
+            {
+                "latitude": FORECAST_POINT[0],
+                "longitude": FORECAST_POINT[1],
+                "hourly": "precipitation",
+                "models": ",".join(RAIN_MODELS),
+                "timezone": "Australia/Sydney",
+                "past_days": 4,
+                "forecast_days": 1,
+            },
+        )
+    except Exception as e:  # keep the single model's rain
+        print(f"multi-model rain unavailable ({e}); using the default model", file=sys.stderr)
+        return
+    h = wx["hourly"]
+    cutoff = now.strftime("%Y-%m-%dT%H:00")
+    for i, t in enumerate(h["time"]):
+        if t in hours and t <= cutoff:
+            vals = [h[f"precipitation_{m}"][i] or 0 for m in RAIN_MODELS]
+            hours[t]["precipitation"] = quantiles(vals, n=4, method="inclusive")[2]
 
 
 class Context:

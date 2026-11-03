@@ -27,7 +27,7 @@ def load_history(start, end):
             "latitude": FORECAST_POINT[0],
             "longitude": FORECAST_POINT[1],
             "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
-            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index",
+            "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index,weather_code,cape",
             "daily": "sunrise,sunset",
             "timezone": "Australia/Sydney",
             "start_date": lead,

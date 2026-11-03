@@ -11,8 +11,9 @@ def slug(name, kind):
     return kind + "-" + "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-").replace("--", "-")
 
 
-def export_scores(sessions, hours, ctx, beachwatch, now):
-    """Everything the map site needs, as one JSON-able dict."""
+def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
+    """Everything the map site needs, as one JSON-able dict. `posted` is the session keys with a live calendar
+    event (from sync), so the site says "worth it" exactly when the calendar has it; without a sync, 8/10+."""
     spots = [
         {
             "id": slug(b.name, "swim"),
@@ -83,7 +84,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now):
                 "start": sess.start.isoformat(),
                 "end": sess.end.isoformat(),
                 "started": sess.start <= now,
-                "posted": bool(sess.is_good),
+                "posted": sess.key in posted if posted is not None else bool(sess.is_good),
                 "fire": best >= FIRE_THRESHOLD,
                 "lead": {
                     "id": slug(lead, kind) if lead else None,

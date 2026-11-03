@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import BEACH_FOR_SURF, BEACHES, POOLS, SURF_SPOTS, Pool
+from .beaches import BEACH_FOR_SURF, BEACHES, POOLS, SURF_SPOTS, Pool, SurfSpot
 from .config import (
     CLOVELLY_TOLERANCE,
     DAYS_AHEAD,
@@ -17,7 +17,7 @@ from .config import (
     WINDOW_HOURS,
 )
 from .geo import compass, swell_sector, wind_kind, wind_words
-from .scoring import score_pool_hour, score_surf_hour, score_swim_hour
+from .scoring import score_pool_hour, score_surf_hour, score_swim_hour, storm
 
 
 @dataclass
@@ -131,7 +131,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
     sess.pools.sort(key=lambda x: -x[0])
 
     for sp in SURF_SPOTS:
-        results = [score_surf_hour(sp, hours[t]) for t in sess.hours]
+        results = [score_surf_hour(sp, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         sc, i = best_window(sess, [r[0] for r in results])  # never None: surf always scores
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
         sess.surf.append((round(sc), sp, notes))
@@ -227,8 +227,7 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
         hb = c["hs"] * (spot.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
-    own_surf = next((sc for sc, sp, _ in sess.surf if sp.name == spot.name), None)
-    surf = out_of_10(own_surf if own_surf is not None else sess.surf[0][0]) if sess.surf else 1
+    own_surf = next((sc for sc, sp, _ in sess.surf if sp is spot), None) if isinstance(spot, SurfSpot) else None
 
     sea = c["sea"] or 20
     water = (
@@ -252,6 +251,8 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     air = c["air"]
     weather = 10 if air >= 26 else 8 if air >= 23 else 6 if air >= 21 else 4 if air >= 19 else 2
     weather -= 3 if c["rain_prob"] >= 60 else 1 if c["rain_prob"] >= 40 else 0
+    if any(storm(h) for h in hs_list):
+        weather -= 5
 
     b = water_beach
     bw = beachwatch.get(b.beachwatch) if sess.day == today else None
@@ -265,10 +266,12 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         quality = 6
 
     clamp = lambda x: max(1, min(10, x))  # noqa: E731
+    # Swimmers want calm water and surfers want waves, so each spot only gets the row that matters to it
+    # (a "Surf 8/10" at a swimming beach read like good news when it meant big waves)
+    waves = {"Surf quality": out_of_10(own_surf)} if own_surf is not None else {"Calm water": clamp(calm)}
     return {
         "Wind": clamp(w),
-        "Calm water": clamp(calm),
-        "Surf": clamp(surf),
+        **waves,
         "Water temp": clamp(water),
         "Weather": clamp(weather),
         "Water quality": clamp(quality),

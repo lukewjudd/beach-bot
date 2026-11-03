@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 
-from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, TZ
+from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, KEEP_THRESHOLD, TZ
 from .geo import wind_kind
 from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
 
@@ -71,6 +71,8 @@ def calendar_service():
 
 
 def sync(sessions, hours, ctx, beachwatch, now):
+    """Posts sessions at 8/10+ and removes them once they drop below 7/10 (KEEP_THRESHOLD), so a session
+    hovering around 8 doesn't add and remove itself every hour. Returns the keys that have a live event."""
     from googleapiclient.errors import HttpError
 
     svc = calendar_service()
@@ -78,9 +80,8 @@ def sync(sessions, hours, ctx, beachwatch, now):
     # Fails loudly if the calendar isn't shared with the bot (a missing event alone looks like a 404)
     svc.events().list(calendarId=cal, maxResults=1).execute()
     print(f"calendar ok, {sum(s.is_good for s in sessions)} good session(s)")
+    posted = set()
     for sess in sessions:
-        if sess.start <= now:
-            continue  # never touch a session that has started
         try:
             existing = svc.events().get(calendarId=cal, eventId=sess.key).execute()
         except HttpError as e:
@@ -88,12 +89,17 @@ def sync(sessions, hours, ctx, beachwatch, now):
                 raise
             existing = None
         live = existing and existing.get("status") != "cancelled"
+        if sess.start <= now:  # never touch a session that has started
+            if live:
+                posted.add(sess.key)
+            continue
 
-        if not sess.is_good:
+        if not (sess.is_good or (live and sess.best >= KEEP_THRESHOLD)):
             if live:
                 svc.events().delete(calendarId=cal, eventId=sess.key).execute()
                 print(f"deleted  {sess.key}")
             continue
+        posted.add(sess.key)
 
         title, desc = event_body(sess, hours, ctx, beachwatch, now.date())
         body = {
@@ -112,3 +118,4 @@ def sync(sessions, hours, ctx, beachwatch, now):
         else:
             svc.events().insert(calendarId=cal, body=body).execute()
             print(f"created  {sess.key}  {title}")
+    return posted

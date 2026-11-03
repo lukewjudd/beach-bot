@@ -2,13 +2,23 @@
 
 from datetime import date
 
-from .beaches import Beach, Pool, SurfSpot
+from .beaches import BEACH_FOR_SURF, Beach, Pool, SurfSpot
+from .config import STORM_CAPE, STORM_CODE, STORM_RAIN_PROB
 from .forecast import Context
 from .geo import in_range, swell_sector, wind_kind
 
 
+def storm(h: dict):
+    """Thunderstorm risk this hour: get out of the water."""
+    if (h.get("weather_code") or 0) >= STORM_CODE:
+        return True
+    return (h.get("cape") or 0) >= STORM_CAPE and (h.get("precipitation_probability") or 0) >= STORM_RAIN_PROB
+
+
 def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
     """Returns (score, notes). score None = no-go."""
+    if storm(h):
+        return None, ["storms ⚡"]
     notes = []
     s = 45
     hs = h.get("wave_height") or 0
@@ -153,6 +163,8 @@ def weather(h: dict, t: str, ctx: Context, notes: list):
 def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
     """Returns (score, notes) for an ocean pool (beach-knowledge.md §2, rules R-P*). None = closed or unsafe.
     Pools stay flat when the beaches are rough; what matters is swell over the walls near high tide."""
+    if storm(h):
+        return None, ["storms ⚡"]
     notes = []
     s = 45
     hs = h.get("wave_height") or 0
@@ -223,11 +235,16 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
     return max(0, min(100, s)), notes
 
 
-def score_surf_hour(sp: SurfSpot, h: dict):
+def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
     """Returns (score, notes) for surfing. Every spot always gets a score: flat or blown out is just low.
     Size at the break sets the ceiling (no waves = 1/10 however nice the wind); the gap between waves
-    and the wind decide how much of that ceiling you get."""
+    and the wind decide how much of that ceiling you get. Storms and dirty water drop it to the floor."""
+    if storm(h):
+        return 10, ["storms ⚡"]
     notes = []
+    q_water = water_quality(BEACH_FOR_SURF[sp.name], t, ctx, beachwatch, today, notes)
+    if q_water is None:
+        return 10, notes
     hs = h.get("wave_height") or 0
     sdir = h.get("swell_wave_direction") or 0
     period = h.get("swell_wave_period") or 0
@@ -284,5 +301,5 @@ def score_surf_hour(sp: SurfSpot, h: dict):
     if (h.get("precipitation_probability") or 0) >= 60:
         q -= 5
 
-    s = 5 + size_pts + max(0, q) * factor
+    s = 5 + size_pts + max(0, q) * factor + q_water
     return max(10, min(100, round(s))), notes  # 1/10 is the floor

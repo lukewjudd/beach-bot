@@ -40,14 +40,13 @@ def main():
             print(f"     → {title}")
             print("       " + desc.replace("\n", "\n       "))
 
-    data = export_scores(sessions, hours, ctx, beachwatch, now)
+    posted = sync(sessions, hours, ctx, beachwatch, now) if args.sync else None
+    data = export_scores(sessions, hours, ctx, beachwatch, now, posted)
     if args.json:
         with open(args.json, "w") as f:
             json.dump(data, f, indent=1)
-    if args.sync:
-        sync(sessions, hours, ctx, beachwatch, now)
-        if os.environ.get("BEACH_BUCKET"):
-            upload_scores(data, os.environ["BEACH_BUCKET"])
+    if args.sync and os.environ.get("BEACH_BUCKET"):
+        upload_scores(data, os.environ["BEACH_BUCKET"])
 
 
 if __name__ == "__main__":
