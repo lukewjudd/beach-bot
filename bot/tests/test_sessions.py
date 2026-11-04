@@ -136,3 +136,49 @@ def test_beachwatch_wins_over_the_rain_rules_for_water_quality():
 
     assert report(am, hours, ctx, {}, WED, coogee)["Water quality"] < 10  # no Beachwatch forecast
     assert report(am, hours, ctx, {"Coogee Beach": "Unlikely"}, WED, coogee)["Water quality"] == 10
+
+
+def test_started_sessions_keep_their_last_call_until_the_week_is_out():
+    from datetime import datetime
+
+    from beach_bot.config import TZ
+    from beach_bot.export import keep_this_week
+
+    now = datetime(2026, 11, 4, 18, 0, tzinfo=TZ)  # Wednesday evening
+    fresh = {
+        "sessions": [
+            {
+                "key": "beach20261104pm",
+                "date": "2026-11-04",
+                "start": "2026-11-04T17:00:00+11:00",
+                "lead": {"rating": 9},
+            }
+        ]
+    }
+    previous = {
+        "sessions": [
+            {
+                "key": "beach20261026am",
+                "date": "2026-10-26",
+                "start": "2026-10-26T05:50:00+11:00",
+                "lead": {"rating": 5},
+            },
+            {
+                "key": "beach20261102am",
+                "date": "2026-11-02",
+                "start": "2026-11-02T05:52:00+11:00",
+                "lead": {"rating": 4},
+            },
+            {
+                "key": "beach20261104pm",
+                "date": "2026-11-04",
+                "start": "2026-11-04T17:00:00+11:00",
+                "lead": {"rating": 3},
+            },
+        ]
+    }
+    keys = {s["key"]: s for s in keep_this_week(fresh, previous, now)["sessions"]}
+
+    assert "beach20261026am" not in keys  # last week: gone
+    assert keys["beach20261102am"]["frozen"]  # Monday this week: kept
+    assert keys["beach20261104pm"]["lead"]["rating"] == 3  # started an hour ago: the call it had, not a rescore

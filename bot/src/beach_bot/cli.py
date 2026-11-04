@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from .calendar import event_body, sync
 from .config import DAYS_AHEAD, TZ
-from .export import export_scores, upload_scores
+from .export import export_scores, keep_this_week, load_previous, upload_scores
 from .forecast import Context, load_data
 from .sessions import build_sessions, score_session
 
@@ -53,11 +53,20 @@ def main():
 
     posted = sync(soon, hours, ctx, beachwatch, now) if args.sync else None
     data = export_scores(sessions, hours, ctx, beachwatch, now, posted, sun)
+    bucket = os.environ.get("BEACH_BUCKET") if args.sync else None
+    if bucket:
+        previous = load_previous(bucket)
+    elif args.json and os.path.exists(args.json):  # local runs carry forward from the last local file
+        with open(args.json) as f:
+            previous = json.load(f)
+    else:
+        previous = None
+    data = keep_this_week(data, previous, now)
     if args.json:
         with open(args.json, "w") as f:
             json.dump(data, f, indent=1)
-    if args.sync and os.environ.get("BEACH_BUCKET"):
-        upload_scores(data, os.environ["BEACH_BUCKET"])
+    if bucket:
+        upload_scores(data, bucket)
 
 
 if __name__ == "__main__":

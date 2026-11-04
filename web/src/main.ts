@@ -274,9 +274,14 @@ function renderWeek() {
       const found = daySessions.find(({ s }) => s.key.endsWith(code));
       const live = found && !isPast(found.s);
       const name = `${dayName(d, "long")} ${code === "am" ? "morning" : "evening"}`;
-      return `<button type="button" class="slot" ${live ? `data-i="${found.idx}"` : "disabled"}
-          aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${found.s.lead.rating} out of 10` : ", no forecast"}">
-        <span class="lbl">${label}</span>${live ? pill(found.s.lead.rating) : `<span class="pill none">–</span>`}
+      // Finished sessions stay for the week, greyed out, with the call the bot made before they started
+      const said = found && !live ? `, was ${found.s.lead.rating} out of 10` : ", no forecast";
+      const score = found
+        ? `<span class="pill${live ? ` ${ratingClass(found.s.lead.rating)}` : " none"}">${found.s.lead.rating}</span>`
+        : `<span class="pill none">–</span>`;
+      return `<button type="button" class="slot${found && !live ? " past" : ""}" ${live ? `data-i="${found.idx}"` : "disabled"}
+          aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${found.s.lead.rating} out of 10` : said}">
+        <span class="lbl">${label}</span>${score}
       </button>`;
     };
     return `<div class="day${low ? " low" : ""}${date === selectedDate ? " selected" : ""}">

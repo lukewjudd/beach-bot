@@ -155,6 +155,34 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None):
     }
 
 
+def keep_this_week(data, previous, now):
+    """Sessions that have started keep the last call made before they started, until the week (Mon-Sun) is out,
+    so the site can show how each one was called. The bot keeps no history of its own: `previous` is the last
+    scores.json, which already holds those frozen calls."""
+    if not previous:
+        return data
+    monday = (now.date() - timedelta(days=now.weekday())).isoformat()
+    fresh = {s["key"]: s for s in data["sessions"]}
+    for old in previous.get("sessions", []):
+        if old["date"] < monday or old["start"] > now.isoformat():
+            continue  # last week's, or hasn't started yet (the fresh call wins)
+        # Started: freeze the call as it stood, whether this run recalculated it or the forecast has moved on
+        fresh[old["key"]] = {**old, "started": True, "frozen": True}
+    data["sessions"] = sorted(fresh.values(), key=lambda s: s["start"])
+    return data
+
+
+def load_previous(bucket):
+    """The scores.json from the last run, or None (first run, or the bucket's unreachable)."""
+    from google.cloud import storage
+
+    try:
+        return json.loads(storage.Client().bucket(bucket).blob("scores.json").download_as_bytes())
+    except Exception as e:
+        print(f"no previous scores ({e}); past sessions start fresh")
+        return None
+
+
 def upload_scores(data, bucket):
     from google.cloud import storage
 

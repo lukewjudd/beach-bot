@@ -8,6 +8,7 @@ From a round of UI feedback.
 
 - **A week at a glance.** Days run Monday to Sunday, with morning and evening inside each day, and there's a "Next week" view as far as the swell forecast reaches (about 9 days). Anything more than two days out is marked as an early forecast (dashed day, a note in the summary), and the calendar still only posts two days ahead.
 - **Every day shows its AM and PM score**, labelled, so the whole week reads at a glance; tap either to open that session. The summary heading just says the day and morning or evening (no clock times), and the conditions include sunrise and sunset.
+- **Sessions that have finished stay for the rest of the week**, greyed out and not clickable, showing the call the bot made before they started (frozen when they start, so it's what you were told, not a rescore with hindsight). They clear on Monday. The bot keeps no history of its own: each run carries them forward from the last scores.json.
 - **Calendar links open their own session** (`?s=beach20261107am`), and the page keeps that link as you move around, so it can be shared.
 - **Summary card** has a heading saying which session it is, adds tide times, icons on each condition, and the coast-wide conditions ("Across the coast").
 - **Traffic lights**: red, amber and green for every score, using Beachwatch's red. Ruled-out spots show 0 in red instead of "–".
