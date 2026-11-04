@@ -105,6 +105,15 @@ async function start() {
     wind = m.windLayer(map);
     wind.show(windOn);
     m.windButton(map, windOn, toggleWind);
+    // Phones, map view: "Details" in a popup goes to that spot's card in the list. Bound on the popup itself,
+    // since Leaflet stops clicks inside popups from reaching the page
+    map.on("popupopen", (e) => {
+      const link = e.popup.getElement()?.querySelector<HTMLElement>("[data-details]");
+      link?.addEventListener("click", () => {
+        setView("list");
+        openCard(link.dataset.details as string, false);
+      });
+    });
     if (data) render(); // scores got here first: add the pins now
   });
   try {
@@ -216,13 +225,6 @@ function wireControls() {
   $("view-toggle")
     .querySelectorAll<HTMLButtonElement>("button")
     .forEach((b) => b.addEventListener("click", () => setView(b.dataset.view as "list" | "map")));
-  // "Details" in a map popup opens that spot's card
-  document.addEventListener("click", (e) => {
-    const id = (e.target as HTMLElement).closest<HTMLElement>("[data-details]")?.dataset.details;
-    if (!id) return;
-    setView("list");
-    openCard(id, false);
-  });
 }
 
 function setView(view: "list" | "map") {

@@ -285,6 +285,8 @@ button:disabled { opacity: .45; cursor: default; }
 #map .leaflet-popup-content-wrapper { border-radius: 10px; }
 #map .leaflet-popup-content { margin: 10px 12px; font-size: 14px; }
 .popup .t { font-weight: 700; }
+/* "Details" is for phones, where the map and list are separate views; on desktop the card opens beside it */
+@media (min-width: 860px) { .popup .link { display: none; } }
 
 /* Wind trails switch, with the zoom buttons bottom-left */
 .wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
