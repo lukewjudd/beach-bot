@@ -208,9 +208,13 @@ button:disabled { opacity: .45; cursor: default; }
   .week-pick { flex-direction: column; justify-content: center; }
   .week-pick button { min-height: 28px; padding: 2px 10px; font-size: 13px; }
   .days { flex: 1; }
-  .day { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; padding: 4px 6px 6px; }
+  .day { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 4px; padding: 4px 6px 6px; }
   .day .dh { grid-column: 1 / -1; margin: 0; }
-  .slot { min-height: 28px; padding: 2px 4px 2px 6px; }
+  .slot { min-height: 28px; padding: 2px; justify-content: center; gap: 5px; } /* each half centred, never wider than it */
+}
+@media (min-width: 860px) and (max-width: 1150px) {
+  /* Narrower desktops: not enough width for "AM 5 PM 4" in a row, so each label sits over its score */
+  .slot { flex-direction: column; gap: 1px; padding: 2px 0; }
   /* Summary: the coast's ratings in a column to the right of the stat lines */
   .stats-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 34%); column-gap: 28px; }
   .coast-line { grid-template-columns: 1fr; align-content: start; gap: 6px; }
