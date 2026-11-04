@@ -345,7 +345,10 @@ function renderHero(s: Session) {
   const coast = s.coast ?? s.report;
   const air = c.air_c >= 26 ? 10 : c.air_c >= 23 ? 8 : c.air_c >= 21 ? 6 : c.air_c >= 19 ? 4 : 2; // the scoring bands
   const rain = c.rain_pct >= 60 ? 2 : c.rain_pct >= 40 ? 5 : 10;
-  const water = c.water_c != null && c.water_c > 22 ? 10 : undefined; // warm earns a bonus; cool is never a minus
+  // Water: how it feels going in (20°+ green, 17-19° amber, colder red). Only a colour: cool water is never
+  // a minus in the scores
+  const w = c.water_c;
+  const water = w == null ? undefined : w >= 20 ? 8 : w >= 17 ? 6 : 3;
   // Stats on three lines by what they describe, the one that swings a session most leading each line
   const line = (label: string, chips: string) =>
     `<div class="stat-line"><span class="stat-label">${label}</span><div class="chips">${chips}</div></div>`;
