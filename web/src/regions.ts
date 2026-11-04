@@ -17,8 +17,8 @@ export const REGIONS: Region[] = [
     key: "beach",
     tiles: "eastern-suburbs",
     bounds: [
-      [-34.01, 151.17],
-      [-33.82, 151.32],
+      [-34.05, 151.05],
+      [-33.8, 151.4],
     ],
     fit: [
       [-33.982, 151.243],
@@ -31,8 +31,8 @@ export const REGIONS: Region[] = [
     key: "north",
     tiles: "northern-beaches",
     bounds: [
-      [-33.83, 151.22],
-      [-33.56, 151.36],
+      [-33.87, 151.05],
+      [-33.53, 151.45],
     ],
     fit: [
       [-33.805, 151.27],

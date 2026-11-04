@@ -9,6 +9,7 @@ What changed and why, newest first. Dates are Sydney time.
 - **Missing eastern pools**: McIver's Ladies Baths (labelled Women only) and South Maroubra Rockpool.
 - **Eastern / Northern switch** on the site, remembered per browser and defaulting to Eastern; a calendar link opens the right region. Each region has its own map tiles and scores file (`scores-<region>.json`; `scores.json` stays as the eastern copy for older links).
 - Every map pin was checked against OpenStreetMap's beach and pool outlines.
+- **Wider map tiles** for both regions (eastern 8MB, northern 7.6MB), reaching well inland, so a wide screen never shows a blank strip beside the coast, and the map can zoom out one more level to fit the whole northern coastline.
 
 ## 2026-11-04 (evening): site redesign
 

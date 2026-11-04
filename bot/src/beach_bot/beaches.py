@@ -277,7 +277,7 @@ EASTERN = Region(
     favourite="Clovelly",
     calendar_env="BEACH_CALENDAR_ID",
     tiles="eastern-suburbs",
-    bounds=((-34.01, 151.17), (-33.82, 151.32)),
+    bounds=((-34.05, 151.05), (-33.80, 151.40)),  # = the eastern-suburbs.pmtiles bbox
 )
 
 
@@ -508,7 +508,7 @@ NORTHERN = Region(
     favourite="Shelly Beach",
     calendar_env="BEACH_CALENDAR_ID_NORTH",
     tiles="northern-beaches",
-    bounds=((-33.83, 151.22), (-33.56, 151.36)),  # = the northern-beaches.pmtiles bbox
+    bounds=((-33.87, 151.05), (-33.53, 151.45)),  # = the northern-beaches.pmtiles bbox
     rain_gauges=("94759", "94768"),  # Terrey Hills, Observatory Hill
 )
 REGIONS = [EASTERN, NORTHERN]

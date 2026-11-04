@@ -22,7 +22,7 @@ export function createMap(container: HTMLElement, region: Region): L.Map {
     scrollWheelZoom: true, // the page fits the screen, so the wheel has nothing else to scroll
     maxBounds: L.latLngBounds(region.bounds), // inside the extract's bbox
     maxBoundsViscosity: 1,
-    minZoom: 11,
+    minZoom: 10, // the northern beaches run 25km: a short map needs ~10.5 to show them all
     maxZoom: 17,
     zoomSnap: 0.25, // fit the coastline snugly rather than rounding down a whole zoom level
   });
