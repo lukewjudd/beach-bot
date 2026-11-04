@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-05
+
+- **More room for the map on desktop.** The week toggle sits beside the days, each day's AM and PM sit side by side under its date, the day heading shares a row with the verdict, and the coast ratings move into a column beside the stat lines. At 1440×900 the top goes from 529px to 349px and the map from 355px to 535px tall. Phones are unchanged.
+
 ## 2026-11-04 (night): northern beaches and harbour beaches
 
 - **Harbour beaches are extras**: scored and shown, but they never lead a session, never make it "worth it" and never post to the calendar. On the site they're off until you tick Harbour, so the eastern map opens on the ocean coast as before; ticking it takes the map out to include them.

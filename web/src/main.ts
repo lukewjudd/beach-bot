@@ -423,12 +423,15 @@ function renderHero(s: Session) {
     `<div class="stat-line"><span class="stat-label">${label}</span><div class="chips">${chips}</div></div>`;
   const month = d.toLocaleDateString("en-AU", { month: "short", timeZone: "UTC" });
   $("hero").innerHTML = `
+    <div class="hero-top">
     <h2 class="hero-title">${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}</h2>
     <div class="headline">
       <span class="flag ${ok ? "yes" : "no"}">${ok ? (s.fire ? `<span aria-hidden="true">🔥</span> Worth it` : "Worth it") : "Not worth it"}</span>
       ${verdict}
     </div>
+    </div>
     ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
+    <div class="stats-wrap">
     <div class="stats">
       ${line(
         "Weather",
@@ -447,7 +450,8 @@ function renderHero(s: Session) {
         (s.sun ? chip(ICONS.sun, morning ? "Sunrise" : "Sunset", morning ? `Sunrise <b>${s.sun.rise}</b>` : `Sunset <b>${s.sun.set}</b>`) : "") +
           chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`),
       )}
-      <div class="stat-line"><span class="stat-label">Coast</span><div class="report coast">${bars(s.coast ?? s.report)}</div></div>
+    </div>
+    <div class="stat-line coast-line"><span class="stat-label">Coast</span><div class="report coast">${bars(s.coast ?? s.report)}</div></div>
     </div>`;
 }
 

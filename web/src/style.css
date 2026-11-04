@@ -202,6 +202,26 @@ button:disabled { opacity: .45; cursor: default; }
   .layout[data-view="map"] #map { height: 70vh; }
 }
 @media (min-width: 860px) {
+  /* Desktop: keep the top compact so the map and spots get the height.
+     Week toggle beside the days, and each day's AM and PM side by side under its date */
+  .week { flex-direction: row; align-items: stretch; gap: 8px; padding-bottom: 8px; }
+  .week-pick { flex-direction: column; justify-content: center; }
+  .week-pick button { min-height: 28px; padding: 2px 10px; font-size: 13px; }
+  .days { flex: 1; }
+  .day { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; padding: 4px 6px 6px; }
+  .day .dh { grid-column: 1 / -1; margin: 0; }
+  .slot { min-height: 28px; padding: 2px 4px 2px 6px; }
+  /* Summary: the coast's ratings in a column to the right of the stat lines */
+  .stats-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 34%); column-gap: 28px; }
+  .coast-line { grid-template-columns: 1fr; align-content: start; gap: 6px; }
+  .report.coast { grid-template-columns: 1fr; row-gap: 5px; }
+  .stat-line { padding: 5px 0; }
+  .stats { margin-top: 0; }
+  .stats-wrap { margin-top: 10px; }
+  /* The day and the verdict share a row */
+  .hero-top { display: flex; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; }
+  .hero-top .hero-title { margin: 0; }
+  .hero-top .headline { flex: 1; min-width: 0; }
   body { height: 100dvh; overflow: hidden; }
   .layout { flex: 1; min-height: 0; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr; }
   .panel { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-right: 4px; }
