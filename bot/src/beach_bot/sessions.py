@@ -4,12 +4,11 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import BEACH_FOR_SURF, BEACHES, POOLS, SURF_SPOTS, Pool, SurfSpot
+from .beaches import EASTERN, Pool, Region, SurfSpot
 from .config import (
-    CLOVELLY_TOLERANCE,
     DAYS_AHEAD,
     EVENT_THRESHOLD,
-    FAVOURITE,
+    FAVOURITE_TOLERANCE,
     SURF_THRESHOLD,
     TZ,
     WEEKDAY_SESSIONS,
@@ -32,10 +31,11 @@ class Session:
     pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
     ruled_out: dict = field(default_factory=dict)  # spot name -> why it's a no-go all session
+    region: Region = EASTERN
 
     @property
     def key(self):
-        return f"beach{self.day:%Y%m%d}{self.slot}"  # valid Google event id (base32hex)
+        return f"{self.region.key}{self.day:%Y%m%d}{self.slot}"  # valid Google event id (base32hex)
 
     @property
     def best_swim(self):
@@ -59,7 +59,7 @@ class Session:
         return self.best >= EVENT_THRESHOLD
 
 
-def build_sessions(hours, sun, now, days=None):
+def build_sessions(hours, sun, now, days=None, region=EASTERN):
     sessions = []
     days = days or [now.date() + timedelta(days=o) for o in range(DAYS_AHEAD + 1)]
     for d in days:
@@ -74,7 +74,7 @@ def build_sessions(hours, sun, now, days=None):
             keys = [f"{d.isoformat()}T{hr:02d}:00" for hr in range(first, last)]
             keys = [k for k in keys if k in hours]
             if keys:
-                sessions.append(Session(d, slot, start.replace(tzinfo=TZ), end.replace(tzinfo=TZ), keys))
+                sessions.append(Session(d, slot, start.replace(tzinfo=TZ), end.replace(tzinfo=TZ), keys, region=region))
     return sessions
 
 
@@ -101,7 +101,8 @@ def main_reason(results):
 
 def score_session(sess, hours, ctx, beachwatch, today):
     n = min(WINDOW_HOURS, len(sess.hours))
-    for b in BEACHES:
+    region = sess.region
+    for b in region.beaches:
         results = [score_swim_hour(b, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         best = best_window(sess, [r[0] for r in results])
         if not best:
@@ -112,13 +113,13 @@ def score_session(sess, hours, ctx, beachwatch, today):
         sess.swim.append((round(sc), b, notes))
         sess.windows[b.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.swim.sort(key=lambda x: -x[0])
-    if sess.swim and sess.swim[0][1].name != FAVOURITE:  # R-TB1
-        fav = next((x for x in sess.swim if x[1].name == FAVOURITE), None)
-        if fav and fav[0] >= sess.swim[0][0] - CLOVELLY_TOLERANCE:
+    if sess.swim and sess.swim[0][1].name != region.favourite:  # R-TB1
+        fav = next((x for x in sess.swim if x[1].name == region.favourite), None)
+        if fav and fav[0] >= sess.swim[0][0] - FAVOURITE_TOLERANCE:
             sess.swim.remove(fav)
             sess.swim.insert(0, fav)
 
-    for p in POOLS:
+    for p in region.pools:
         results = [score_pool_hour(p, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         best = best_window(sess, [r[0] for r in results])
         if not best:
@@ -130,7 +131,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
         sess.windows[p.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.pools.sort(key=lambda x: -x[0])
 
-    for sp in SURF_SPOTS:
+    for sp in region.surf:
         results = [score_surf_hour(sp, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
         sc, i = best_window(sess, [r[0] for r in results])  # never None: surf always scores
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
@@ -152,7 +153,7 @@ def headline(sess):
     and surf leads when it beats a postable swim."""
     swim, pool, surf = sess.best_swim, sess.best_pool, sess.best_surf
     lead = swim
-    if pool and (not swim or pool[0] > swim[0] + CLOVELLY_TOLERANCE):
+    if pool and (not swim or pool[0] > swim[0] + FAVOURITE_TOLERANCE):
         lead = pool
     if surf and (not lead or lead[0] < EVENT_THRESHOLD or surf[0] > lead[0]):
         return surf[1].name
@@ -160,13 +161,13 @@ def headline(sess):
 
 
 def lead_kind(sess):
-    """'swim', 'pool' or 'surf' for the headline spot."""
+    """'swim', 'harbour', 'pool' or 'surf' for the headline spot."""
     name = headline(sess)
     if sess.best_surf and sess.best_surf[1].name == name:
         return "surf"
     if sess.best_pool and sess.best_pool[1].name == name and not (sess.best_swim and sess.best_swim[1].name == name):
         return "pool"
-    return "swim"
+    return "harbour" if sess.best_swim and sess.best_swim[1].harbour else "swim"
 
 
 def conditions(sess, hours, keys=None):
@@ -205,12 +206,12 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     Without a spot it's the top swim pick, which is what the calendar event shows.
     Wind, weather and water temp come from area-wide forecasts; how the wind and swell hit the spot,
     and its water quality, are the spot's own."""
-    spot = spot or (sess.best_swim[1] if sess.best_swim else BEACHES[3])
+    spot = spot or (sess.best_swim[1] if sess.best_swim else sess.region.beaches[0])
     keys = window_hours(sess, spot.name)
     c = conditions(sess, hours, keys)
     hs_list = [hours[t] for t in keys]
     facing = spot.facing  # pools take their beach's (see Pool.facing)
-    water_beach = spot.beach if isinstance(spot, Pool) else BEACH_FOR_SURF.get(spot.name, spot)
+    water_beach = spot.beach if isinstance(spot, Pool | SurfSpot) else spot
 
     wind = c["wind"]
     w = 10 if wind < 8 else 8 if wind < 15 else 6 if wind < 20 else 4 if wind < 28 else 2
@@ -296,16 +297,20 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
 def coast_report(sess, hours, ctx, beachwatch, today):
     """The typical beach this session: the median of each row across every beach. Shown on the site when
     nothing's worth going to, so it doesn't single out a spot."""
-    reports = [report(sess, hours, ctx, beachwatch, today, b) for b in BEACHES]
+    reports = [report(sess, hours, ctx, beachwatch, today, b) for b in sess.region.beaches]
     return {k: sorted(r[k] for r in reports)[len(reports) // 2] for k in reports[0]}
 
 
 def top_spots(sess, n=3):
     """Best beach, pool and surf options merged into one ranked list."""
-    picks = [(sc, b.name, "swim" + (" / snorkel" if b.snorkel else ""), notes) for sc, b, notes in sess.swim]
+    picks = [
+        (sc, b.name, ("harbour swim" if b.harbour else "swim") + (" / snorkel" if b.snorkel else ""), notes)
+        for sc, b, notes in sess.swim
+    ]
     picks += [(sc, p.name, "pool", notes) for sc, p, notes in sess.pools]
     picks += [(sc, sp.name, "surf", notes) for sc, sp, notes in sess.surf]
-    picks.sort(key=lambda x: -(x[0] + (CLOVELLY_TOLERANCE + 0.5 if x[1] == FAVOURITE else 0)))  # R-TB1
+    fav = sess.region.favourite
+    picks.sort(key=lambda x: -(x[0] + (FAVOURITE_TOLERANCE + 0.5 if x[1] == fav else 0)))  # R-TB1
     seen, out = set(), []
     for p in picks:
         if p[1] not in seen:

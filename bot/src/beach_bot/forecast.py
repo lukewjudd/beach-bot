@@ -12,7 +12,8 @@ from statistics import mean, quantiles
 
 import requests
 
-from .config import BOM_OBS_URL, BOM_STATIONS, FORECAST_DAYS, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
+from .beaches import EASTERN
+from .config import BOM_OBS_URL, FORECAST_DAYS, RAIN_MODELS, TZ
 
 
 def fetch_json(url, params):
@@ -53,12 +54,12 @@ def fetch_weather(url, params):
     return out
 
 
-def load_data():
+def load_data(region=EASTERN):
     wx = fetch_weather(
         "https://api.open-meteo.com/v1/forecast",
         {
-            "latitude": FORECAST_POINT[0],
-            "longitude": FORECAST_POINT[1],
+            "latitude": region.forecast_point[0],
+            "longitude": region.forecast_point[1],
             "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
             "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index,weather_code,cape",
             "daily": "sunrise,sunset",
@@ -70,8 +71,8 @@ def load_data():
     sea = fetch_json(
         "https://marine-api.open-meteo.com/v1/marine",
         {
-            "latitude": MARINE_POINT[0],
-            "longitude": MARINE_POINT[1],
+            "latitude": region.marine_point[0],
+            "longitude": region.marine_point[1],
             "cell_selection": "sea",
             "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
             "sea_surface_temperature,sea_level_height_msl",
@@ -93,8 +94,8 @@ def load_data():
     for i, t in enumerate(sea["hourly"]["time"]):
         if t in hours:
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
-    past_rain(hours, datetime.now(TZ))
-    gauge_rain(hours)
+    past_rain(hours, datetime.now(TZ), region.forecast_point)
+    gauge_rain(hours, region.rain_gauges)
     sun = {
         d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
         for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
@@ -118,7 +119,7 @@ def fresh_forecasts(features, today):
     return out
 
 
-def past_rain(hours, now):
+def past_rain(hours, now, point):
     """Fallback for when the BOM gauges are down: a wetter read of past rain across several models. One model
     smears storms out: on the night of 3 Nov 2026 the default had 6mm where Sydney Airport measured 22mm, so the
     rain rules never kicked in. The 75th percentile of six models had 12.5mm there and barely moves on ordinary
@@ -127,8 +128,8 @@ def past_rain(hours, now):
         wx = fetch_weather(
             "https://api.open-meteo.com/v1/forecast",
             {
-                "latitude": FORECAST_POINT[0],
-                "longitude": FORECAST_POINT[1],
+                "latitude": point[0],
+                "longitude": point[1],
                 "hourly": "precipitation",
                 "models": ",".join(RAIN_MODELS),
                 "timezone": "Australia/Sydney",
@@ -147,7 +148,7 @@ def past_rain(hours, now):
             hours[t]["precipitation"] = quantiles(vals, n=4, method="inclusive")[2]
 
 
-def gauge_rain(hours):
+def gauge_rain(hours, stations):
     """Rain that's actually fallen, from BOM's rain gauges, over the top of the modelled rain. Storms are patchy
     (on 3 Nov 2026 Observatory Hill had 50mm and the airport 22mm), so it takes the wetter station: for water
     quality it's the runoff that matters. Comes from BOM's public FTP, which is how BOM shares data for automated
@@ -156,7 +157,7 @@ def gauge_rain(hours):
         with urllib.request.urlopen(BOM_OBS_URL, timeout=60) as r:
             bundle = tarfile.open(fileobj=io.BytesIO(r.read()), mode="r:gz")
         gauges = []
-        for station in BOM_STATIONS:
+        for station in stations:
             f = bundle.extractfile(f"IDN60910.{station}.json")
             gauges.append(hourly_rain(json.load(f)["observations"]["data"]))
     except Exception as e:  # keep the modelled rain

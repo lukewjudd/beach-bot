@@ -1,4 +1,5 @@
-"""The beaches and surf spots, with the local knowledge from beach-knowledge.md."""
+"""The beaches, pools and surf spots of each region, with the local knowledge from beach-knowledge.md
+(eastern suburbs) and northern-beaches-knowledge.md."""
 
 from dataclasses import dataclass, field
 
@@ -15,6 +16,7 @@ class Beach:
     swim_limit: float = 1.2  # Hb above this = no swim
     poor_grade: bool = False  # R-R3: 3-day rain rule
     snorkel: bool = False
+    harbour: bool = False  # inside the harbour (or Pittwater): no ocean swell, often netted
     patrolled_all_daylight: bool = False
     notes: list = field(default_factory=list)
 
@@ -59,6 +61,7 @@ class SurfSpot:
     k: dict  # how much of the open-ocean swell reaches the break, by swell sector (§1a)
     max_hs: float = 2.5  # above this (at the break) it closes out
     bonus_dirs: tuple = None  # swell direction range that gets a small bonus
+    beach: Beach | None = None  # the beach it breaks off: shares its water (and Beachwatch site)
 
 
 SURF_SPOTS = [
@@ -106,6 +109,7 @@ class Pool:
     closes_summer: int = 19  # 1 Oct - 12 Apr
     closes_winter: int = 17
     facing_override: int | None = None  # where it faces, when that differs from its beach
+    women_only: bool = False  # women and children only (McIver's)
 
     @property
     def facing(self):
@@ -122,6 +126,8 @@ BEACH_FOR_SURF = {
     "Bronte": _BEACH["Bronte"],
     "Coogee": _BEACH["Coogee"],
 }
+for _sp in SURF_SPOTS:
+    _sp.beach = BEACH_FOR_SURF[_sp.name]
 
 POOLS = [
     # R-P7: Thursdays. Sits at Bondi's south end facing east, not the south-east of the north end
@@ -142,3 +148,45 @@ POOL_COORDS = {
     "Ross Jones Pool": (-33.9228, 151.2578),
     "Mahon Pool": (-33.9430, 151.2639),
 }
+
+
+@dataclass(frozen=True, eq=False)  # fixed once defined; compared by identity
+class Region:
+    """One stretch of coast: its spots, where its forecasts come from, its favourite and its calendar."""
+
+    id: str  # "eastern"
+    name: str  # "Eastern suburbs"
+    key: str  # session and calendar event id prefix: Google wants base32hex, so letters a-v only
+    beaches: list
+    pools: list
+    surf: list
+    coords: dict  # map pins, by spot name ("<name> surf" for surf breaks, which share names with beaches)
+    forecast_point: tuple  # weather (a blend of the land and sea cells either side)
+    marine_point: tuple  # swell, sea temperature and tides; beaches differ via k
+    favourite: str  # wins close calls (R-TB1)
+    calendar_env: str  # env var holding the region's Google Calendar id
+    tiles: str  # map/<tiles>.pmtiles
+    bounds: tuple  # ((south, west), (north, east)) the map can pan within; inside the tiles' bbox
+    rain_gauges: tuple = ("94768", "94767")  # BOM stations: Observatory Hill, Sydney Airport
+
+    def pin(self, spot):
+        return self.coords[f"{spot.name} surf" if isinstance(spot, SurfSpot) else spot.name]
+
+
+EASTERN = Region(
+    id="eastern",
+    name="Eastern suburbs",
+    key="beach",
+    beaches=BEACHES,
+    pools=POOLS,
+    surf=SURF_SPOTS,
+    coords={**COORDS, **POOL_COORDS, **{f"{name} surf": pin for name, pin in SURF_COORDS.items()}},
+    forecast_point=(-33.914, 151.267),  # Clovelly
+    marine_point=(-33.92, 151.33),
+    favourite="Clovelly",
+    calendar_env="BEACH_CALENDAR_ID",
+    tiles="eastern-suburbs",
+    bounds=((-34.01, 151.17), (-33.82, 151.32)),
+)
+
+REGIONS = [EASTERN]

@@ -70,13 +70,12 @@ def calendar_service():
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
 
 
-def sync(sessions, hours, ctx, beachwatch, now):
+def sync(sessions, hours, ctx, beachwatch, now, cal):
     """Posts sessions at 8/10+ and removes them once they drop below 7/10 (KEEP_THRESHOLD), so a session
     hovering around 8 doesn't add and remove itself every hour. Returns the keys that have a live event."""
     from googleapiclient.errors import HttpError
 
     svc = calendar_service()
-    cal = os.environ["BEACH_CALENDAR_ID"]
     # Fails loudly if the calendar isn't shared with the bot (a missing event alone looks like a 404)
     svc.events().list(calendarId=cal, maxResults=1).execute()
     print(f"calendar ok, {sum(s.is_good for s in sessions)} good session(s)")

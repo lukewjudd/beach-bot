@@ -5,7 +5,7 @@
 
 # generated
 backtest.csv
-web/public/scores.json
+web/public/scores*.json
 web/dist/
 
 # tooling

@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from .beaches import BEACH_FOR_SURF, Beach, Pool, SurfSpot
+from .beaches import Beach, Pool, SurfSpot
 from .config import STORM_CAPE, STORM_CODE, STORM_RAIN_PROB
 from .forecast import Context
 from .geo import in_range, swell_sector, wind_kind
@@ -256,7 +256,7 @@ def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dic
     if storm(h):
         return 10, ["storms ⚡"]
     notes = []
-    q_water = water_quality(BEACH_FOR_SURF[sp.name], t, ctx, beachwatch, today, notes)
+    q_water = water_quality(sp.beach, t, ctx, beachwatch, today, notes)
     if q_water is None:
         return 10, notes
     hs = h.get("wave_height") or 0

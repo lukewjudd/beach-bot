@@ -13,7 +13,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
-from .config import FORECAST_POINT, MARINE_POINT
+from .beaches import EASTERN
 from .forecast import Context, fetch_json, fetch_weather
 from .sessions import build_sessions, conditions, headline, lead_kind, out_of_10, score_session
 
@@ -25,8 +25,8 @@ def load_history(start, end):
     wx = fetch_weather(
         "https://historical-forecast-api.open-meteo.com/v1/forecast",
         {
-            "latitude": FORECAST_POINT[0],
-            "longitude": FORECAST_POINT[1],
+            "latitude": EASTERN.forecast_point[0],
+            "longitude": EASTERN.forecast_point[1],
             "hourly": "temperature_2m,precipitation,precipitation_probability,wind_speed_10m,"
             "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index,weather_code,cape",
             "daily": "sunrise,sunset",
@@ -38,8 +38,8 @@ def load_history(start, end):
     sea = fetch_json(
         "https://marine-api.open-meteo.com/v1/marine",
         {
-            "latitude": MARINE_POINT[0],
-            "longitude": MARINE_POINT[1],
+            "latitude": EASTERN.marine_point[0],
+            "longitude": EASTERN.marine_point[1],
             "cell_selection": "sea",
             "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
             "sea_surface_temperature,sea_level_height_msl",
