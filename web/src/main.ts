@@ -82,11 +82,6 @@ const today = () => parse(data.generated_at.slice(0, 10)); // generated_at is Sy
 const monday = (d: Date) => new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * DAY);
 const dayName = (d: Date, style: "short" | "long" = "short") =>
   d.toLocaleDateString("en-AU", { weekday: style, timeZone: "UTC" });
-const clock = (iso: string) =>
-  new Date(iso)
-    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", timeZone: "Australia/Sydney" })
-    .replace(":00", "")
-    .replace(/\s/g, "");
 const slotName = (s: Session) => (s.key.endsWith("am") ? "Morning" : "Evening");
 const weekOf = (s: Session) => Math.floor((parse(s.date).getTime() - monday(today()).getTime()) / (7 * DAY));
 
@@ -243,30 +238,29 @@ function renderWeek() {
   // Always Monday to Sunday, so a day sits in the same place every time you look
   const start = new Date(monday(today()).getTime() + week * 7 * DAY);
   const selectedDate = data.sessions[current].date;
+  // Each day shows its morning and evening score side by side; tapping one opens that session
   $("days").innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start.getTime() + i * DAY);
     const date = ymd(d);
-    const live = data.sessions.filter((s) => s.date === date && !isPast(s));
-    const best = live.length ? Math.max(...live.map((s) => s.lead.rating)) : null;
-    const low = live.length > 0 && live.every((s) => s.confidence === "low");
-    const label = `${dayName(d, "long")} ${d.getUTCDate()}${best != null ? `, best ${best} out of 10` : ", no forecast"}${low ? ", early forecast" : ""}`;
-    return `<button type="button" class="day${low ? " low" : ""}" data-date="${date}" aria-pressed="${date === selectedDate}"
-        ${live.length ? "" : "disabled"} aria-label="${label}">
-      <span class="dn">${date === ymd(today()) ? "Today" : dayName(d)}</span><span class="dd">${d.getUTCDate()}</span>
-      ${best != null ? pill(best) : `<span class="pill none" aria-hidden="true">–</span>`}
-    </button>`;
+    const daySessions = data.sessions.map((s, idx) => ({ s, idx })).filter(({ s }) => s.date === date);
+    const low = daySessions.length > 0 && daySessions.every(({ s }) => s.confidence === "low");
+    const slot = (code: "am" | "pm", label: string) => {
+      const found = daySessions.find(({ s }) => s.key.endsWith(code));
+      const live = found && !isPast(found.s);
+      const name = `${dayName(d, "long")} ${code === "am" ? "morning" : "evening"}`;
+      return `<button type="button" class="slot" ${live ? `data-i="${found.idx}"` : "disabled"}
+          aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${found.s.lead.rating} out of 10` : ", no forecast"}">
+        <span class="lbl">${label}</span>${live ? pill(found.s.lead.rating) : `<span class="pill none">–</span>`}
+      </button>`;
+    };
+    return `<div class="day${low ? " low" : ""}${date === selectedDate ? " selected" : ""}">
+      <span class="dh"><span class="dn">${date === ymd(today()) ? "Today" : dayName(d)}</span><span class="dd">${d.getUTCDate()}</span></span>
+      ${slot("am", "AM")}${slot("pm", "PM")}
+    </div>`;
   }).join("");
   $("days")
-    .querySelectorAll<HTMLButtonElement>(".day:not([disabled])")
-    .forEach((b) =>
-      b.addEventListener("click", () => {
-        // Keep morning or evening when you change day, if that day still has it
-        const slot = data.sessions[current].key.slice(-2);
-        const same = data.sessions.findIndex((s) => s.date === b.dataset.date && s.key.endsWith(slot) && !isPast(s));
-        const any = data.sessions.findIndex((s) => s.date === b.dataset.date && !isPast(s));
-        selectSession(same >= 0 ? same : any);
-      }),
-    );
+    .querySelectorAll<HTMLButtonElement>(".slot[data-i]")
+    .forEach((b) => b.addEventListener("click", () => selectSession(Number(b.dataset.i))));
 }
 
 // ---------------------------------------------------------------- summary of the chosen session
@@ -303,7 +297,6 @@ function renderHero(s: Session) {
   const d = parse(s.date);
   const ok = worth(s);
   const leadSpot = lead.id ? spotsById[lead.id] : undefined;
-  const daySessions = data.sessions.map((x, i) => ({ x, i })).filter(({ x }) => x.date === s.date);
   const verdict = ok
     ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
@@ -313,18 +306,7 @@ function renderHero(s: Session) {
     `<span class="chip">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
   const month = d.toLocaleDateString("en-AU", { month: "short", timeZone: "UTC" });
   $("hero").innerHTML = `
-    <div class="hero-head">
-      <h2>${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}
-        <span class="hours">${clock(s.start)}–${clock(s.end)}</span></h2>
-      <div class="slots" role="group" aria-label="Session">
-        ${daySessions
-          .map(
-            ({ x, i }) =>
-              `<button type="button" data-i="${i}" aria-pressed="${i === current}" ${isPast(x) ? "disabled" : ""}>${slotName(x)} ${pill(x.lead.rating)}</button>`,
-          )
-          .join("")}
-      </div>
-    </div>
+    <h2 class="hero-title">${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}</h2>
     <div class="headline">
       <span class="flag ${ok ? "yes" : "no"}">${ok ? (s.fire ? `<span aria-hidden="true">🔥</span> Worth it` : "Worth it") : "Not worth it"}</span>
       ${verdict}
@@ -337,13 +319,11 @@ function renderHero(s: Session) {
       ${c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`) : ""}
       ${chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`)}
       ${chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`)}
+      ${s.sun ? chip(ICONS.sun, "Sun", `Sunrise <b>${s.sun.rise}</b> · sunset <b>${s.sun.set}</b>`) : ""}
       ${tides ? chip(ICONS.tide, "Tides", tides) : ""}
     </div>
     <h3 class="coast-title">Across the coast</h3>
     <div class="report coast">${bars(s.coast ?? s.report)}</div>`;
-  $("hero")
-    .querySelectorAll<HTMLButtonElement>(".slots button:not([disabled])")
-    .forEach((b) => b.addEventListener("click", () => selectSession(Number(b.dataset.i))));
 }
 
 // ---------------------------------------------------------------- spots: list and map

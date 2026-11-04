@@ -52,7 +52,7 @@ def main():
             print("       " + desc.replace("\n", "\n       "))
 
     posted = sync(soon, hours, ctx, beachwatch, now) if args.sync else None
-    data = export_scores(sessions, hours, ctx, beachwatch, now, posted)
+    data = export_scores(sessions, hours, ctx, beachwatch, now, posted, sun)
     if args.json:
         with open(args.json, "w") as f:
             json.dump(data, f, indent=1)

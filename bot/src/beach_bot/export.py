@@ -17,9 +17,14 @@ def area(beach):
     return beach.name.split(" (")[0]
 
 
-def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
+def clock(t):
+    return t.strftime("%-I:%M%p").lower()  # 5:41am
+
+
+def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None):
     """Everything the map site needs, as one JSON-able dict. `posted` is the session keys with a live calendar
-    event (from sync), so the site says "worth it" exactly when the calendar has it; without a sync, 8/10+."""
+    event (from sync), so the site says "worth it" exactly when the calendar has it; without a sync, 8/10+.
+    `sun` is load_data()'s sunrise and sunset by date."""
     spots = [
         {
             "id": slug(b.name, "swim"),
@@ -96,6 +101,11 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
                 "posted": sess.key in posted if posted is not None else bool(sess.is_good),
                 # Past a couple of days the forecast is a guide, not a plan (and the calendar doesn't post it)
                 "confidence": "high" if sess.day <= now.date() + timedelta(days=DAYS_AHEAD) else "low",
+                "sun": (
+                    {"rise": clock(sun[sess.day.isoformat()][0]), "set": clock(sun[sess.day.isoformat()][1])}
+                    if sun and sess.day.isoformat() in sun
+                    else None
+                ),
                 "tides": [{"kind": kind, "time": hour_label(t, 0)} for kind, t in ctx.tide_times(sess.day.isoformat())],
                 "fire": best >= FIRE_THRESHOLD,
                 "lead": {

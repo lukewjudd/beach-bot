@@ -34,6 +34,7 @@ export interface Session {
   /** "low" past a couple of days out: a guide, not something the calendar posts */
   confidence?: "high" | "low";
   tides?: { kind: "high" | "low"; time: string }[];
+  sun?: { rise: string; set: string } | null;
   lead: { id: string | null; kind: SpotKind; name: string | null; score: number; rating: number; window: [string, string] | null };
   conditions: {
     wind_kmh: number;

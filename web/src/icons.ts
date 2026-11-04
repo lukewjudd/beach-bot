@@ -25,5 +25,7 @@ export const ICONS = {
   water: svg('<path d="M10 14V4a2 2 0 1 1 4 0v10a4 4 0 1 1-4 0z"/>'),
   rain: svg('<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1 0 7z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2"/>'),
   uv: svg('<circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>'),
+  // Sun on the horizon
+  sun: svg('<path d="M2 18h20"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 6v3M4.9 10.9l2.1 2.1M19.1 10.9 17 13"/>'),
   tide: svg('<path d="M2 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M12 22v-6M9 19l3 3 3-3"/>'),
 };
