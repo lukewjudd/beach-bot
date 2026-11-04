@@ -1,11 +1,64 @@
 """Hour-by-hour scores for swimming and surfing. Rule ids (R-W1 etc.) refer to beach-knowledge.md."""
 
 from datetime import date
+from itertools import pairwise
 
 from .beaches import Beach, Pool, SurfSpot
 from .config import STORM_CAPE, STORM_CODE, STORM_RAIN_PROB
 from .forecast import Context
 from .geo import in_range, swell_sector, wind_kind
+
+# ---------------------------------------------------------------- swell reaching a spot
+# The sea is split into wave trains (the main swell, a second swell from another direction, and the local wind
+# chop), and each is scaled by how exposed the spot is from where it comes. Heights add as energy, so a spot
+# open from every direction gets exactly the combined wave height, and one that only faces east shrugs off a
+# south swell even when an east wind chop is running alongside it.
+
+# Exposure k is set for four directions; between them it's blended by angle, so 112 and 113 degrees don't
+# land in different buckets. North and west of these (offshore for an east coast) barely reach a spot.
+_SECTOR_DEG = (("NE", 45), ("E", 90), ("SE", 135), ("S", 180))
+
+
+def exposure(k: dict, deg: float):
+    """How much of a swell from `deg` reaches a spot (0-1)."""
+    floor = min(0.1, *k.values())
+    pts = [(0, floor), *((d, k[s]) for s, d in _SECTOR_DEG), (225, floor)]
+    deg %= 360
+    for (a0, v0), (a1, v1) in pairwise(pts):
+        if a0 <= deg <= a1:
+            return v0 + (v1 - v0) * (deg - a0) / (a1 - a0)
+    return floor
+
+
+def wave_trains(h: dict):
+    """[(height, direction, period)] for the main swell, the second swell and the wind chop. Falls back to the
+    combined height on the main swell's direction when the forecast doesn't split them."""
+    trains = [
+        (h.get(f"{p}_height"), h.get(f"{p}_direction"), h.get(f"{p}_period") or 0)
+        for p in ("swell_wave", "secondary_swell_wave", "wind_wave")
+    ]
+    trains = [(ht, d, per) for ht, d, per in trains if ht and d is not None]
+    if not trains or h.get("secondary_swell_wave_height") is None and h.get("wind_wave_height") is None:
+        return [(h.get("wave_height") or 0, h.get("swell_wave_direction") or 0, h.get("swell_wave_period") or 0)]
+    return trains
+
+
+def at_beach(h: dict, k: dict):
+    """Wave height at a swimming beach. Long-period groundswell wraps in bigger than its height suggests."""
+    return sum((ht * exposure(k, d) * (1.3 if per >= 12 else 1)) ** 2 for ht, d, per in wave_trains(h)) ** 0.5
+
+
+def reach(period: float):
+    """Short-period swell arrives smaller and weaker than its offshore height suggests."""
+    return 0.6 if period < 6 else 0.75 if period < 8 else 0.9 if period < 10 else 1.0 if period < 12 else 1.2
+
+
+def at_break(h: dict, k: dict):
+    """Wave size at a surf break: the whole sea on the main swell's direction (blended smoothly). Unlike the
+    beaches it isn't split into trains: the size bands were set against the combined height, and splitting
+    them out dropped classic days (1.8m SSE at 11s, offshore wind) out of the sweet spot."""
+    hs = h.get("wave_height") or 0
+    return hs * exposure(k, h.get("swell_wave_direction") or 0) * reach(h.get("swell_wave_period") or 0)
 
 
 def storm(h: dict):
@@ -23,7 +76,6 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     s = 45
     hs = h.get("wave_height") or 0
     sdir = h.get("swell_wave_direction") or 0
-    period = h.get("swell_wave_period") or 0
     wind = h["wind_speed_10m"]
     wdir = h["wind_direction_10m"]
     hour = int(t[11:13])
@@ -31,7 +83,7 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
 
     # Swell at the beach (§4.2, R-S7)
     sector = swell_sector(sdir)
-    hb = hs * (b.k[sector] if sector else 0.1) * (1.3 if period >= 12 else 1)
+    hb = at_beach(h, b.k)
     if b.name == "Clovelly" and hs > 2.5 and sector in ("E", "SE"):  # R-S3
         return None, ["too much swell in the inlet"]
     if b.name == "Gordons Bay" and hs > 1.2 and sector in ("NE", "E", "SE"):  # R-S5
@@ -259,14 +311,10 @@ def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dic
     q_water = water_quality(sp.beach, t, ctx, beachwatch, today, notes)
     if q_water is None:
         return 10, notes
-    hs = h.get("wave_height") or 0
     sdir = h.get("swell_wave_direction") or 0
     period = h.get("swell_wave_period") or 0
     wind = h["wind_speed_10m"]
-    sector = swell_sector(sdir)
-    # Short-period swell arrives smaller and weaker than its offshore height suggests
-    reach = 0.6 if period < 6 else 0.75 if period < 8 else 0.9 if period < 10 else 1.0 if period < 12 else 1.2
-    size = hs * (sp.k[sector] if sector else 0.1) * reach
+    size = at_break(h, sp.k)
 
     # Size at the break (§1a): ~1-1.8m is the sweet spot for these beachies and reefs
     if size < 0.3:

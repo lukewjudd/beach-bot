@@ -15,8 +15,8 @@ from .config import (
     WEEKEND_SESSIONS,
     WINDOW_HOURS,
 )
-from .geo import compass, swell_sector, wind_kind, wind_words
-from .scoring import score_pool_hour, score_surf_hour, score_swim_hour, storm
+from .geo import compass, wind_kind, wind_words
+from .scoring import at_beach, at_break, score_pool_hour, score_surf_hour, score_swim_hour, storm
 
 
 @dataclass
@@ -232,8 +232,7 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         surge = c["hs"] * spot.exposure
         calm = 10 if surge < 0.8 else 8 if surge < 1.2 else 6 if surge < 1.5 else 4 if surge < 2.0 else 2
     else:
-        sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
-        hb = c["hs"] * (spot.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
+        hb = mean(at_beach(h, spot.k) for h in hs_list)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
 
     air = c["air"]
@@ -257,10 +256,8 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     # Each kind of spot is rated on what matters for it: swimmers want calm water, surfers want waves,
     # and pools care about swell over the walls and the tide
     if isinstance(spot, SurfSpot):
-        sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
         p = c["period"]
-        reach = 0.6 if p < 6 else 0.75 if p < 8 else 0.9 if p < 10 else 1.0 if p < 12 else 1.2
-        size = c["hs"] * (spot.k[sector] if sector else 0.1) * reach  # same as score_surf_hour
+        size = mean(at_break(h, spot.k) for h in hs_list)  # same as score_surf_hour
         if size < 0.3:
             size_r = 1  # flat
         elif size < 0.5:

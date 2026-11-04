@@ -4,6 +4,8 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-05
 
+- **Smarter swell at the beaches** (ideas from spearoSpotter). Each beach's exposure to swell is now blended smoothly between NE, E, SE and S instead of four buckets (a 112° and a 113° swell used to be treated differently). And the sea is weighed as separate wave trains, the main swell, a second swell and the local wind chop, each against how exposed the beach is from its own direction, so a beach facing away from a south groundswell isn't hit by it just because an east chop is running too. Surf breaks keep the combined sea height (just with the smooth blend), since their size bands were set against it.
+- Backtest since 2023: 185 posts instead of 173 (about 3 more a year), nearly all Bondi's north end on northerly days with an ENE swell, where it's tucked behind Ben Buckler. Surf posts are unchanged bar two borderline days.
 - **More room for the map on desktop.** The week toggle sits beside the days, each day's AM and PM sit side by side under its date, the day heading shares a row with the verdict, and the coast ratings move into a column beside the stat lines. At 1440×900 the top goes from 529px to 349px and the map from 355px to 535px tall. Phones are unchanged.
 - Desktop week strip: AM and PM are centred in each day (they were spilling past the card's right edge), and on narrower desktop windows each label sits over its score.
 
