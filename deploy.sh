@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Deploys the beach bot as a Cloud Run Job, run by Cloud Scheduler at 4am, 3pm and 7pm Sydney time.
+# Deploys the beach bot as a Cloud Run Job, run by Cloud Scheduler hourly from 4:15am to 9:15pm Sydney time.
 # Safe to re-run: it updates whatever already exists.
 #
-# Settings come from .env (PROJECT_ID, CALENDAR_ID) or the environment:
+# Settings come from .env (PROJECT_ID, CALENDAR_ID, and CALENDAR_ID_NORTH once the northern beaches have a
+# calendar) or the environment:
 #   ./deploy.sh
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -12,6 +13,7 @@ export CLOUDSDK_ACTIVE_CONFIG_NAME=${GCLOUD_CONFIG:-beach}
 
 PROJECT=${PROJECT:-${PROJECT_ID:?set PROJECT_ID in .env to your personal Google Cloud project id}}
 CALENDAR_ID=${CALENDAR_ID:?set CALENDAR_ID to the Beach calendar id}
+CALENDAR_ID_NORTH=${CALENDAR_ID_NORTH:-}  # optional: without it the northern beaches are scored but not posted
 REGION=${REGION:-us-central1}   # free tier region; the schedule still runs on Sydney time
 SA_NAME=beach-bot
 SA="$SA_NAME@$PROJECT.iam.gserviceaccount.com"
@@ -50,13 +52,16 @@ rm "$CORS"
 echo "→ Map tiles"
 # Served from the bucket rather than GitHub Pages: Pages' CDN fetches the whole 4.8MB file on a cache miss
 # (~1.6s for the first tile), while the bucket answers every range request directly (~150ms from Sydney)
-g storage cp map/eastern-suburbs.pmtiles "gs://$BUCKET/map/eastern-suburbs.pmtiles" \
-  --content-type application/octet-stream --cache-control "public, max-age=86400" >/dev/null
+for tiles in map/*.pmtiles; do  # one extract per region
+  g storage cp "$tiles" "gs://$BUCKET/$tiles" \
+    --content-type application/octet-stream --cache-control "public, max-age=86400" >/dev/null
+done
 
 echo "→ Building and deploying the job"
 g run jobs deploy beach-bot --source bot --region "$REGION" \
-  --service-account "$SA" --set-env-vars "BEACH_CALENDAR_ID=$CALENDAR_ID,BEACH_BUCKET=$BUCKET" \
-  --max-retries 1 --task-timeout 300
+  --service-account "$SA" \
+  --set-env-vars "BEACH_CALENDAR_ID=$CALENDAR_ID,BEACH_CALENDAR_ID_NORTH=$CALENDAR_ID_NORTH,BEACH_BUCKET=$BUCKET" \
+  --max-retries 1 --task-timeout 600
 
 g run jobs add-iam-policy-binding beach-bot --region "$REGION" \
   --member "serviceAccount:$SA" --role roles/run.invoker >/dev/null
