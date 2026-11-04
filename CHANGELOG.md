@@ -4,6 +4,10 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-04 (night): northern beaches and harbour beaches
 
+- **Harbour beaches are extras**: scored and shown, but they never lead a session, never make it "worth it" and never post to the calendar. On the site they're off until you tick Harbour, so the eastern map opens on the ocean coast as before; ticking it takes the map out to include them.
+- **"Worth it" says why**, from the lead spot's best conditions ("Calm water · clean water · light NE wind · 24° and dry").
+- **A pool leads when it's what makes the session worth it**, instead of the favourite beach taking the headline with the pool's score.
+- **Clicking a map pin zooms in** to it, the same as clicking its card.
 - **Northern beaches**, Manly to Palm Beach, as a second region with its own calendar (`CALENDAR_ID_NORTH`; scored but not posted until it's set). 18 ocean beaches, 5 harbour and Pittwater spots, 15 rock pools and 10 surf breaks, from `northern-beaches-knowledge.md`. Shelly Beach is the favourite. Forecasts from Dee Why with swell off Narrabeen, and rain from the Terrey Hills and Observatory Hill gauges.
 - **Harbour beaches** as their own category: Shark Beach, Camp Cove, Parsley Bay, Watsons Bay and Murray Rose Pool in the east. Next to no swell (only a very big NE/E swell reaches Shark Beach), no bluebottles, the 3-day rain rule, and left out of the coast-wide summary. On the site they're labelled Harbour, with their own activity filter.
 - **Missing eastern pools**: McIver's Ladies Baths (labelled Women only) and South Maroubra Rockpool.

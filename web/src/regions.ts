@@ -21,8 +21,8 @@ export const REGIONS: Region[] = [
       [-33.8, 151.4],
     ],
     fit: [
-      [-33.982, 151.243],
-      [-33.836, 151.284], // up to Camp Cove, and west to Murray Rose Pool
+      [-33.982, 151.2505],
+      [-33.889, 151.284], // the ocean coast, Bondi to Little Bay; ticking Harbour widens it
     ],
   },
   {

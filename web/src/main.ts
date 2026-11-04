@@ -52,14 +52,12 @@ let week = 0; // 0 = this week, 1 = next
 let openSpot: string | null = null; // the card that's expanded
 type Activity = "swim" | "harbour" | "snorkel" | "pool" | "surf";
 const ACTIVITIES: Activity[] = ["swim", "harbour", "snorkel", "pool", "surf"];
-// Which activities to show spots for; all of them until you untick some (remembered per browser)
-let activities = new Set<Activity>(ACTIVITIES);
+// Which activities to show spots for (remembered per browser). The harbour beaches are opt-in: they're
+// extras for a big-swell day, not what the site's about, so the map opens on the ocean coast
+let activities = new Set<Activity>(ACTIVITIES.filter((a) => a !== "harbour"));
 try {
   const saved = JSON.parse(load("activities") ?? "null");
-  if (Array.isArray(saved)) {
-    activities = new Set(saved.filter((a) => ACTIVITIES.includes(a)));
-    if (saved.includes("swim") && !saved.includes("harbour")) activities.add("harbour"); // saved before Harbour existed
-  }
+  if (Array.isArray(saved)) activities = new Set(saved.filter((a) => ACTIVITIES.includes(a)));
 } catch {
   // nothing saved, or garbled: show everything
 }
@@ -73,9 +71,10 @@ const tags = (spot: Spot) =>
   (spot.women_only ? `<span class="tag">Women only</span>` : "");
 // A spot shows if it suits any ticked activity (Clovelly is a swim and a snorkel spot)
 const shows = (spot: Spot) =>
-  (activities.has("swim") && spot.kind === "swim") ||
-  (activities.has("harbour") && spot.kind === "harbour") ||
-  (activities.has("snorkel") && !!spot.snorkel) ||
+  spot.kind === "harbour"
+    ? activities.has("harbour") // only ever with Harbour ticked, even the snorkel spots
+    : (activities.has("swim") && spot.kind === "swim") ||
+      (activities.has("snorkel") && !!spot.snorkel) ||
   (activities.has("pool") && spot.kind === "pool") ||
   (activities.has("surf") && spot.kind === "surf");
 
@@ -224,8 +223,15 @@ function wireControls() {
   const boxes = [...act.querySelectorAll<HTMLInputElement>("input[type=checkbox]")];
   const summarise = () => {
     const names = boxes.filter((b) => b.checked).map((b) => b.parentElement?.textContent?.trim());
+    const harbour = activities.has("harbour");
     $("activity-value").textContent =
-      names.length === ACTIVITIES.length ? "All" : names.length ? names.join(", ") : "None";
+      names.length === ACTIVITIES.length
+        ? "All"
+        : names.length === ACTIVITIES.length - 1 && !harbour
+          ? "All ocean"
+          : names.length
+            ? names.join(", ")
+            : "None";
   };
   boxes.forEach((b) => {
     b.checked = activities.has(b.value as Activity);
@@ -234,6 +240,7 @@ function wireControls() {
       save("activities", JSON.stringify([...activities]));
       summarise();
       render();
+      if (b.value === "harbour") fitToShown(); // take the map out to the harbour, or back to the coast
     });
   });
   summarise();
@@ -334,14 +341,46 @@ function bars(rep: Record<string, number>) {
     .join("");
 }
 
+// Frame the map on the spots on show (ticking Harbour takes it in to Camp Cove and Murray Rose Pool)
+function fitToShown() {
+  const pins = data.spots.filter(shows).map((p) => [p.lat, p.lon] as [number, number]);
+  if (map && pins.length) map.flyToBounds(pins, { padding: [24, 24], duration: 0.6 });
+}
+
+// One line on why it's worth it: the lead spot's best conditions, in words
+function whyWorth(s: Session) {
+  const c = s.conditions;
+  const rep = (s.lead.id && s.reports?.[s.lead.id]) || s.report;
+  const say: Record<string, string> = {
+    Wind: c.wind_kmh < 8 ? "barely any wind" : `light ${c.wind_dir} wind`,
+    "Calm water": "calm water",
+    "Calm in the pool": "calm in the pool",
+    Tide: "a good tide",
+    "Wave size": `${c.swell_m}m of swell`,
+    "Wave quality": `clean ${c.period_s}s swell`,
+    Weather: `${c.air_c}° and dry`,
+    "Water quality": "clean water",
+  };
+  const good = Object.entries(rep)
+    .filter(([k, v]) => v >= 8 && say[k])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([k]) => say[k]);
+  if (c.water_c != null && c.water_c >= 22) good.push(`warm ${c.water_c}° water`);
+  return good.length ? good.join(" · ").replace(/^./, (x) => x.toUpperCase()) : "";
+}
+
 // One line on why it isn't worth it: the reason most spots are ruled out, or the weakest conditions.
 // Says what's wrong without naming a spot.
 function whyNotWorth(s: Session) {
   const top = `Nothing above ${s.lead.rating}/10`;
+  // Ocean beaches and pools only: the harbour doesn't decide whether it's worth going
   const counts = new Map<string, number>();
-  Object.values(s.ruled_out ?? {}).forEach((r) => counts.set(r, (counts.get(r) ?? 0) + 1));
+  Object.entries(s.ruled_out ?? {})
+    .filter(([id]) => spotsById[id]?.kind !== "harbour")
+    .forEach(([, r]) => counts.set(r, (counts.get(r) ?? 0) + 1));
   const [reason, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
-  const swimmable = data.spots.filter((p) => p.kind !== "surf").length;
+  const swimmable = data.spots.filter((p) => p.kind === "swim" || p.kind === "pool").length;
   if (n >= 3) return `${top} · ${reason} at ${n} of ${swimmable} beaches and pools`;
   const weak = Object.entries(s.coast ?? s.report)
     .filter(([, v]) => v <= 4)
@@ -359,7 +398,8 @@ function renderHero(s: Session) {
   const leadSpot = lead.id ? spotsById[lead.id] : undefined;
   const verdict = ok
     ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
-       ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
+       ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}
+       ${whyWorth(s) ? `<span class="why worth">${esc(whyWorth(s))}</span>` : ""}`
     : `<span class="why">${esc(whyNotWorth(s))}</span>`;
   // Only what matters for this session: sunrise for a morning, sunset for an evening, and that half of the day's tides
   const morning = s.key.endsWith("am");
@@ -431,7 +471,7 @@ function renderPins(s: Session) {
     const sc = byId[spot.id];
     const r = sc ? sc.rating : 0;
     const cls = ["marker", spot.kind, ratingClass(r), spot.id === leadId ? "lead" : "", spot.id === openSpot ? "open" : ""];
-    markers[spot.id] = mapApi.addPin(map, spot, cls.join(" "), String(r), popup(spot, sc), () => openCard(spot.id, false));
+    markers[spot.id] = mapApi.addPin(map, spot, cls.join(" "), String(r), popup(spot, sc), () => openCard(spot.id, true));
   }
 }
 
@@ -491,12 +531,12 @@ function renderSpots(s: Session) {
 }
 
 // Expand a spot's card (closing any other), bring it into view, and show it on the map
-function openCard(id: string, fromList: boolean) {
+function openCard(id: string, fly: boolean) {
   openSpot = id;
   renderSpots(data.sessions[current]);
   markOpenPin();
   document.querySelector(`.spot[data-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  if (fromList) focusPin(id);
+  if (fly) focusPin(id);
 }
 
 // Ring the open spot's pin. Only the classes change: rebuilding the pins would close the popup just opened

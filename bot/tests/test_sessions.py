@@ -182,3 +182,18 @@ def test_started_sessions_keep_their_last_call_until_the_week_is_out():
     assert "beach20261026am" not in keys  # last week: gone
     assert keys["beach20261102am"]["frozen"]  # Monday this week: kept
     assert keys["beach20261104pm"]["lead"]["rating"] == 3  # started an hour ago: the call it had, not a rescore
+
+
+def test_harbour_beaches_never_lead_or_make_a_session_worth_it():
+    # A big swell rules the ocean beaches out; the harbour stays calm but must not post on its own
+    def big_swell(t, h):
+        h.update(wave_height=3.5, swell_wave_direction=135, swell_wave_period=12, wind_direction_10m=200)
+        return h
+
+    sessions, _ = score(*make_forecast(WED, big_swell), WED)
+    am = sessions["am"]
+
+    assert any(b.harbour for _, b, _ in am.swim)  # still scored, for the site
+    assert am.best_swim is None or not am.best_swim[1].harbour
+    harbour_best = max(sc for sc, b, _ in am.swim if b.harbour)
+    assert am.best < harbour_best  # a calm harbour doesn't make the session worth it

@@ -39,7 +39,9 @@ class Session:
 
     @property
     def best_swim(self):
-        return self.swim[0] if self.swim else None
+        """The best ocean beach. Harbour beaches are scored and shown, but never lead a session or decide
+        whether it's worth going (so they never post to the calendar)."""
+        return next((x for x in self.swim if not x[1].harbour), None)
 
     @property
     def best_surf(self):
@@ -113,9 +115,10 @@ def score_session(sess, hours, ctx, beachwatch, today):
         sess.swim.append((round(sc), b, notes))
         sess.windows[b.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.swim.sort(key=lambda x: -x[0])
-    if sess.swim and sess.swim[0][1].name != region.favourite:  # R-TB1
+    top = sess.best_swim
+    if top and top[1].name != region.favourite:  # R-TB1
         fav = next((x for x in sess.swim if x[1].name == region.favourite), None)
-        if fav and fav[0] >= sess.swim[0][0] - FAVOURITE_TOLERANCE:
+        if fav and fav[0] >= top[0] - FAVOURITE_TOLERANCE:
             sess.swim.remove(fav)
             sess.swim.insert(0, fav)
 
@@ -153,7 +156,9 @@ def headline(sess):
     and surf leads when it beats a postable swim."""
     swim, pool, surf = sess.best_swim, sess.best_pool, sess.best_surf
     lead = swim
-    if pool and (not swim or pool[0] > swim[0] + FAVOURITE_TOLERANCE):
+    # The beach wins a close call, unless the pool is what makes the session worth it: then it's the headline
+    # (no "Clovelly 8/10" when Clovelly is a 7 and the 8 is Wylie's)
+    if pool and (not swim or pool[0] > swim[0] + FAVOURITE_TOLERANCE or swim[0] < EVENT_THRESHOLD <= pool[0]):
         lead = pool
     if surf and (not lead or lead[0] < EVENT_THRESHOLD or surf[0] > lead[0]):
         return surf[1].name
@@ -307,6 +312,7 @@ def top_spots(sess, n=3):
     picks = [
         (sc, b.name, ("harbour swim" if b.harbour else "swim") + (" / snorkel" if b.snorkel else ""), notes)
         for sc, b, notes in sess.swim
+        if not b.harbour  # the event is about the ocean; harbour beaches are on the site
     ]
     picks += [(sc, p.name, "pool", notes) for sc, p, notes in sess.pools]
     picks += [(sc, sp.name, "surf", notes) for sc, sp, notes in sess.surf]
