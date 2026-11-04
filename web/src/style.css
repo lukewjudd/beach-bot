@@ -156,15 +156,33 @@ button:disabled { opacity: .45; cursor: default; }
 .flag.yes { background: var(--r-green); color: var(--on-pill); }
 .flag.no { background: var(--r-red-soft); color: var(--r-red); }
 .early { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* Summary stats: one line each for weather, ocean, sun and the coast's ratings */
+.stats { margin-top: 12px; }
+.stat-line {
+  display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center;
+  padding: 7px 0; border-top: 1px solid var(--line);
+}
+.stat-label { font-size: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.lead { font-size: 14px; border-color: var(--muted); }
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
   border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 13px; color: var(--muted);
 }
 .chip .icon { color: var(--accent); width: 15px; height: 15px; }
 .chip b { color: var(--text); font-weight: 600; }
-.coast-title { margin: 14px 0 6px; }
-.report.coast { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); column-gap: 24px; }
+.report.coast { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; row-gap: 4px; }
+/* Phones: the coast's ratings as coloured numbers, two to a row, instead of bars */
+@media (max-width: 859px) {
+  .stat-line { grid-template-columns: 1fr; gap: 4px; }  /* label above its chips, so they get the full width */
+  .report.coast { column-gap: 16px; }
+  .report.coast .bar { grid-template-columns: 1fr auto; font-size: 13px; }
+  .report.coast .track { display: none; }
+  .report.coast .num { font-weight: 700; }
+  .report.coast .r-green-text { color: var(--r-green); }
+  .report.coast .r-amber-text { color: var(--r-amber); }
+  .report.coast .r-red-text { color: var(--r-red); }
+}
 
 /* ---- Layout */
 .view-toggle { display: none; gap: 4px; margin-top: 12px; }

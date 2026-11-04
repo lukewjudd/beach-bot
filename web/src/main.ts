@@ -300,7 +300,7 @@ function bars(rep: Record<string, number>) {
     .map(
       ([k, v]) => `<div class="bar"><span>${esc(k)}</span>
       <div class="track"><div class="fill ${ratingClass(v)}" style="width:${v * 10}%"></div></div>
-      <span class="num">${v}/10</span></div>`,
+      <span class="num ${ratingClass(v)}-text">${v}/10</span></div>`,
     )
     .join("");
 }
@@ -332,9 +332,17 @@ function renderHero(s: Session) {
     ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
        ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
     : `<span class="why">${esc(whyNotWorth(s))}</span>`;
-  const tides = (s.tides ?? []).map((t) => `${t.kind === "high" ? "High" : "Low"} ${t.time}`).join(" · ");
-  const chip = (icon: string, label: string, value: string) =>
-    `<span class="chip">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
+  // Only what matters for this session: sunrise for a morning, sunset for an evening, and that half of the day's tides
+  const morning = s.key.endsWith("am");
+  const tides = (s.tides ?? [])
+    .filter((t) => t.time.endsWith(morning ? "am" : "pm"))
+    .map((t) => `${t.kind === "high" ? "High" : "Low"} <b>${t.time}</b>`)
+    .join(" · ");
+  const chip = (icon: string, label: string, value: string, lead = false) =>
+    `<span class="chip${lead ? " lead" : ""}">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
+  // Stats on three lines by what they describe, the one that swings a session most leading each line
+  const line = (label: string, chips: string) =>
+    `<div class="stat-line"><span class="stat-label">${label}</span><div class="chips">${chips}</div></div>`;
   const month = d.toLocaleDateString("en-AU", { month: "short", timeZone: "UTC" });
   $("hero").innerHTML = `
     <h2 class="hero-title">${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}</h2>
@@ -343,18 +351,26 @@ function renderHero(s: Session) {
       ${verdict}
     </div>
     ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
-    <div class="chips">
-      ${chip(ICONS.wind, "Wind", `<b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}`)}
-      ${chip(ICONS.swell, "Swell", `<b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s`)}
-      ${chip(ICONS.air, "Air", `Air <b>${c.air_c}°</b>`)}
-      ${c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`) : ""}
-      ${chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`)}
-      ${chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`)}
-      ${s.sun ? chip(ICONS.sun, "Sun", `Sunrise <b>${s.sun.rise}</b> · sunset <b>${s.sun.set}</b>`) : ""}
-      ${tides ? chip(ICONS.tide, "Tides", tides) : ""}
-    </div>
-    <h3 class="coast-title">Across the coast</h3>
-    <div class="report coast">${bars(s.coast ?? s.report)}</div>`;
+    <div class="stats">
+      ${line(
+        "Weather",
+        chip(ICONS.wind, "Wind", `<b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}`, true) +
+          chip(ICONS.air, "Air", `Air <b>${c.air_c}°</b>`) +
+          chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`),
+      )}
+      ${line(
+        "Ocean",
+        chip(ICONS.swell, "Swell", `<b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, true) +
+          (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`) : "") +
+          (tides ? chip(ICONS.tide, "Tides", tides) : ""),
+      )}
+      ${line(
+        "Sun",
+        (s.sun ? chip(ICONS.sun, morning ? "Sunrise" : "Sunset", morning ? `Sunrise <b>${s.sun.rise}</b>` : `Sunset <b>${s.sun.set}</b>`) : "") +
+          chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`),
+      )}
+      <div class="stat-line"><span class="stat-label">Coast</span><div class="report coast">${bars(s.coast ?? s.report)}</div></div>
+    </div>`;
 }
 
 // ---------------------------------------------------------------- spots: list and map
