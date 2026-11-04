@@ -2,7 +2,7 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
-## Unreleased (regions branch)
+## 2026-11-04 (night): northern beaches and harbour beaches
 
 - **Northern beaches**, Manly to Palm Beach, as a second region with its own calendar (`CALENDAR_ID_NORTH`; scored but not posted until it's set). 18 ocean beaches, 5 harbour and Pittwater spots, 15 rock pools and 10 surf breaks, from `northern-beaches-knowledge.md`. Shelly Beach is the favourite. Forecasts from Dee Why with swell off Narrabeen, and rain from the Terrey Hills and Observatory Hill gauges.
 - **Harbour beaches** as their own category: Shark Beach, Camp Cove, Parsley Bay, Watsons Bay and Murray Rose Pool in the east. Next to no swell (only a very big NE/E swell reaches Shark Beach), no bluebottles, the 3-day rain rule, and left out of the coast-wide summary. On the site they're labelled Harbour, with their own activity filter.
