@@ -87,7 +87,7 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     s += weather(h, t, ctx, notes)
 
     # Bluebottles (R-B1)
-    if month in (11, 12, 1, 2, 3):
+    if month in (11, 12, 1, 2, 3) and not b.harbour:  # they don't make it into the harbour
         w24, dirs = ctx.mean_wind(t, 24)
         ne = sum(20 <= d <= 70 for d in dirs) > len(dirs) / 2 if dirs else False
         south = sum(135 <= d <= 200 for d in dirs) > len(dirs) / 2 if dirs else False

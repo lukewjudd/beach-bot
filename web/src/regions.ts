@@ -21,8 +21,8 @@ export const REGIONS: Region[] = [
       [-33.82, 151.32],
     ],
     fit: [
-      [-33.982, 151.2505],
-      [-33.839, 151.284],
+      [-33.982, 151.243],
+      [-33.836, 151.284], // up to Camp Cove, and west to Murray Rose Pool
     ],
   },
   {

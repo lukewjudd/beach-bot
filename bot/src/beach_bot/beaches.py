@@ -51,6 +51,75 @@ BEACHES = [
     Beach("Maroubra", 90, {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.6}, 5, 20, 6, "Maroubra Beach"),
     Beach("Malabar", 110, {"NE": 0.25, "E": 0.45, "SE": 0.5, "S": 0.3}, 1, 5, 3, "Malabar Beach"),
     Beach("Little Bay", 45, {"NE": 0.35, "E": 0.4, "SE": 0.35, "S": 0.2}, 1, 10, 2, "Little Bay Beach", snorkel=True),
+    # Harbour beaches (research/eastern-additions.md §1): next to no ocean swell (k near 0), wind chop only.
+    # Rain is the risk: Beachwatch and Woollahra say stay out 3 days after rain (R-H1, via poor_grade).
+    # Hazard: Beachsafe doesn't rate them; 1-2 is a guess.
+    # Netted Oct-Apr; only picks up swell in very big NE/E swells
+    Beach(
+        "Shark Beach",
+        340,
+        {"NE": 0.15, "E": 0.1, "SE": 0.05, "S": 0.0},
+        5,
+        20,
+        1,
+        "Nielsen Park",
+        swim_limit=0.5,
+        poor_grade=True,
+        snorkel=True,
+        harbour=True,
+    ),
+    # Not netted (boat exclusion zone); lifeguards weekends late Oct to Anzac Day and over the summer holidays
+    Beach(
+        "Camp Cove",
+        310,
+        {"NE": 0.08, "E": 0.05, "SE": 0.02, "S": 0.0},
+        5,
+        10,
+        2,
+        "Camp Cove",
+        swim_limit=0.5,
+        poor_grade=True,
+        snorkel=True,
+        harbour=True,
+    ),
+    # Netted inlet; the net comes out each winter
+    Beach(
+        "Parsley Bay",
+        335,
+        {"NE": 0.05, "E": 0.03, "SE": 0.0, "S": 0.0},
+        1,
+        5,
+        1,
+        "Parsley Bay",
+        poor_grade=True,
+        snorkel=True,
+        harbour=True,
+    ),
+    # Netted all year, next to the ferry wharf; westerlies are onshore
+    Beach(
+        "Watsons Bay",
+        275,
+        {"NE": 0.03, "E": 0.02, "SE": 0.0, "S": 0.0},
+        1,
+        10,
+        1,
+        "Watsons Bay",
+        poor_grade=True,
+        harbour=True,
+    ),
+    # Netted enclosure in Double Bay; graded Good this year after two Poor years
+    Beach(
+        "Murray Rose Pool",
+        330,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        5,
+        1,
+        "Murray Rose Pool",
+        poor_grade=True,
+        harbour=True,
+    ),
+    # Milk Beach (no Beachwatch site) and Rose Bay (graded Poor every year, not netted) are left out
 ]
 
 
@@ -86,6 +155,12 @@ COORDS = {
     "Maroubra": (-33.9475, 151.2572),
     "Malabar": (-33.9644, 151.2523),
     "Little Bay": (-33.9799, 151.2514),
+    # Harbour: inside the OSM beach polygons (eastern-additions.md §6)
+    "Shark Beach": (-33.8502, 151.2675),
+    "Camp Cove": (-33.8398, 151.2789),  # the sand is a crescent; nearest point on it to the centre
+    "Parsley Bay": (-33.8515, 151.2775),
+    "Watsons Bay": (-33.8443, 151.2816),
+    "Murray Rose Pool": (-33.8719, 151.2474),
 }
 SURF_COORDS = {  # pushed further out to sea than the swim markers so the two don't overlap
     "Bondi (south end)": (-33.8932, 151.2772),  # off the Icebergs end, not Ben Buckler (that's the north)
@@ -137,8 +212,22 @@ POOLS = [
     Pool("Wylie's Baths", _BEACH["Coogee"], 0.6, best_tide="low", opens=7),  # R-P1, R-P8
     Pool("Ross Jones Pool", _BEACH["Coogee"], 0.9, cleaning_day=0),  # R-P7: Mondays
     Pool("Mahon Pool", _BEACH["Maroubra"], 1.0, best_tide="mid_high"),  # R-P3
+    # Women and children only; cleaned Tuesdays; 7am-7pm Oct-Mar, 7am-4pm in winter (from 1 Apr; the bot's
+    # winter hours start 13 Apr, so the first fortnight of April shows it open an hour late)
+    Pool(
+        "McIver's Ladies Baths",
+        _BEACH["Coogee"],
+        0.7,
+        best_tide="low",
+        cleaning_day=1,
+        opens=7,
+        closes_winter=16,
+        women_only=True,
+    ),
+    # Rings of rocks on the sand at South Maroubra: swim near high tide, empty at very low tide
+    Pool("South Maroubra Rockpool", _BEACH["Maroubra"], 0.8, best_tide="mid_high", facing_override=70),
 ]
-# McIver's (women and children only), Ivor Rowe and South Maroubra rockpool (small wading pools) are left out
+# Ivor Rowe (a small wading pool), Wally Weekes (empties at low tide) and North Bondi's kids' pool are left out
 
 POOL_COORDS = {
     "Bondi Icebergs": (-33.8953, 151.2744),
@@ -147,6 +236,8 @@ POOL_COORDS = {
     "Wylie's Baths": (-33.9256, 151.2594),
     "Ross Jones Pool": (-33.9228, 151.2578),
     "Mahon Pool": (-33.9430, 151.2639),
+    "McIver's Ladies Baths": (-33.9242, 151.2587),
+    "South Maroubra Rockpool": (-33.9536, 151.2583),
 }
 
 

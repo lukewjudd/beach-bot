@@ -77,8 +77,22 @@ def test_a_pool_can_make_a_session_worth_it_when_the_beaches_are_blown_out():
     sessions, _ = score(hours, sun, WED)
 
     am = sessions["am"]
-    assert am.best_swim[0] < am.best_pool[0]
+    best_ocean = max(sc for sc, b, _ in am.swim if not b.harbour)
+    assert best_ocean < am.best_pool[0]
     assert am.is_good == (am.best >= 80)
+
+
+def test_harbour_beaches_stay_swimmable_when_the_ocean_is_too_big():
+    def big_swell(t, h):
+        h.update(wave_height=2.8, swell_wave_direction=135, swell_wave_period=11, wind_direction_10m=200)
+        return h
+
+    sessions, _ = score(*make_forecast(WED, big_swell), WED)
+    am = sessions["am"]
+    swimmable = {b.name for _, b, _ in am.swim}
+
+    assert "Bronte" not in swimmable  # ~2.5m+ at an exposed beach
+    assert {"Shark Beach", "Parsley Bay", "Murray Rose Pool"} <= swimmable
 
 
 def test_pools_feel_the_same_breeze_as_their_beach():
