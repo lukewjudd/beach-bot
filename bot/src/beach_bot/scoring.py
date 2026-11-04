@@ -117,7 +117,7 @@ def water_quality(b: Beach, t: str, ctx: Context, beachwatch: dict, today: date,
     """Points for water quality (§4.4), or None when it's a no-go. Beachwatch first, then the rain rules."""
     bw = beachwatch_says(b, t, beachwatch, today)
     if bw == "Likely":
-        notes.append("pollution likely (Beachwatch)")
+        notes.append("pollution likely")  # Beachwatch is credited on the site's data sources page
         return None
     if bw == "Possible":
         notes.append("pollution possible")

@@ -15,6 +15,9 @@ const $ = (id: string) => document.getElementById(id) as HTMLElement;
 // Traffic lights: green is worth going (the calendar's bar), amber is so-so, red is don't bother
 const ratingClass = (r: number) => (r >= 8 ? "r-green" : r >= 5 ? "r-amber" : "r-red");
 const pill = (r: number) => `<span class="pill ${ratingClass(r)}" aria-label="${r} out of 10">${r}</span>`;
+// A spot's score with an icon for its kind: the same badge as its pin on the map
+const badge = (kind: SpotKind, r: number, label = `${r} out of 10`) =>
+  `<span class="score ${ratingClass(r)}" aria-label="${label}">${ICONS[kind]}<span>${r}</span></span>`;
 const esc = (s: unknown) =>
   String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 const save = (k: string, v: string) => {
@@ -168,6 +171,12 @@ function toggleWind() {
 }
 
 function wireControls() {
+  const about = $("about") as HTMLDialogElement;
+  $("about-open").addEventListener("click", () => about.showModal());
+  $("about-close").addEventListener("click", () => about.close());
+  about.addEventListener("click", (e) => {
+    if (e.target === about) about.close(); // a tap on the backdrop
+  });
   const act = $("activity") as HTMLSelectElement;
   const srt = $("sort") as HTMLSelectElement;
   act.value = activity;
@@ -368,7 +377,7 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
   const rep = s.reports?.[spot.id];
   return `<li class="spot${open ? " open" : ""}" data-id="${spot.id}">
     <button type="button" class="spot-head" aria-expanded="${open}">
-      ${sc ? pill(sc.rating) : `<span class="pill r-red" aria-label="ruled out, 0 out of 10">0</span>`}
+      ${sc ? badge(spot.kind, sc.rating) : badge(spot.kind, 0, "ruled out, 0 out of 10")}
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}${win ? `<span class="win">${esc(win)}</span>` : ""}</span>
     </button>
@@ -410,7 +419,7 @@ function renderSpots(s: Session) {
         if (openSpot === id) {
           openSpot = null; // tap an open card to close it
           renderSpots(s);
-          renderPins(s);
+          markOpenPin();
         } else openCard(id, true);
       }),
     );
@@ -418,12 +427,18 @@ function renderSpots(s: Session) {
 
 // Expand a spot's card (closing any other), bring it into view, and show it on the map
 function openCard(id: string, fromList: boolean) {
-  const s = data.sessions[current];
   openSpot = id;
-  renderSpots(s);
-  renderPins(s);
+  renderSpots(data.sessions[current]);
+  markOpenPin();
   document.querySelector(`.spot[data-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   if (fromList) focusPin(id);
+}
+
+// Ring the open spot's pin. Only the classes change: rebuilding the pins would close the popup just opened
+function markOpenPin() {
+  for (const [id, m] of Object.entries(markers)) {
+    m.getElement()?.querySelector(".marker")?.classList.toggle("open", id === openSpot);
+  }
 }
 
 // Fly in to a spot (never zooming back out if you're already closer) and open its popup
@@ -438,7 +453,7 @@ function focusPin(id: string) {
 // The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
 function whyNot(s: Session, spot: Spot) {
   const why = s.ruled_out?.[spot.id];
-  return why ? why.charAt(0).toUpperCase() + why.slice(1) : "Not scored";
+  return why ?? "not scored"; // lower case, like the notes on spots that are scored
 }
 
 function render() {

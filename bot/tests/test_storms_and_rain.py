@@ -123,4 +123,4 @@ def test_snorkelling_is_only_good_when_the_water_is_clear():
 def test_a_ruled_out_spot_gives_the_reason_not_its_other_notes():
     sessions, _ = score(*make_forecast(WED), WED, beachwatch={"Clovelly Beach": "Likely"})
 
-    assert sessions["am"].ruled_out["Clovelly"] == "pollution likely (Beachwatch)"
+    assert sessions["am"].ruled_out["Clovelly"] == "pollution likely"

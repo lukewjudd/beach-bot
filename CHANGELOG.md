@@ -14,6 +14,8 @@ From a round of UI feedback.
 - **Conditions live in the spot's card**: tap a card to open it, and tap a pin to open and scroll to its card. Pools are rated on calm in the pool and the tide, surf spots on wave size and wave quality.
 - **Map**: pins show an icon for the kind of spot plus the score (just the score when zoomed out), popups just name the spot with a link to its details, the zoom buttons and a proper Wind on/off switch sit bottom-left, and phones get a List / Map toggle.
 - **No water temperature row** in the conditions: it's one sea temperature for the whole coast, already a stat in the summary. It still counts in the scores, and "cold water" (under 20°) still shows as a note.
+- **Spot cards use the same icon-and-score badge as their map pin.** Clicking a pin opens its popup (name, score, kind, Details) and its card; the pins no longer redraw underneath, which was closing the popup. Opened cards scroll fully into view below the filters.
+- **About the data**: an info button top right explains how often the bot runs, what a score means, and the sources (Open-Meteo, BOM rain gauges, NSW Beachwatch, local knowledge, the map). Notes just say "pollution likely" now instead of crediting Beachwatch on every card.
 - **Freshness**: the page fetches new scores every 5 minutes and when you come back to the tab, and warns when they're over an hour old.
 
 ## 2026-11-04

@@ -14,7 +14,40 @@
   <header class="top">
     <h1>Beach calls</h1>
     <p class="sub" id="updated">Eastern suburbs, Sydney</p>
+    <button type="button" class="info-btn" id="about-open" aria-haspopup="dialog">
+      <span aria-hidden="true">i</span><span class="sr-only">About the data</span>
+    </button>
   </header>
+
+  <dialog class="about" id="about" aria-labelledby="about-title">
+    <div class="about-head">
+      <h2 id="about-title">About the data</h2>
+      <button type="button" class="link" id="about-close">Close</button>
+    </div>
+    <h3>How often</h3>
+    <p>The bot runs every hour from 4:15am to 9:15pm, Sydney time. The page picks up new scores on its own.
+      The 6:15am run lands just after Beachwatch's daily update.</p>
+    <h3>What a score means</h3>
+    <p>Every spot is scored out of 10 for each morning (before 9am on weekdays) and evening (after 5pm), on its best
+      two hours. <b>8/10 or better is worth it</b> and goes in the shared calendar, which posts up to two days ahead.
+      Further out is an early forecast: a guide, not a plan. 0 means ruled out (pollution, storms, too rough, closed).</p>
+    <h3>Where the numbers come from</h3>
+    <ul>
+      <li><a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>: wind, air temperature,
+        rain, storms and UV, plus swell, sea temperature and tides from its marine forecast.</li>
+      <li><a href="https://www.bom.gov.au" target="_blank" rel="noopener">Bureau of Meteorology</a>: rain that's
+        actually fallen, from the Observatory Hill and Sydney Airport gauges. Forecast models under-read storms.</li>
+      <li><a href="https://www.beachwatch.nsw.gov.au" target="_blank" rel="noopener">NSW Beachwatch</a>: the daily
+        pollution forecast for each beach ("pollution likely", "possible"), and its yearly grades. When there's no
+        forecast for the day, recent rain stands in.</li>
+      <li>Local knowledge: how each beach faces, what swell reaches it, ocean pool tides and cleaning days, gathered
+        from councils, Beachsafe and surf guides.
+        <a href="https://github.com/lukewjudd/beach-bot/blob/main/beach-knowledge.md" target="_blank" rel="noopener">The rules and sources</a>.</li>
+      <li>Map: <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps</a> and
+        <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.</li>
+    </ul>
+    <p class="fine">It's a hobby project and forecasts are forecasts: check the flags and the water before you go in.</p>
+  </dialog>
   <p class="stale-banner" id="stale" hidden></p>
 
   <nav class="week" aria-label="Days">
