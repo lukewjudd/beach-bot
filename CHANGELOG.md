@@ -2,7 +2,7 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
-## Unreleased (ui-improvements branch)
+## 2026-11-04 (evening): site redesign
 
 From a round of UI feedback.
 
