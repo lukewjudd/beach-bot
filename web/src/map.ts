@@ -6,21 +6,21 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { leafletLayer } from "protomaps-leaflet";
 import { ICONS } from "./icons";
+import type { Region } from "./regions";
 import type { Spot } from "./types";
 
 export { windLayer } from "./wind";
 
-// In the public bucket next to scores.json (see deploy.sh for why not GitHub Pages)
-const TILES_URL = import.meta.env.VITE_TILES_URL;
-const MAP_BOUNDS = L.latLngBounds([-34.01, 151.17], [-33.83, 151.32]); // must sit inside the extract's bbox
-// Covers every spot, so the map can start loading before the scores arrive
-const SPOT_BOUNDS = L.latLngBounds([-33.982, 151.2505], [-33.889, 151.284]);
+// In the public bucket next to the scores (see deploy.sh for why not GitHub Pages), one extract per region
+const TILES_BASE = import.meta.env.VITE_TILES_BASE;
 
-export function createMap(container: HTMLElement): L.Map {
+export function createMap(container: HTMLElement, region: Region): L.Map {
+  // The region's first view covers every spot, so the map can start loading before the scores arrive
+  const spotBounds = L.latLngBounds(region.fit);
   const map = L.map(container, {
     zoomControl: false,
     scrollWheelZoom: true, // the page fits the screen, so the wheel has nothing else to scroll
-    maxBounds: MAP_BOUNDS,
+    maxBounds: L.latLngBounds(region.bounds), // inside the extract's bbox
     maxBoundsViscosity: 1,
     minZoom: 11,
     maxZoom: 17,
@@ -29,7 +29,7 @@ export function createMap(container: HTMLElement): L.Map {
   L.control.zoom({ position: "bottomleft" }).addTo(map);
   const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const tiles = leafletLayer({
-    url: TILES_URL,
+    url: `${TILES_BASE}${region.tiles}.pmtiles`,
     flavor,
     lang: "en",
     maxDataZoom: 14, // the extract stops at z14; deeper zooms reuse those tiles
@@ -44,7 +44,7 @@ export function createMap(container: HTMLElement): L.Map {
   const compact = () => container.classList.toggle("compact-pins", map.getZoom() < 14);
   map.on("zoomend", compact);
 
-  const fit = () => map.fitBounds(SPOT_BOUNDS, { padding: [24, 24], animate: false });
+  const fit = () => map.fitBounds(spotBounds, { padding: [24, 24], animate: false });
   fit();
   compact();
   // The container can settle after first paint (fonts, grid); refit once it has its final size

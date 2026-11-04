@@ -7,13 +7,24 @@
   <meta name="description" content="Best beach sessions in Sydney's eastern suburbs, scored every hour.">
   <!-- Start fetching the scores alongside the JS rather than after it -->
   <link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
-  <link rel="preload" href="%VITE_SCORES_URL%" as="fetch" crossorigin>
+  <script>
+    // Start fetching the right region's scores alongside the JS (src/regions.ts picks the same way)
+    (function () {
+      var r = "eastern", s = new URLSearchParams(location.search).get("s") || "";
+      try { r = localStorage.getItem("region") || r; } catch (e) {}
+      if (s.indexOf("north") === 0) r = "northern"; else if (s.indexOf("beach") === 0) r = "eastern";
+      var l = document.createElement("link");
+      l.rel = "preload"; l.as = "fetch"; l.crossOrigin = "anonymous"; l.href = "%VITE_DATA_BASE%scores-" + r + ".json";
+      document.head.appendChild(l);
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
 </head>
 <body>
   <header class="top">
     <h1>Beach calls</h1>
-    <p class="sub" id="updated">Eastern suburbs, Sydney</p>
+    <div class="region-pick" id="region-pick" role="group" aria-label="Region"></div>
+    <p class="sub" id="updated"></p>
     <button type="button" class="info-btn" id="about-open" aria-haspopup="dialog">
       <span aria-hidden="true">i</span><span class="sr-only">About the data</span>
     </button>
@@ -71,6 +82,7 @@
             <fieldset>
               <legend class="sr-only">Show spots for</legend>
               <label><input type="checkbox" value="swim"> Swim</label>
+              <label><input type="checkbox" value="harbour"> Harbour</label>
               <label><input type="checkbox" value="snorkel"> Snorkel</label>
               <label><input type="checkbox" value="pool"> Pool</label>
               <label><input type="checkbox" value="surf"> Surf</label>

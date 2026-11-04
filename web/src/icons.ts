@@ -9,6 +9,10 @@ export const ICONS = {
   swim: svg(
     '<circle cx="16" cy="5.5" r="2"/><path d="M4 12l5-3 3 2.5 3-2"/><path d="M2 17c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/>',
   ),
+  // Swimmer in a netted harbour cove
+  harbour: svg(
+    '<circle cx="16" cy="6.5" r="2"/><path d="M5 13l4.5-3 3 2.5 3-2"/><path d="M2 18c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 21h20M2 21V9M22 21V9" stroke-dasharray="2 2"/>',
+  ),
   // Pool ladder
   pool: svg(
     '<path d="M8 20V6a2 2 0 0 1 4 0"/><path d="M16 20V6a2 2 0 0 1 4 0"/><path d="M8 10h8M8 15h8"/><path d="M2 20c1.5 0 1.5-1 3-1s1.5 1 3 1"/>',

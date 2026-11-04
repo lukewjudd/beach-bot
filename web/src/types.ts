@@ -1,12 +1,13 @@
 // Shape of scores.json, written by the bot (bot/src/beach_bot/export.py) on every run.
 
-export type SpotKind = "swim" | "pool" | "surf";
+export type SpotKind = "swim" | "harbour" | "pool" | "surf";
 
 export interface Spot {
   id: string;
   name: string;
   kind: SpotKind;
   snorkel?: boolean;
+  women_only?: boolean;
   /** The place it belongs to, e.g. Coogee for the beach, its surf break and its pools */
   area?: string;
   lat: number;
@@ -61,6 +62,7 @@ export interface Session {
 }
 
 export interface Scores {
+  region?: { id: string; name: string; key: string };
   generated_at: string;
   thresholds: { post: number; fire: number };
   favourite?: { id: string; tolerance: number };

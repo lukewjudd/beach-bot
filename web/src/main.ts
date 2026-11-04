@@ -2,12 +2,15 @@
 
 import type { Map as LeafletMap, Marker } from "leaflet";
 import { ICONS } from "./icons";
+import { pickRegion, REGIONS } from "./regions";
 import "./style.css";
 import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
 
-// Set in .env.production / .env.development; ?data= overrides it
+// Which stretch of coast: from the link, else the browser's last choice, else the eastern suburbs
 const params = new URLSearchParams(location.search);
-const DATA_URL = params.get("data") ?? import.meta.env.VITE_SCORES_URL;
+const region = pickRegion(params);
+// Set in .env.production / .env.development; ?data= overrides it
+const DATA_URL = params.get("data") ?? `${import.meta.env.VITE_DATA_BASE}scores-${region.id}.json`;
 const REFRESH_MS = 5 * 60_000; // the bot runs hourly; checking every 5 minutes keeps an open tab current
 const STALE_MINS = 60;
 
@@ -47,25 +50,31 @@ let markers: Record<string, Marker> = {};
 let current = 0; // index into data.sessions
 let week = 0; // 0 = this week, 1 = next
 let openSpot: string | null = null; // the card that's expanded
-type Activity = "swim" | "snorkel" | "pool" | "surf";
-const ACTIVITIES: Activity[] = ["swim", "snorkel", "pool", "surf"];
+type Activity = "swim" | "harbour" | "snorkel" | "pool" | "surf";
+const ACTIVITIES: Activity[] = ["swim", "harbour", "snorkel", "pool", "surf"];
 // Which activities to show spots for; all of them until you untick some (remembered per browser)
 let activities = new Set<Activity>(ACTIVITIES);
 try {
   const saved = JSON.parse(load("activities") ?? "null");
-  if (Array.isArray(saved)) activities = new Set(saved.filter((a) => ACTIVITIES.includes(a)));
+  if (Array.isArray(saved)) {
+    activities = new Set(saved.filter((a) => ACTIVITIES.includes(a)));
+    if (saved.includes("swim") && !saved.includes("harbour")) activities.add("harbour"); // saved before Harbour existed
+  }
 } catch {
   // nothing saved, or garbled: show everything
 }
 let sort = load("sort") ?? "best";
 let windOn = load("wind") === "on";
 
-const TAG: Record<SpotKind, string> = { swim: "Beach", pool: "Pool", surf: "Surf" };
+const TAG: Record<SpotKind, string> = { swim: "Beach", harbour: "Harbour", pool: "Pool", surf: "Surf" };
 const tags = (spot: Spot) =>
-  `<span class="tag">${TAG[spot.kind]}</span>` + (spot.snorkel ? `<span class="tag">Snorkel</span>` : "");
+  `<span class="tag">${TAG[spot.kind]}</span>` +
+  (spot.snorkel ? `<span class="tag">Snorkel</span>` : "") +
+  (spot.women_only ? `<span class="tag">Women only</span>` : "");
 // A spot shows if it suits any ticked activity (Clovelly is a swim and a snorkel spot)
 const shows = (spot: Spot) =>
   (activities.has("swim") && spot.kind === "swim") ||
+  (activities.has("harbour") && spot.kind === "harbour") ||
   (activities.has("snorkel") && !!spot.snorkel) ||
   (activities.has("pool") && spot.kind === "pool") ||
   (activities.has("surf") && spot.kind === "surf");
@@ -98,9 +107,27 @@ const slotName = (s: Session) => (s.key.endsWith("am") ? "Morning" : "Evening");
 const weekOf = (s: Session) => Math.floor((parse(s.date).getTime() - monday(today()).getTime()) / (7 * DAY));
 
 // ---------------------------------------------------------------- loading and refreshing
+// Eastern / Northern. Switching reloads the page on the other region, so the map starts fresh on its coast
+function renderRegionPick() {
+  $("region-pick").innerHTML = REGIONS.map(
+    (r) =>
+      `<button type="button" data-r="${r.id}" aria-pressed="${r.id === region.id}">${esc(r.name.split(" ")[0])}</button>`,
+  ).join("");
+  $("region-pick")
+    .querySelectorAll<HTMLButtonElement>("button")
+    .forEach((b) =>
+      b.addEventListener("click", () => {
+        if (b.dataset.r === region.id) return;
+        save("region", b.dataset.r as string);
+        location.href = location.pathname; // drop ?s=, which belongs to the other region
+      }),
+    );
+}
+
 async function start() {
+  renderRegionPick();
   mapModule.then((m) => {
-    map = m.createMap($("map"));
+    map = m.createMap($("map"), region);
     mapApi = m;
     wind = m.windLayer(map);
     wind.show(windOn);
@@ -172,7 +199,7 @@ function renderUpdated() {
     timeZone: "Australia/Sydney",
   });
   $("updated").innerHTML =
-    `Eastern suburbs, Sydney · <span title="${esc(exact)}">updated ${age ? `${age} ago` : "just now"}</span>`;
+    `${esc(region.name)}, Sydney · <span title="${esc(exact)}">updated ${age ? `${age} ago` : "just now"}</span>`;
   const stale = $("stale");
   stale.hidden = mins <= STALE_MINS;
   stale.textContent = `These scores are ${age} old, so conditions may have changed. The page updates itself when new ones arrive.`;
