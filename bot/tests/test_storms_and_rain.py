@@ -89,7 +89,7 @@ def test_bom_rain_since_9am_becomes_hourly_rain():
     assert round(rain["2026-11-04T10:00"], 1) == 0.2
 
 
-def test_swimming_spots_show_calm_water_and_surf_spots_show_surf_quality():
+def test_each_kind_of_spot_gets_its_own_condition_rows():
     sessions, ctx = score(*make_forecast(WED), WED)
     am = sessions["am"]
     hours = make_forecast(WED)[0]
@@ -99,8 +99,8 @@ def test_swimming_spots_show_calm_water_and_surf_spots_show_surf_quality():
     beach = report(am, hours, ctx, {}, WED, maroubra_beach)
     surf = report(am, hours, ctx, {}, WED, maroubra_surf)
 
-    assert "Calm water" in beach and "Surf quality" not in beach
-    assert "Surf quality" in surf and "Calm water" not in surf
+    assert "Calm water" in beach and "Wave size" not in beach
+    assert {"Wave size", "Wave quality"} <= surf.keys() and "Calm water" not in surf
 
 
 def test_snorkelling_is_only_good_when_the_water_is_clear():

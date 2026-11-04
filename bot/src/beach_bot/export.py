@@ -1,14 +1,20 @@
 """scores.json for the map site, and uploading it to the public bucket."""
 
 import json
+from datetime import timedelta
 
-from .beaches import BEACHES, COORDS, POOL_COORDS, POOLS, SURF_COORDS, SURF_SPOTS
-from .config import CLOVELLY_TOLERANCE, EVENT_THRESHOLD, FAVOURITE, FIRE_THRESHOLD
+from .beaches import BEACH_FOR_SURF, BEACHES, COORDS, POOL_COORDS, POOLS, SURF_COORDS, SURF_SPOTS
+from .config import CLOVELLY_TOLERANCE, DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE, FIRE_THRESHOLD
 from .sessions import coast_report, conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
 
 
 def slug(name, kind):
     return kind + "-" + "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-").replace("--", "-")
+
+
+def area(beach):
+    """The place a spot belongs to, so the site can group a beach with its surf break and pools ("Coogee")."""
+    return beach.name.split(" (")[0]
 
 
 def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
@@ -20,6 +26,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
             "name": b.name,
             "kind": "swim",
             "snorkel": b.snorkel,
+            "area": area(b),
             "lat": COORDS[b.name][0],
             "lon": COORDS[b.name][1],
         }
@@ -30,6 +37,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
             "id": slug(sp.name, "surf"),
             "name": sp.name,
             "kind": "surf",
+            "area": area(BEACH_FOR_SURF[sp.name]),
             "lat": SURF_COORDS[sp.name][0],
             "lon": SURF_COORDS[sp.name][1],
         }
@@ -40,6 +48,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
             "id": slug(p.name, "pool"),
             "name": p.name,
             "kind": "pool",
+            "area": area(p.beach),
             "lat": POOL_COORDS[p.name][0],
             "lon": POOL_COORDS[p.name][1],
         }
@@ -85,6 +94,9 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None):
                 "end": sess.end.isoformat(),
                 "started": sess.start <= now,
                 "posted": sess.key in posted if posted is not None else bool(sess.is_good),
+                # Past a couple of days the forecast is a guide, not a plan (and the calendar doesn't post it)
+                "confidence": "high" if sess.day <= now.date() + timedelta(days=DAYS_AHEAD) else "low",
+                "tides": [{"kind": kind, "time": hour_label(t, 0)} for kind, t in ctx.tide_times(sess.day.isoformat())],
                 "fire": best >= FIRE_THRESHOLD,
                 "lead": {
                     "id": slug(lead, kind) if lead else None,

@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 TZ = ZoneInfo("Australia/Sydney")
 
 # ---------------------------------------------------------------- tunables
-DAYS_AHEAD = 2  # today + this many days
+DAYS_AHEAD = 2  # calendar events: today + this many days
+FORECAST_DAYS = 12  # the site shows this week and next (as far as the swell forecast reaches, ~9 days)
 EVENT_THRESHOLD = 80  # session score needed to post an event (8/10)
 FIRE_THRESHOLD = 90  # adds a 🔥 to the title (9/10+)
 KEEP_THRESHOLD = 70  # a posted event stays until the session drops below this (7/10), so it doesn't flip-flop

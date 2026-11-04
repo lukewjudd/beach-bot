@@ -3,10 +3,10 @@
 import argparse
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .calendar import event_body, sync
-from .config import TZ
+from .config import DAYS_AHEAD, TZ
 from .export import export_scores, upload_scores
 from .forecast import Context, load_data
 from .sessions import build_sessions, score_session
@@ -22,11 +22,22 @@ def main():
     now = datetime.now(TZ)
     hours, sun, beachwatch = load_data()
     ctx = Context(hours)
-    sessions = build_sessions(hours, sun, now)
+    # The site shows this week and next, Monday to Sunday; only sessions the swell forecast reaches get scored
+    # (missing swell would read as dead calm)
+    next_sunday = now.date() + timedelta(days=13 - now.weekday())
+    days = [now.date() + timedelta(days=o) for o in range((next_sunday - now.date()).days + 1)]
+    days = [d for d in days if d.isoformat() in sun]
+    sessions = [
+        s
+        for s in build_sessions(hours, sun, now, days)
+        if all(hours[t].get("wave_height") is not None for t in s.hours)
+    ]
     for sess in sessions:
         score_session(sess, hours, ctx, beachwatch, now.date())
+    # The calendar only gets the next couple of days: further out the forecast isn't good enough to plan on
+    soon = [s for s in sessions if s.day <= now.date() + timedelta(days=DAYS_AHEAD)]
 
-    for sess in sessions:
+    for sess in soon:
         flag = "✅" if sess.is_good else "  "
         swim = sess.best_swim
         surf = sess.surf[0] if sess.surf else None
@@ -40,7 +51,7 @@ def main():
             print(f"     → {title}")
             print("       " + desc.replace("\n", "\n       "))
 
-    posted = sync(sessions, hours, ctx, beachwatch, now) if args.sync else None
+    posted = sync(soon, hours, ctx, beachwatch, now) if args.sync else None
     data = export_scores(sessions, hours, ctx, beachwatch, now, posted)
     if args.json:
         with open(args.json, "w") as f:

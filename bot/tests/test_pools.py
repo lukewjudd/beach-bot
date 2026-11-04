@@ -104,3 +104,16 @@ def test_pools_feel_the_same_breeze_as_their_beach():
         report(onshore["pm"], hours, ctx, {}, WED, rj)["Wind"]
         == report(onshore["pm"], hours, ctx, {}, WED, rj.beach)["Wind"]
     )
+
+
+def test_pools_are_rated_on_calm_and_tide():
+    from beach_bot.beaches import POOLS
+    from beach_bot.sessions import report
+
+    hours, sun = make_forecast(WED, with_tide(18))  # high tide mid-evening
+    sessions, ctx = score(hours, sun, WED)
+    mahon = next(p for p in POOLS if p.name == "Mahon Pool")  # likes mid to high tide
+    rows = report(sessions["pm"], hours, ctx, {}, WED, mahon)
+
+    assert {"Calm in the pool", "Tide"} <= rows.keys()
+    assert rows["Tide"] >= 8

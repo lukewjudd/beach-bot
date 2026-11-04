@@ -227,7 +227,6 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
         hb = c["hs"] * (spot.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
-    own_surf = next((sc for sc, sp, _ in sess.surf if sp is spot), None) if isinstance(spot, SurfSpot) else None
 
     sea = c["sea"] or 20
     water = (
@@ -266,9 +265,43 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         quality = 6
 
     clamp = lambda x: max(1, min(10, x))  # noqa: E731
-    # Swimmers want calm water and surfers want waves, so each spot only gets the row that matters to it
-    # (a "Surf 8/10" at a swimming beach read like good news when it meant big waves)
-    waves = {"Surf quality": out_of_10(own_surf)} if own_surf is not None else {"Calm water": clamp(calm)}
+    # Each kind of spot is rated on what matters for it: swimmers want calm water, surfers want waves,
+    # and pools care about swell over the walls and the tide
+    if isinstance(spot, SurfSpot):
+        sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
+        p = c["period"]
+        reach = 0.6 if p < 6 else 0.75 if p < 8 else 0.9 if p < 10 else 1.0 if p < 12 else 1.2
+        size = c["hs"] * (spot.k[sector] if sector else 0.1) * reach  # same as score_surf_hour
+        if size < 0.3:
+            size_r = 1  # flat
+        elif size < 0.5:
+            size_r = 3
+        elif size < 0.8:
+            size_r = 5
+        elif size < 1.0:
+            size_r = 7
+        elif size < 1.4:
+            size_r = 8
+        elif size <= 2.0:
+            size_r = 10  # the sweet spot for these breaks
+        else:
+            size_r = 8 if size <= spot.max_hs else 3  # then closing out
+        waves = {
+            "Wave size": clamp(size_r),
+            "Wave quality": clamp(2 if p < 6 else 4 if p < 8 else 6 if p < 10 else 8 if p < 12 else 10),
+        }
+    elif isinstance(spot, Pool):
+        waves = {"Calm in the pool": clamp(calm)}
+        tides = [ctx.tide(t) for t in keys]
+        if spot.best_tide and all(tides):
+            fit = {
+                "low": lambda hi, lo: abs(lo) <= 3,
+                "mid": lambda hi, lo: min(abs(hi), abs(lo)) >= 1.5,
+                "mid_high": lambda hi, lo: abs(hi) <= 3,
+            }[spot.best_tide]
+            waves["Tide"] = clamp(round(4 + 6 * sum(fit(*td) for td in tides) / len(tides)))
+    else:
+        waves = {"Calm water": clamp(calm)}
     return {
         "Wind": clamp(w),
         **waves,

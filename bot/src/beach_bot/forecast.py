@@ -12,7 +12,7 @@ from statistics import mean, quantiles
 
 import requests
 
-from .config import BOM_OBS_URL, BOM_STATIONS, DAYS_AHEAD, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
+from .config import BOM_OBS_URL, BOM_STATIONS, FORECAST_DAYS, FORECAST_POINT, MARINE_POINT, RAIN_MODELS, TZ
 
 
 def fetch_json(url, params):
@@ -64,7 +64,7 @@ def load_data():
             "daily": "sunrise,sunset",
             "timezone": "Australia/Sydney",
             "past_days": 4,
-            "forecast_days": DAYS_AHEAD + 1,
+            "forecast_days": FORECAST_DAYS,
         },
     )
     sea = fetch_json(
@@ -77,7 +77,7 @@ def load_data():
             "sea_surface_temperature,sea_level_height_msl",
             "timezone": "Australia/Sydney",
             "past_days": 4,
-            "forecast_days": DAYS_AHEAD + 1,
+            "forecast_days": FORECAST_DAYS,
         },
     )
     try:
@@ -222,6 +222,11 @@ class Context:
             if len(ne) >= len(w) / 2 and mean(h["wind_speed_10m"] for h in w) >= 15:
                 count += 1
         return count
+
+    def tide_times(self, day):
+        """High and low tides on a day: [("high", "2026-11-04T17:00"), ...] (to the hour)."""
+        self.tide(self.times[len(self.times) // 2])  # builds self._tides
+        return [(kind, self.times[i]) for i, kind in self._tides if self.times[i].startswith(day)]
 
     def tide(self, t):
         """(hours to the nearest high tide, hours to the nearest low tide) from `sea_level_height_msl`.

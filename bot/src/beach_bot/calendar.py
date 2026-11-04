@@ -51,7 +51,7 @@ def event_body(sess, hours, ctx, beachwatch, today):
         + f" · rain chance {c['rain_prob']:.0f}% · UV {c['uv']:.0f}",
         "",
         f"Updated {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if it drops below 7/10.",
-        f"Map and every spot's score: {SITE_URL}",
+        f"Map and every spot's score: {SITE_URL}?s={sess.key}",  # opens the site on this session
     ]
     return title, "\n".join(lines)
 
