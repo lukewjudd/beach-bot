@@ -15,23 +15,42 @@
     <h1>Beach calls</h1>
     <p class="sub" id="updated">Eastern suburbs, Sydney</p>
   </header>
+  <p class="stale-banner" id="stale" hidden></p>
 
-  <nav class="tabs" id="tabs" aria-label="Sessions"></nav>
+  <nav class="week" aria-label="Days">
+    <div class="week-pick" id="week-pick" role="group" aria-label="Week"></div>
+    <div class="days" id="days"></div>
+  </nav>
 
   <main>
     <section class="hero" id="hero" aria-live="polite">
       <div class="loading"><span class="spinner" aria-hidden="true"></span> Checking the forecast…</div>
     </section>
-    <div class="layout">
-      <div id="map" role="region" aria-label="Map of beach scores"></div>
-      <section class="panel">
-        <!-- Pinned while the spots list scrolls, so picking a spot visibly changes the conditions -->
-        <div class="pinned">
-          <div class="filters" id="filters" role="group" aria-label="Show"></div>
-          <h2 id="conditions-title">Conditions</h2>
-          <div class="report" id="report"></div>
+    <div class="view-toggle" id="view-toggle" role="group" aria-label="View">
+      <button type="button" data-view="list" aria-pressed="true">List</button>
+      <button type="button" data-view="map" aria-pressed="false">Map</button>
+    </div>
+    <div class="layout" id="layout" data-view="list">
+      <div id="map" role="region" aria-label="Map of spot scores"></div>
+      <section class="panel" aria-label="Spots">
+        <div class="controls">
+          <label>Activity
+            <select id="activity">
+              <option value="all">All</option>
+              <option value="swim">Swim</option>
+              <option value="snorkel">Snorkel</option>
+              <option value="pool">Pool</option>
+              <option value="surf">Surf</option>
+            </select>
+          </label>
+          <label>Sort
+            <select id="sort">
+              <option value="best">Best first</option>
+              <option value="north">North to south</option>
+              <option value="area">By place</option>
+            </select>
+          </label>
         </div>
-        <h2>Spots</h2>
         <ol class="spots" id="spots"></ol>
       </section>
     </div>

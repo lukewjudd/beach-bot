@@ -1,304 +1,282 @@
-// Beach calls: renders scores.json as session tabs, a map and a ranked list.
+// Beach calls: renders scores.json as a week of days, a summary of the chosen session, a map and a list of spots.
 
 import type { Map as LeafletMap, Marker } from "leaflet";
+import { ICONS } from "./icons";
 import "./style.css";
 import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
 
 // Set in .env.production / .env.development; ?data= overrides it
-const DATA_URL = new URLSearchParams(location.search).get("data") ?? import.meta.env.VITE_SCORES_URL;
+const params = new URLSearchParams(location.search);
+const DATA_URL = params.get("data") ?? import.meta.env.VITE_SCORES_URL;
+const REFRESH_MS = 5 * 60_000; // the bot runs hourly; checking every 5 minutes keeps an open tab current
+const STALE_MINS = 60;
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
-const ratingClass = (r: number) => (r >= 9 ? "r-great" : r >= 8 ? "r-good" : r >= 6 ? "r-mid" : "r-low");
+// Traffic lights: green is worth going (the calendar's bar), amber is so-so, red is don't bother
+const ratingClass = (r: number) => (r >= 8 ? "r-green" : r >= 5 ? "r-amber" : "r-red");
 const pill = (r: number) => `<span class="pill ${ratingClass(r)}" aria-label="${r} out of 10">${r}</span>`;
-// Emoji are decoration next to words: screen readers would otherwise read "beach with umbrella Beaches"
-const emoji = (e: string) => `<span aria-hidden="true">${e}</span>`;
 const esc = (s: unknown) =>
   String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+const save = (k: string, v: string) => {
+  try {
+    localStorage.setItem(k, v);
+  } catch {
+    // storage blocked: not remembered, still works for this visit
+  }
+};
+const load = (k: string) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
 
 let data: Scores;
 let spotsById: Record<string, Spot>;
-// The map code loads on the side: the forecast renders as soon as the scores arrive,
-// and pins are added once the map is ready
+// The map code loads on the side: the forecast renders as soon as the scores arrive, and pins follow
 const mapModule = import("./map");
 let mapApi: typeof import("./map") | undefined;
 let map: LeafletMap | undefined;
 let wind: import("./wind").Wind | undefined;
 let markers: Record<string, Marker> = {};
-let current = 0;
-let activeSpot: string | null = null;
 
-// Each kind has its own pin shape (circle, rounded square, diamond); the filters double as the legend
-const shape = (k: SpotKind) => `<span class="shape ${k}" aria-hidden="true"></span>`;
+let current = 0; // index into data.sessions
+let week = 0; // 0 = this week, 1 = next
+let openSpot: string | null = null; // the card that's expanded
+type Activity = "all" | "swim" | "snorkel" | "pool" | "surf";
+let activity = (load("activity") as Activity) ?? "all";
+let sort = load("sort") ?? "best";
+let windOn = load("wind") === "on";
+
 const TAG: Record<SpotKind, string> = { swim: "Beach", pool: "Pool", surf: "Surf" };
-const KIND_LABEL: Record<SpotKind, string> = { swim: "Beaches", pool: "Pools", surf: "Surf" };
-
-// Which kinds of spot to show on the map and in the list; remembered per browser
-let shown = new Set<SpotKind>(["swim", "pool", "surf"]);
-try {
-  const saved = JSON.parse(localStorage.getItem("shown") ?? "null");
-  if (Array.isArray(saved)) shown = new Set(saved);
-} catch {
-  // private mode or blocked storage: just show everything
-}
-// Wind trails on the map, off until turned on (remembered per browser)
-let windOn = false;
-try {
-  windOn = localStorage.getItem("wind") === "on";
-} catch {
-  // storage blocked: default off
-}
-
-// What kind of spot it is, as labels on the right of its card
 const tags = (spot: Spot) =>
   `<span class="tag">${TAG[spot.kind]}</span>` + (spot.snorkel ? `<span class="tag">Snorkel</span>` : "");
+const shows = (spot: Spot) =>
+  activity === "all" || (activity === "snorkel" ? !!spot.snorkel : spot.kind === activity);
+
 // Notes that should change your mind stand out from the nice-to-knows ("wave pool fun")
 const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach/i;
 const notesHtml = (notes: string[]) =>
   notes
-    .map((n) => (WARN.test(n) ? `<span class="warn">${emoji("⚠")} ${esc(n)}</span>` : esc(n)))
+    .map((n) => (WARN.test(n) ? `<span class="warn"><span aria-hidden="true">⚠</span> ${esc(n)}</span>` : esc(n)))
     .join(" · ");
 
-// Worth it uses the calendar's own bar, and a best window only means something for spots that clear it
-const worth = (score: number) => score >= data.thresholds.post;
-const windowText = (x: SpotScore) => (worth(x.score) && x.window ? `${x.window[0]}–${x.window[1]}` : "");
-// Ranking used everywhere on the page: score, with the favourite winning close calls like the headline does
-const rankScore = (x: SpotScore) =>
-  x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0);
-const byRank = (a: SpotScore, b: SpotScore) => rankScore(b) - rankScore(a);
+// Worth it: the calendar's own rule. Further out than the calendar posts, an 8/10 still counts, as an early guess
+const worth = (s: Session) => s.posted || (s.confidence === "low" && s.lead.score >= data.thresholds.post);
+const windowText = (x: SpotScore) =>
+  x.score >= data.thresholds.post && x.window ? `${x.window[0]}–${x.window[1]}` : "";
+// Ranking: score, with the favourite winning close calls like the headline does
+const rankScore = (x: SpotScore | undefined) =>
+  x ? x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0) : -1;
 const isPast = (s: Session) => s.started && new Date(s.end) < new Date();
 
-async function load() {
+// ---------------------------------------------------------------- dates (calendar days, from the session dates)
+const DAY = 86_400_000;
+const ymd = (d: Date) => d.toISOString().slice(0, 10);
+const parse = (iso: string) => new Date(`${iso}T00:00:00Z`); // kept in UTC so day maths is exact
+const today = () => parse(data.generated_at.slice(0, 10)); // generated_at is Sydney local time
+const monday = (d: Date) => new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * DAY);
+const dayName = (d: Date, style: "short" | "long" = "short") =>
+  d.toLocaleDateString("en-AU", { weekday: style, timeZone: "UTC" });
+const clock = (iso: string) =>
+  new Date(iso)
+    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", timeZone: "Australia/Sydney" })
+    .replace(":00", "")
+    .replace(/\s/g, "");
+const slotName = (s: Session) => (s.key.endsWith("am") ? "Morning" : "Evening");
+const weekOf = (s: Session) => Math.floor((parse(s.date).getTime() - monday(today()).getTime()) / (7 * DAY));
+
+// ---------------------------------------------------------------- loading and refreshing
+async function start() {
   mapModule.then((m) => {
     map = m.createMap($("map"));
     mapApi = m;
     wind = m.windLayer(map);
     wind.show(windOn);
-    m.windButton(map, windOn, toggleWind); // it's a map layer, so its switch lives on the map
+    m.windButton(map, windOn, toggleWind);
     if (data) render(); // scores got here first: add the pins now
   });
   try {
-    // Plain fetch so it picks up the <link rel="preload"> in index.html; the bucket's max-age keeps it fresh
+    // Plain fetch so it picks up the <link rel="preload"> in index.html
     const res = await fetch(DATA_URL);
     if (!res.ok) throw new Error(String(res.status));
-    data = await res.json();
+    adopt(await res.json(), params.get("s"));
   } catch (e) {
     $("hero").innerHTML = `<p class="error">Couldn't load the latest scores (${esc((e as Error).message)}). Try again shortly.</p>`;
     return;
   }
-  spotsById = Object.fromEntries(data.spots.map((s) => [s.id, s]));
-  renderUpdated();
-  setInterval(renderUpdated, 60_000);
-
-  const upcoming = data.sessions.findIndex((s) => !isPast(s));
-  current = upcoming === -1 ? 0 : upcoming;
-  renderTabs();
-  renderFilters();
+  wireControls();
   render();
+  setInterval(renderUpdated, 60_000);
+  setInterval(refresh, REFRESH_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refresh();
+  });
 }
 
-// "updated 25 min ago", amber once it's older than two runs (the bot runs hourly)
+// Take on a scores.json, keeping the chosen session (or the one in the link) if it's there
+function adopt(next: Scores, wantKey: string | null) {
+  data = next;
+  spotsById = Object.fromEntries(data.spots.map((s) => [s.id, s]));
+  const wanted = wantKey ? data.sessions.findIndex((s) => s.key === wantKey) : -1;
+  const upcoming = data.sessions.findIndex((s) => !isPast(s));
+  current = wanted >= 0 ? wanted : upcoming >= 0 ? upcoming : 0;
+  renderUpdated();
+}
+
+// New scores land hourly; pick them up without a reload so an open tab never goes quietly stale
+async function refresh() {
+  if (document.visibilityState !== "visible") return;
+  try {
+    const res = await fetch(DATA_URL, { cache: "no-cache" }); // revalidate rather than trust the 5-minute cache
+    const next: Scores = await res.json();
+    if (next.generated_at !== data.generated_at) {
+      adopt(next, data.sessions[current]?.key ?? null);
+      render();
+    }
+  } catch {
+    // offline or the bucket hiccuped: keep what's on screen; the stale warning covers it
+  }
+  renderUpdated();
+}
+
+// "updated 25 min ago"; past an hour, a warning that conditions may have moved on
 function renderUpdated() {
   const at = new Date(data.generated_at);
   const mins = Math.max(0, Math.round((Date.now() - at.getTime()) / 60_000));
-  const ago =
-    mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : mins < 48 * 60 ? `${Math.round(mins / 60)}h ago` : "days ago";
+  const age = mins < 1 ? "" : mins < 60 ? `${mins} min` : mins < 48 * 60 ? `${Math.round(mins / 60)}h` : "days";
   const exact = at.toLocaleString("en-AU", {
     weekday: "short",
     hour: "numeric",
     minute: "2-digit",
     timeZone: "Australia/Sydney",
   });
-  const el = $("updated");
-  el.innerHTML = `Eastern suburbs, Sydney · <span class="${mins > 120 ? "stale" : ""}" title="${esc(exact)}">updated ${ago}</span>`;
+  $("updated").innerHTML =
+    `Eastern suburbs, Sydney · <span title="${esc(exact)}">updated ${age ? `${age} ago` : "just now"}</span>`;
+  const stale = $("stale");
+  stale.hidden = mins <= STALE_MINS;
+  stale.textContent = `These scores are ${age} old, so conditions may have changed. The page updates itself when new ones arrive.`;
 }
 
+// ---------------------------------------------------------------- controls
 function toggleWind() {
   windOn = !windOn;
-  try {
-    localStorage.setItem("wind", windOn ? "on" : "off");
-  } catch {
-    // not remembered, still works for this visit
-  }
+  save("wind", windOn ? "on" : "off");
   wind?.show(windOn);
   return windOn;
 }
 
-function renderFilters() {
-  const el = $("filters");
-  el.innerHTML = (Object.keys(KIND_LABEL) as SpotKind[])
+function wireControls() {
+  const act = $("activity") as HTMLSelectElement;
+  const srt = $("sort") as HTMLSelectElement;
+  act.value = activity;
+  srt.value = sort;
+  act.addEventListener("change", () => {
+    activity = act.value as Activity;
+    save("activity", activity);
+    render();
+  });
+  srt.addEventListener("change", () => {
+    sort = srt.value;
+    save("sort", sort);
+    renderSpots(data.sessions[current]);
+  });
+  // Phones: the list or the map, one at a time
+  $("view-toggle")
+    .querySelectorAll<HTMLButtonElement>("button")
+    .forEach((b) => b.addEventListener("click", () => setView(b.dataset.view as "list" | "map")));
+  // "Details" in a map popup opens that spot's card
+  document.addEventListener("click", (e) => {
+    const id = (e.target as HTMLElement).closest<HTMLElement>("[data-details]")?.dataset.details;
+    if (!id) return;
+    setView("list");
+    openCard(id, false);
+  });
+}
+
+function setView(view: "list" | "map") {
+  $("layout").dataset.view = view;
+  $("view-toggle")
+    .querySelectorAll<HTMLButtonElement>("button")
+    .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+  if (view === "map") map?.invalidateSize();
+}
+
+function selectSession(i: number) {
+  current = i;
+  openSpot = null;
+  const url = new URL(location.href);
+  url.searchParams.set("s", data.sessions[i].key); // shareable, and the same link the calendar uses
+  history.replaceState(null, "", url);
+  render();
+}
+
+// ---------------------------------------------------------------- week and day picker
+function renderWeek() {
+  const hasNext = data.sessions.some((s) => weekOf(s) === 1);
+  $("week-pick").innerHTML = ["This week", "Next week"]
     .map(
-      (k) =>
-        `<button class="filter" aria-pressed="${shown.has(k)}" data-kind="${k}">${shape(k)} ${KIND_LABEL[k]}</button>`,
+      (label, w) =>
+        `<button type="button" data-w="${w}" aria-pressed="${w === week}" ${w === 1 && !hasNext ? "disabled" : ""}>${label}</button>`,
     )
     .join("");
-  el.querySelectorAll<HTMLButtonElement>(".filter[data-kind]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const k = b.dataset.kind as SpotKind;
-      if (shown.has(k)) shown.delete(k);
-      else shown.add(k);
-      b.setAttribute("aria-pressed", String(shown.has(k)));
-      try {
-        localStorage.setItem("shown", JSON.stringify([...shown]));
-      } catch {
-        // not remembered, still works for this visit
-      }
-      render();
-    }),
-  );
-}
-
-function renderTabs() {
-  const tabs = $("tabs");
-  tabs.setAttribute("role", "tablist");
-  // Sessions that have finished are gone; one that's on now stays
-  const live = data.sessions.map((s, i) => ({ s, i })).filter(({ s }) => !isPast(s));
-  tabs.innerHTML = (live.length ? live : data.sessions.map((s, i) => ({ s, i })))
-    .map(
-      ({ s, i }) => `
-    <button class="tab" role="tab" aria-selected="${i === current}" data-i="${i}">
-      ${esc(s.label)} ${pill(s.lead.rating)}${s.fire ? ` ${emoji("🔥")}` : ""}
-    </button>`,
-    )
-    .join("");
-  tabs.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) =>
-    b.addEventListener("click", () => {
-      current = Number(b.dataset.i);
-      tabs.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t === b)));
-      render();
-    }),
-  );
-  tabs.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "center", block: "nearest" });
-}
-
-function renderHero(s: Session, leadSpot: Spot | undefined) {
-  const c = s.conditions;
-  const lead = s.lead;
-  // Only name a spot when it's worth going: "best option at 3/10" reads like a recommendation
-  const verdict = s.posted
-    ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
-       ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
-    : `<span class="why">${esc(whyNotWorth(s))}</span>`;
-  $("hero").innerHTML = `
-    <div class="headline">
-      <span class="flag ${s.posted ? "yes" : "no"}">${s.posted ? (s.fire ? `${emoji("🔥")} Worth it` : "Worth it") : "Not worth it"}</span>
-      ${verdict}
-    </div>
-    <div class="chips">
-      <span class="chip">Wind <b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}</span>
-      <span class="chip">Swell <b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s</span>
-      <span class="chip">Air <b>${c.air_c}°</b></span>
-      ${c.water_c != null ? `<span class="chip">Water <b>${c.water_c}°</b></span>` : ""}
-      <span class="chip">Rain <b>${c.rain_pct}%</b></span>
-      <span class="chip">UV <b>${c.uv}</b></span>
-    </div>`;
-}
-
-function renderPins(s: Session, byId: Record<string, SpotScore>, leadId: string | undefined) {
-  if (!map || !mapApi) return; // map still loading; render() runs again when it's ready
-  Object.values(markers).forEach((m) => m.remove());
-  markers = {};
-  // Lowest scores first so the best spots are drawn on top where pins overlap
-  const order = [...data.spots].sort((a, b) => (byId[a.id]?.score ?? -1) - (byId[b.id]?.score ?? -1));
-  for (const spot of order) {
-    const sc = byId[spot.id];
-    if (!shown.has(spot.kind)) continue;
-    const cls = ["marker", spot.kind, sc ? ratingClass(sc.rating) : "none", spot.id === leadId ? "lead" : ""].join(" ");
-    markers[spot.id] = mapApi.addPin(map, spot, cls, sc ? String(sc.rating) : "–", popup(s, spot, sc), () =>
-      highlight(spot.id, false),
+  $("week-pick")
+    .querySelectorAll<HTMLButtonElement>("button:not([disabled])")
+    .forEach((b) =>
+      b.addEventListener("click", () => {
+        const w = Number(b.dataset.w);
+        const first = data.sessions.findIndex((s) => weekOf(s) === w && !isPast(s));
+        if (first >= 0) selectSession(first);
+      }),
     );
-  }
-}
 
-function renderSpots(s: Session, byId: Record<string, SpotScore>) {
-  const ranked = [...s.scores].filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank);
-  const scored = ranked.map((x) => {
-    const spot = spotsById[x.id];
-    const meta = notesHtml(x.notes);
-    return `<li class="spot" data-id="${x.id}" tabindex="0" role="button">
-      ${pill(x.rating)}
-      <div><div class="name">${esc(spot.name)}</div>${meta ? `<div class="meta">${meta}</div>` : ""}</div>
-      <div class="side">${tags(spot)}${windowText(x) ? `<span class="win">${esc(windowText(x))}</span>` : ""}</div>
-    </li>`;
-  });
-  const unsafe = data.spots
-    .filter((p) => !byId[p.id] && p.kind !== "surf" && shown.has(p.kind))
-    .map(
-      (p) => `<li class="spot" data-id="${p.id}" tabindex="0" role="button"><span class="pill r-low" aria-label="ruled out">–</span>
-        <div><div class="name">${esc(p.name)}</div><div class="meta">${notesHtml([whyNot(s, p)])}</div></div>
-        <div class="side">${tags(p)}</div></li>`,
+  // Always Monday to Sunday, so a day sits in the same place every time you look
+  const start = new Date(monday(today()).getTime() + week * 7 * DAY);
+  const selectedDate = data.sessions[current].date;
+  $("days").innerHTML = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start.getTime() + i * DAY);
+    const date = ymd(d);
+    const live = data.sessions.filter((s) => s.date === date && !isPast(s));
+    const best = live.length ? Math.max(...live.map((s) => s.lead.rating)) : null;
+    const low = live.length > 0 && live.every((s) => s.confidence === "low");
+    const label = `${dayName(d, "long")} ${d.getUTCDate()}${best != null ? `, best ${best} out of 10` : ", no forecast"}${low ? ", early forecast" : ""}`;
+    return `<button type="button" class="day${low ? " low" : ""}" data-date="${date}" aria-pressed="${date === selectedDate}"
+        ${live.length ? "" : "disabled"} aria-label="${label}">
+      <span class="dn">${date === ymd(today()) ? "Today" : dayName(d)}</span><span class="dd">${d.getUTCDate()}</span>
+      ${best != null ? pill(best) : `<span class="pill none" aria-hidden="true">–</span>`}
+    </button>`;
+  }).join("");
+  $("days")
+    .querySelectorAll<HTMLButtonElement>(".day:not([disabled])")
+    .forEach((b) =>
+      b.addEventListener("click", () => {
+        // Keep morning or evening when you change day, if that day still has it
+        const slot = data.sessions[current].key.slice(-2);
+        const same = data.sessions.findIndex((s) => s.date === b.dataset.date && s.key.endsWith(slot) && !isPast(s));
+        const any = data.sessions.findIndex((s) => s.date === b.dataset.date && !isPast(s));
+        selectSession(same >= 0 ? same : any);
+      }),
     );
-  $("spots").innerHTML = [...scored, ...unsafe].join("");
-  document.querySelectorAll<HTMLElement>(".spot").forEach((li) => {
-    li.addEventListener("click", () => highlight(li.dataset.id as string, true));
-    li.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      e.preventDefault();
-      highlight(li.dataset.id as string, true);
-    });
-  });
-
-  renderConditions(s);
 }
 
-// The session's top pick among the kinds you're showing: the overall pick if it's visible,
-// otherwise the best-scoring visible spot
-function topPick(s: Session): string | null {
-  if (s.lead.id && shown.has(spotsById[s.lead.id]?.kind)) return s.lead.id;
-  const best = s.scores.filter((x) => shown.has(spotsById[x.id].kind)).sort(byRank)[0];
-  return best?.id ?? null;
-}
-
-// Conditions at the spot you've picked, or the top pick. When nothing's worth going to there's no top pick
-// to name, so it shows the typical beach instead.
-function renderConditions(s: Session) {
-  if (activeSpot && !shown.has(spotsById[activeSpot]?.kind)) activeSpot = null; // its kind was filtered out
-  const coast = !activeSpot && !s.posted && s.coast;
-  const id = coast ? null : (activeSpot ?? topPick(s));
-  const spot = id ? spotsById[id] : undefined;
-  const picked = activeSpot !== null && spot !== undefined;
-  const back = s.posted ? "show top pick" : "show the whole coast";
-  $("conditions-title").innerHTML =
-    (spot ? `Conditions at ${esc(spot.name)}` : "Conditions on the coast") +
-    (picked ? ` <button class="link" id="conditions-reset">${back}</button>` : "");
-  document.getElementById("conditions-reset")?.addEventListener("click", () => {
-    activeSpot = null;
-    const top = s.posted ? topPick(s) : null;
-    document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === top));
-    renderConditions(s);
-    if (top) focusPin(top); // take the map to it too
-    else map?.closePopup();
-  });
-  const rep = coast ? (s.coast as Record<string, number>) : (id && s.reports?.[id]) || s.report;
-  $("report").innerHTML = Object.entries(rep)
+// ---------------------------------------------------------------- summary of the chosen session
+function bars(rep: Record<string, number>) {
+  return Object.entries(rep)
     .map(
-      ([k, v]) => `
-    <div class="bar"><span>${esc(k)}</span>
+      ([k, v]) => `<div class="bar"><span>${esc(k)}</span>
       <div class="track"><div class="fill ${ratingClass(v)}" style="width:${v * 10}%"></div></div>
       <span class="num">${v}/10</span></div>`,
     )
     .join("");
 }
 
-function render() {
-  const s = data.sessions[current];
-  const leadSpot = s.lead.id ? spotsById[s.lead.id] : undefined;
-  const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
-  renderHero(s, leadSpot);
-  const c = s.conditions;
-  if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
-  renderPins(s, byId, s.posted ? leadSpot?.id : undefined); // no "top pick" ring when nothing's worth it
-  renderSpots(s, byId);
-  // Keep the chosen spot highlighted in the list across tabs, without flying the map around again
-  if (activeSpot) document.querySelector(`.spot[data-id="${activeSpot}"]`)?.classList.add("active");
-}
-
-// One line on why a session isn't worth it: the reason most spots are ruled out, or else the weakest conditions.
+// One line on why it isn't worth it: the reason most spots are ruled out, or the weakest conditions.
 // Says what's wrong without naming a spot.
 function whyNotWorth(s: Session) {
   const top = `Nothing above ${s.lead.rating}/10`;
-  const reasons = Object.entries(s.ruled_out ?? {}).map(([, why]) => why);
   const counts = new Map<string, number>();
-  reasons.forEach((r) => counts.set(r, (counts.get(r) ?? 0) + 1));
+  Object.values(s.ruled_out ?? {}).forEach((r) => counts.set(r, (counts.get(r) ?? 0) + 1));
   const [reason, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
   const swimmable = data.spots.filter((p) => p.kind !== "surf").length;
   if (n >= 3) return `${top} · ${reason} at ${n} of ${swimmable} beaches and pools`;
@@ -310,37 +288,168 @@ function whyNotWorth(s: Session) {
   return weak.length ? `${top} · ${weak.join(", ")}` : top;
 }
 
+function renderHero(s: Session) {
+  const c = s.conditions;
+  const lead = s.lead;
+  const d = parse(s.date);
+  const ok = worth(s);
+  const leadSpot = lead.id ? spotsById[lead.id] : undefined;
+  const daySessions = data.sessions.map((x, i) => ({ x, i })).filter(({ x }) => x.date === s.date);
+  const verdict = ok
+    ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
+       ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}`
+    : `<span class="why">${esc(whyNotWorth(s))}</span>`;
+  const tides = (s.tides ?? []).map((t) => `${t.kind === "high" ? "High" : "Low"} ${t.time}`).join(" · ");
+  const chip = (icon: string, label: string, value: string) =>
+    `<span class="chip">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
+  const month = d.toLocaleDateString("en-AU", { month: "short", timeZone: "UTC" });
+  $("hero").innerHTML = `
+    <div class="hero-head">
+      <h2>${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}
+        <span class="hours">${clock(s.start)}–${clock(s.end)}</span></h2>
+      <div class="slots" role="group" aria-label="Session">
+        ${daySessions
+          .map(
+            ({ x, i }) =>
+              `<button type="button" data-i="${i}" aria-pressed="${i === current}" ${isPast(x) ? "disabled" : ""}>${slotName(x)} ${pill(x.lead.rating)}</button>`,
+          )
+          .join("")}
+      </div>
+    </div>
+    <div class="headline">
+      <span class="flag ${ok ? "yes" : "no"}">${ok ? (s.fire ? `<span aria-hidden="true">🔥</span> Worth it` : "Worth it") : "Not worth it"}</span>
+      ${verdict}
+    </div>
+    ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
+    <div class="chips">
+      ${chip(ICONS.wind, "Wind", `<b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}`)}
+      ${chip(ICONS.swell, "Swell", `<b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s`)}
+      ${chip(ICONS.air, "Air", `Air <b>${c.air_c}°</b>`)}
+      ${c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`) : ""}
+      ${chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`)}
+      ${chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`)}
+      ${tides ? chip(ICONS.tide, "Tides", tides) : ""}
+    </div>
+    <h3 class="coast-title">Across the coast</h3>
+    <div class="report coast">${bars(s.coast ?? s.report)}</div>`;
+  $("hero")
+    .querySelectorAll<HTMLButtonElement>(".slots button:not([disabled])")
+    .forEach((b) => b.addEventListener("click", () => selectSession(Number(b.dataset.i))));
+}
+
+// ---------------------------------------------------------------- spots: list and map
+function popup(spot: Spot, sc: SpotScore | undefined) {
+  // Just enough to say which spot it is; its details and warnings live in its card, not twice
+  return `<div class="popup"><span class="t">${esc(spot.name)}</span> · ${sc ? sc.rating : 0}/10
+    <span class="tag">${TAG[spot.kind]}</span> <button type="button" class="link" data-details="${spot.id}">Details</button></div>`;
+}
+
+function renderPins(s: Session) {
+  if (!map || !mapApi) return; // map still loading; render() runs again when it's ready
+  const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
+  Object.values(markers).forEach((m) => m.remove());
+  markers = {};
+  const leadId = worth(s) ? s.lead.id : null; // no "top pick" ring when nothing's worth it
+  // Lowest scores first so the best spots are drawn on top where pins overlap
+  const order = [...data.spots].sort((a, b) => rankScore(byId[a.id]) - rankScore(byId[b.id]));
+  for (const spot of order) {
+    if (!shows(spot)) continue;
+    const sc = byId[spot.id];
+    const r = sc ? sc.rating : 0;
+    const cls = ["marker", spot.kind, ratingClass(r), spot.id === leadId ? "lead" : "", spot.id === openSpot ? "open" : ""];
+    markers[spot.id] = mapApi.addPin(map, spot, cls.join(" "), String(r), popup(spot, sc), () => openCard(spot.id, false));
+  }
+}
+
+function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
+  const open = spot.id === openSpot;
+  const notes = notesHtml(sc ? sc.notes : [whyNot(s, spot)]);
+  const win = sc ? windowText(sc) : "";
+  const rep = s.reports?.[spot.id];
+  return `<li class="spot${open ? " open" : ""}" data-id="${spot.id}">
+    <button type="button" class="spot-head" aria-expanded="${open}">
+      ${sc ? pill(sc.rating) : `<span class="pill r-red" aria-label="ruled out, 0 out of 10">0</span>`}
+      <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
+      <span class="side">${tags(spot)}${win ? `<span class="win">${esc(win)}</span>` : ""}</span>
+    </button>
+    ${open && rep ? `<div class="details"><h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div></div>` : ""}
+  </li>`;
+}
+
+function renderSpots(s: Session) {
+  const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
+  const spots = data.spots.filter(shows);
+  const best = (a: Spot, b: Spot) => rankScore(byId[b.id]) - rankScore(byId[a.id]);
+  const north = (a: Spot, b: Spot) => b.lat - a.lat;
+  let html: string;
+  if (sort === "area") {
+    // One group per place (Coogee: the beach, its surf break and its pools), north to south
+    const areas = new Map<string, Spot[]>();
+    for (const p of [...spots].sort(north)) areas.set(p.area ?? p.name, [...(areas.get(p.area ?? p.name) ?? []), p]);
+    html = [...areas.entries()]
+      .map(
+        ([name, group]) =>
+          `<li class="group"><h3>${esc(name)}</h3><ol>${group
+            .sort(best)
+            .map((p) => card(s, p, byId[p.id]))
+            .join("")}</ol></li>`,
+      )
+      .join("");
+  } else {
+    html = [...spots]
+      .sort(sort === "north" ? north : best)
+      .map((p) => card(s, p, byId[p.id]))
+      .join("");
+  }
+  $("spots").innerHTML = html || `<li class="empty">No spots for this activity.</li>`;
+  $("spots")
+    .querySelectorAll<HTMLElement>(".spot")
+    .forEach((li) =>
+      li.querySelector(".spot-head")?.addEventListener("click", () => {
+        const id = li.dataset.id as string;
+        if (openSpot === id) {
+          openSpot = null; // tap an open card to close it
+          renderSpots(s);
+          renderPins(s);
+        } else openCard(id, true);
+      }),
+    );
+}
+
+// Expand a spot's card (closing any other), bring it into view, and show it on the map
+function openCard(id: string, fromList: boolean) {
+  const s = data.sessions[current];
+  openSpot = id;
+  renderSpots(s);
+  renderPins(s);
+  document.querySelector(`.spot[data-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (fromList) focusPin(id);
+}
+
+// Fly in to a spot (never zooming back out if you're already closer) and open its popup
+function focusPin(id: string) {
+  const m = markers[id];
+  const mapHidden = innerWidth < 860 && $("layout").dataset.view === "list"; // phone list view
+  if (!m || !map || mapHidden) return;
+  map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
+  m.openPopup();
+}
+
 // The bot's own reason when it has one (e.g. "waves over the walls", "closed until 7am")
 function whyNot(s: Session, spot: Spot) {
   const why = s.ruled_out?.[spot.id];
   return why ? why.charAt(0).toUpperCase() + why.slice(1) : "Not scored";
 }
 
-function popup(s: Session, spot: Spot, sc: SpotScore | undefined) {
-  if (!sc) {
-    return `<div class="popup"><div class="t">${esc(spot.name)} <span class="tag">${TAG[spot.kind]}</span></div><div class="m">${notesHtml([whyNot(s, spot)])}</div></div>`;
-  }
-  return `<div class="popup">
-    <div class="t">${esc(spot.name)} · ${sc.rating}/10 <span class="tag">${TAG[spot.kind]}</span></div>
-    ${windowText(sc) ? `<div class="m">Best ${esc(windowText(sc))}</div>` : ""}
-    ${sc.notes.length ? `<div class="m">${notesHtml(sc.notes)}</div>` : ""}
-  </div>`;
+function render() {
+  const s = data.sessions[current];
+  week = weekOf(s);
+  renderWeek();
+  renderHero(s);
+  const c = s.conditions;
+  if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
+  renderPins(s);
+  renderSpots(s);
 }
 
-function highlight(id: string, fromList: boolean) {
-  activeSpot = id;
-  document.querySelectorAll<HTMLElement>(".spot").forEach((li) => li.classList.toggle("active", li.dataset.id === id));
-  renderConditions(data.sessions[current]);
-  focusPin(id);
-  if (fromList) $("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-// Fly in to a spot (never zooming back out if you're already closer) and open its popup
-function focusPin(id: string) {
-  const m = markers[id];
-  if (!m || !map) return;
-  map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
-  m.openPopup(); // Leaflet closes any other open popup
-}
-
-load();
+start();

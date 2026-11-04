@@ -2,6 +2,19 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## Unreleased (ui-improvements branch)
+
+From a round of UI feedback.
+
+- **A week at a glance.** Days run Monday to Sunday, with morning and evening inside each day, and there's a "Next week" view as far as the swell forecast reaches (about 9 days). Anything more than two days out is marked as an early forecast (dashed day, a note in the summary), and the calendar still only posts two days ahead.
+- **Calendar links open their own session** (`?s=beach20261107am`), and the page keeps that link as you move around, so it can be shared.
+- **Summary card** has a heading saying which session it is, adds tide times, icons on each condition, and the coast-wide conditions ("Across the coast").
+- **Traffic lights**: red, amber and green for every score, using Beachwatch's red. Ruled-out spots show 0 in red instead of "–".
+- **Spots**: an Activity filter (All, Swim, Snorkel, Pool, Surf; all by default) and Sort (Best first, North to south, By place, which groups a beach with its surf break and pools).
+- **Conditions live in the spot's card**: tap a card to open it, and tap a pin to open and scroll to its card. Pools are rated on calm in the pool and the tide, surf spots on wave size and wave quality.
+- **Map**: pins show an icon for the kind of spot plus the score (just the score when zoomed out), popups just name the spot with a link to its details, the zoom buttons and a proper Wind on/off switch sit bottom-left, and phones get a List / Map toggle.
+- **Freshness**: the page fetches new scores every 5 minutes and when you come back to the tab, and warns when they're over an hour old.
+
 ## 2026-11-04
 
 ### Pools and wind

@@ -7,6 +7,8 @@ export interface Spot {
   name: string;
   kind: SpotKind;
   snorkel?: boolean;
+  /** The place it belongs to, e.g. Coogee for the beach, its surf break and its pools */
+  area?: string;
   lat: number;
   lon: number;
 }
@@ -29,6 +31,9 @@ export interface Session {
   /** Worth it: the same rule the calendar uses, so the site and calendar always agree */
   posted: boolean;
   fire: boolean;
+  /** "low" past a couple of days out: a guide, not something the calendar posts */
+  confidence?: "high" | "low";
+  tides?: { kind: "high" | "low"; time: string }[];
   lead: { id: string | null; kind: SpotKind; name: string | null; score: number; rating: number; window: [string, string] | null };
   conditions: {
     wind_kmh: number;

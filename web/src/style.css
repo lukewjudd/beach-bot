@@ -5,10 +5,11 @@
   --muted: #5d6a72;
   --line: #e2ded5;
   --accent: #0e6e8c;
-  --r-low: #6b757c; /* pill colours all clear 4.5:1 with white text */
-  --r-mid: #a0670d;
-  --r-good: #1b7f57;
-  --r-great: #0b6e4f;
+  /* Traffic lights, Beachwatch's red: each clears 4.5:1 with --on-pill text */
+  --r-red: #d7153a;
+  --r-amber: #b45309;
+  --r-green: #00804a;
+  --r-red-soft: #fde8ec;
   --on-pill: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .05);
   --wind: rgba(255, 255, 255, .75);
@@ -23,10 +24,10 @@
     --muted: #97a4ab;
     --line: #2b363b;
     --accent: #5cc3e0;
-    --r-low: #8a949b;
-    --r-mid: #c99434;
-    --r-good: #34b37f;
-    --r-great: #4fd29b;
+    --r-red: #f2556b;
+    --r-amber: #e8a33d;
+    --r-green: #3ccf8e;
+    --r-red-soft: #3a1d24;
     --on-pill: #0d1417;
     --shadow: none;
     --wind: rgba(255, 255, 255, .5);
@@ -41,10 +42,10 @@
   --muted: #97a4ab;
   --line: #2b363b;
   --accent: #5cc3e0;
-  --r-low: #8a949b;
-  --r-mid: #c99434;
-  --r-good: #34b37f;
-  --r-great: #4fd29b;
+  --r-red: #f2556b;
+  --r-amber: #e8a33d;
+  --r-green: #3ccf8e;
+  --r-red-soft: #3a1d24;
   --on-pill: #0d1417;
   --shadow: none;
   --wind: rgba(255, 255, 255, .5);
@@ -60,105 +61,169 @@ body {
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Desktop: the whole app fits the viewport and only the panel (conditions + spots) scrolls.
-   Phones scroll as a normal page: there isn't room under the map for a pinned panel and a list. */
+/* Desktop: the whole app fits the viewport and only the spots panel scrolls.
+   Phones scroll as a normal page, showing the list or the map. */
 body { display: flex; flex-direction: column; }
-.top, .tabs, main { width: 100%; max-width: 1100px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+.top, .week, .stale-banner, main { width: 100%; max-width: 1100px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
 main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 16px; }
 
 .top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 14px; padding-bottom: 4px; }
 h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
 .sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-
-.tabs { display: flex; gap: 6px; overflow-x: auto; padding-top: 8px; padding-bottom: 10px; scrollbar-width: none; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-  border: 1px solid var(--line); background: var(--surface); color: var(--text);
-  border-radius: 999px; padding: 6px 8px 6px 12px; min-height: 44px; font: inherit; font-size: 14px; cursor: pointer;
+.stale-banner {
+  margin-top: 6px; margin-bottom: 0; padding-top: 8px; padding-bottom: 8px; border-radius: 10px;
+  background: var(--r-red-soft); color: var(--text); font-size: 14px;
 }
-.tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.stale-banner[hidden] { display: none; }
+
+.icon { width: 16px; height: 16px; flex: 0 0 auto; }
+
+/* ---- Week and days: always Monday to Sunday */
+.week { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; padding-bottom: 10px; }
+.week-pick { display: flex; gap: 4px; }
+.week-pick button, .slots button, .view-toggle button {
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  border-radius: 999px; padding: 4px 12px; min-height: 36px; font: inherit; font-size: 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.week-pick button[aria-pressed="true"], .slots button[aria-pressed="true"], .view-toggle button[aria-pressed="true"] {
+  color: var(--text); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent);
+}
+button:disabled { opacity: .45; cursor: default; }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; min-height: 44px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 12px; font: inherit; cursor: pointer;
+}
+.day .dn { font-size: 12px; color: var(--muted); }
+.day .dd { font-size: 16px; font-weight: 700; line-height: 1.1; }
+.day[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.day.low { border-style: dashed; } /* an early forecast */
+.day:disabled { background: transparent; }
 
 .pill {
   display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 22px;
   padding: 0 6px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--on-pill);
   font-variant-numeric: tabular-nums;
 }
-.r-low { background: var(--r-low); }
-.r-mid { background: var(--r-mid); }
-.r-good { background: var(--r-good); }
-.r-great { background: var(--r-great); }
+.pill.none { background: var(--line); color: var(--muted); }
+.r-red { background: var(--r-red); }
+.r-amber { background: var(--r-amber); }
+.r-green { background: var(--r-green); }
 
+/* ---- Summary of the chosen session */
 .hero {
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow);
 }
+.hero-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.hero-head h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+.hero-head .hours { color: var(--muted); font-weight: 400; font-size: 15px; margin-left: 4px; }
+.slots { display: flex; gap: 4px; }
 .hero .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero .where { font-size: 18px; font-weight: 600; }
-.hero .when { color: var(--muted); }
+.hero .when, .hero .why { color: var(--muted); }
 .flag { font-size: 20px; font-weight: 800; letter-spacing: -.01em; padding: 2px 10px; border-radius: 8px; }
-.flag.yes { background: var(--r-good); color: var(--on-pill); }
-.flag.no { background: var(--line); color: var(--muted); }
+.flag.yes { background: var(--r-green); color: var(--on-pill); }
+.flag.no { background: var(--r-red-soft); color: var(--r-red); }
+.early { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.chip { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 13px; color: var(--muted); }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 13px; color: var(--muted);
+}
+.chip .icon { color: var(--accent); width: 15px; height: 15px; }
 .chip b { color: var(--text); font-weight: 600; }
+.coast-title { margin: 14px 0 6px; }
+.report.coast { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); column-gap: 24px; }
 
-.layout { display: grid; grid-template-columns: 1fr; grid-template-rows: 50vh auto; gap: 12px; margin-top: 12px; }
+/* ---- Layout */
+.view-toggle { display: none; gap: 4px; margin-top: 12px; }
+.layout { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+@media (max-width: 859px) {
+  /* Phones: the list or the map, one at a time */
+  .view-toggle { display: flex; }
+  .layout[data-view="list"] #map { display: none; }
+  .layout[data-view="map"] .panel { display: none; }
+  .layout[data-view="map"] #map { height: 70vh; }
+}
 @media (min-width: 860px) {
   body { height: 100dvh; overflow: hidden; }
   .layout { flex: 1; min-height: 0; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr; }
   .panel { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-right: 4px; }
-  .pinned { position: sticky; top: 0; z-index: 2; background: var(--bg); padding-bottom: 4px; box-shadow: 0 8px 8px -8px var(--bg); }
+  .controls { position: sticky; top: 0; z-index: 2; background: var(--bg); }
 }
 
 #map { height: 100%; min-height: 0; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
 
-.panel h2:first-child, .pinned h2 { margin-top: 0; }
-.spots { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.spot {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer;
+/* ---- Spots: filters, sort, cards */
+.controls { display: flex; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; }
+.controls label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.controls select {
+  font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-height: 40px;
 }
-.spot.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.spots, .spots ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.group h3 { margin: 10px 0 6px; }
+.spot { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.spot.open { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.spot-head {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; width: 100%;
+  background: none; border: 0; padding: 8px 10px; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.spot .body { display: flex; flex-direction: column; min-width: 0; }
 .spot .name { font-weight: 600; }
 .spot .meta { color: var(--muted); font-size: 13px; }
 .spot .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .spot .win { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.spot .details { padding: 2px 12px 12px; border-top: 1px solid var(--line); margin-top: 2px; padding-top: 10px; }
+.empty { color: var(--muted); padding: 12px 0; }
 .tag {
   display: inline-block; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px;
   font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--muted); white-space: nowrap; vertical-align: middle;
 }
-.hero .why { color: var(--muted); }
 
 .report { display: grid; gap: 6px; }
-.bar { display: grid; grid-template-columns: 104px 1fr 44px; gap: 8px; align-items: center; font-size: 14px; }
+.bar { display: grid; grid-template-columns: 112px 1fr 44px; gap: 8px; align-items: center; font-size: 14px; }
 .bar .track { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .bar .fill { height: 100%; border-radius: 4px; }
 .bar .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
 
-
-/* Map markers */
+/* ---- Map pins: an icon for the kind of spot and its score, coloured by the score */
 .marker {
-  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
-  color: var(--on-pill); font-weight: 800; font-size: 13px; border: 2px solid var(--surface);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .3); font-family: system-ui, sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 3px; height: 30px; padding: 0 9px 0 7px;
+  border-radius: 999px; color: var(--on-pill); font: 800 13px system-ui, sans-serif;
+  border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); cursor: pointer; width: max-content;
 }
-.marker { position: relative; }
-/* Pin shapes by kind: beach circle, pool rounded square, surf diamond */
-.marker.pool { border-radius: 8px; }
-.marker.surf { border-radius: 5px; width: 27px; height: 27px; margin: 3.5px; transform: rotate(45deg); }
-.marker.surf .n { transform: rotate(-45deg); }
-.marker.lead { outline: 3px solid var(--accent); outline-offset: 2px; }
-.marker.none { background: var(--r-low); color: var(--on-pill); opacity: .7; }
+.marker .icon { width: 15px; height: 15px; }
+.pin-wrap { display: flex; align-items: center; justify-content: center; }
+#map.compact-pins .marker .icon { display: none; }
+#map.compact-pins .marker { padding: 0 8px; min-width: 30px; }
+.marker.lead, .marker.open { outline: 3px solid var(--accent); outline-offset: 2px; }
 #map { overflow: hidden; }
-.marker { cursor: pointer; }
 /* #map prefix: Leaflet's own stylesheet loads after ours (with the map code), so ours needs to outrank it */
 #map.leaflet-container { font: inherit; background: var(--bg); }
 #map .leaflet-popup-content-wrapper, #map .leaflet-popup-tip { background: var(--surface); color: var(--text); }
 #map .leaflet-popup-content-wrapper { border-radius: 10px; }
 #map .leaflet-popup-content { margin: 10px 12px; font-size: 14px; }
 .popup .t { font-weight: 700; }
-.popup .m { color: var(--muted); font-size: 13px; }
+
+/* Wind trails switch, with the zoom buttons bottom-left */
+.wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
+#map .wind-switch {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; min-height: 36px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+  font: 600 13px system-ui, sans-serif; box-shadow: var(--shadow); cursor: pointer;
+}
+#map .wind-switch .track {
+  position: relative; width: 30px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s;
+}
+#map .wind-switch .knob {
+  position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: transform .15s;
+}
+#map .wind-switch[aria-checked="true"] .track { background: var(--accent); }
+#map .wind-switch[aria-checked="true"] .knob { transform: translateX(12px); }
 
 .error { color: var(--muted); padding: 24px 0; }
 
@@ -178,37 +243,9 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner, #map:not(.ready)::after { animation-duration: 2.4s; } }
 
-/* Beaches / Pools / Surf filter */
-.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-.filter {
-  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
-  border-radius: 999px; padding: 5px 14px; min-height: 44px; font: inherit; font-size: 14px; cursor: pointer;
-}
-.filter[aria-pressed="true"] { color: var(--text); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-
-/* "show top pick" next to the conditions title */
-.link { border: 0; background: none; padding: 0 0 0 6px; font: inherit; font-size: 12px; text-transform: none;
-  letter-spacing: 0; color: var(--accent); cursor: pointer; }
-
-/* Wind trails: above the tiles, below the pins, never in the way of clicks */
-.wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
-/* Wind trails switch: same square as Leaflet's zoom buttons */
-#map .wind-toggle button {
-  display: block; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 4px;
-  background: #fff; color: #333; font: 600 9px/30px system-ui, sans-serif; cursor: pointer;
-}
-#map .wind-toggle button:hover { background: #f4f4f4; }
-#map .wind-toggle button[aria-pressed="true"] { color: var(--accent); }
+.link { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; color: var(--accent); cursor: pointer; }
 
 /* Notes that should change your mind */
-.warn { color: var(--r-mid); }
-#updated .stale { color: var(--r-mid); font-weight: 600; }
-.spot:focus-visible, .tab:focus-visible, .filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.warn { color: var(--r-amber); }
+.spot-head:focus-visible, .day:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-/* Legend shapes in the Beaches / Pools / Surf filters, matching the pins */
-.shape { display: inline-block; width: 11px; height: 11px; background: var(--muted); vertical-align: -1px; }
-.shape.swim { border-radius: 50%; }
-.shape.pool { border-radius: 3px; }
-.shape.surf { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); margin: 0 1px; }
-.filter[aria-pressed="true"] .shape { background: var(--accent); }

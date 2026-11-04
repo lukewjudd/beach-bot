@@ -5,6 +5,7 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { leafletLayer } from "protomaps-leaflet";
+import { ICONS } from "./icons";
 import type { Spot } from "./types";
 
 export { windLayer } from "./wind";
@@ -25,7 +26,7 @@ export function createMap(container: HTMLElement): L.Map {
     maxZoom: 17,
     zoomSnap: 0.25, // fit the coastline snugly rather than rounding down a whole zoom level
   });
-  L.control.zoom({ position: "bottomright" }).addTo(map);
+  L.control.zoom({ position: "bottomleft" }).addTo(map);
   const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const tiles = leafletLayer({
     url: TILES_URL,
@@ -39,8 +40,13 @@ export function createMap(container: HTMLElement): L.Map {
   // Spinner until the first screenful of tiles is drawn
   tiles.once("load", () => container.classList.add("ready"));
 
+  // Zoomed out, the pins sit close together: drop their kind icons so they're just the score
+  const compact = () => container.classList.toggle("compact-pins", map.getZoom() < 14);
+  map.on("zoomend", compact);
+
   const fit = () => map.fitBounds(SPOT_BOUNDS, { padding: [24, 24], animate: false });
   fit();
+  compact();
   // The container can settle after first paint (fonts, grid); refit once it has its final size
   new ResizeObserver(() => {
     map.invalidateSize();
@@ -50,15 +56,14 @@ export function createMap(container: HTMLElement): L.Map {
 }
 
 export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, popupHtml: string, onClick: () => void) {
-  // Leaflet positions the outer icon element; styling lives on the inner pin so our CSS can't shift it
-  // Kind is shown by the pin's shape (see .marker.pool / .marker.surf); the label sits in its own span so a
-  // diamond can turn it back upright
+  // An icon for the kind of spot and its score, in a pill coloured by the score. Leaflet positions the
+  // outer element; styling lives on the inner pin so our CSS can't shift it
   const icon = L.divIcon({
-    className: "",
-    html: `<div class="${pinClass}"><span class="n">${label}</span></div>`,
-    iconSize: [34, 34], // big enough to tap
-    iconAnchor: [17, 17],
-    popupAnchor: [0, -16],
+    className: "pin-wrap", // centres the pill, whose width depends on the score, on the anchor
+    html: `<div class="${pinClass}">${ICONS[spot.kind]}<span class="n">${label}</span></div>`,
+    iconSize: [48, 30],
+    iconAnchor: [24, 15],
+    popupAnchor: [0, -14],
   });
   return L.marker([spot.lat, spot.lon], { icon, title: spot.name, keyboard: true })
     .bindPopup(popupHtml, { closeButton: false })
@@ -66,20 +71,19 @@ export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, 
     .addTo(map);
 }
 
-// The wind trails' on/off switch: a plain square button stacked above the zoom buttons, out of the way
+// The wind trails' on/off switch, with the zoom buttons in the bottom-left corner
 export function windButton(map: L.Map, on: boolean, toggle: () => boolean) {
   const Control = L.Control.extend({
     onAdd() {
-      const bar = L.DomUtil.create("div", "leaflet-bar wind-toggle");
-      const b = L.DomUtil.create("button", "", bar);
+      const b = L.DomUtil.create("button", "wind-switch");
       b.type = "button";
-      b.textContent = "Wind";
-      b.title = "Show wind trails";
-      b.setAttribute("aria-pressed", String(on));
-      L.DomEvent.disableClickPropagation(bar); // a tap on the button isn't a tap on the map
-      L.DomEvent.on(b, "click", () => b.setAttribute("aria-pressed", String(toggle())));
-      return bar;
+      b.setAttribute("role", "switch");
+      b.setAttribute("aria-checked", String(on));
+      b.innerHTML = `<span class="track" aria-hidden="true"><span class="knob"></span></span> Wind`;
+      L.DomEvent.disableClickPropagation(b); // a tap on the switch isn't a tap on the map
+      L.DomEvent.on(b, "click", () => b.setAttribute("aria-checked", String(toggle())));
+      return b;
     },
   });
-  new Control({ position: "bottomright" }).addTo(map);
+  new Control({ position: "bottomleft" }).addTo(map);
 }
