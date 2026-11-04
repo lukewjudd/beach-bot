@@ -338,8 +338,14 @@ function renderHero(s: Session) {
     .filter((t) => t.time.endsWith(morning ? "am" : "pm"))
     .map((t) => `${t.kind === "high" ? "High" : "Low"} <b>${t.time}</b>`)
     .join(" · ");
-  const chip = (icon: string, label: string, value: string, lead = false) =>
-    `<span class="chip${lead ? " lead" : ""}">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
+  // A chip's border is a traffic light when the stat is good or bad for a swim, using the bot's own rules;
+  // tides, sun and UV are just information and stay plain
+  const chip = (icon: string, label: string, value: string, rating?: number, lead = false) =>
+    `<span class="chip${lead ? " lead" : ""}${rating != null ? ` edge-${ratingClass(rating).slice(2)}` : ""}">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
+  const coast = s.coast ?? s.report;
+  const air = c.air_c >= 26 ? 10 : c.air_c >= 23 ? 8 : c.air_c >= 21 ? 6 : c.air_c >= 19 ? 4 : 2; // the scoring bands
+  const rain = c.rain_pct >= 60 ? 2 : c.rain_pct >= 40 ? 5 : 10;
+  const water = c.water_c != null && c.water_c > 22 ? 10 : undefined; // warm earns a bonus; cool is never a minus
   // Stats on three lines by what they describe, the one that swings a session most leading each line
   const line = (label: string, chips: string) =>
     `<div class="stat-line"><span class="stat-label">${label}</span><div class="chips">${chips}</div></div>`;
@@ -354,14 +360,14 @@ function renderHero(s: Session) {
     <div class="stats">
       ${line(
         "Weather",
-        chip(ICONS.wind, "Wind", `<b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}`, true) +
-          chip(ICONS.air, "Air", `Air <b>${c.air_c}°</b>`) +
-          chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`),
+        chip(ICONS.wind, "Wind", `<b>${esc(c.wind_dir)} ${c.wind_kmh} km/h</b>, gusting up to ${c.gust_kmh}`, coast.Wind, true) +
+          chip(ICONS.air, "Air", `Air <b>${c.air_c}°</b>`, air) +
+          chip(ICONS.rain, "Rain", `Rain <b>${c.rain_pct}%</b>`, rain),
       )}
       ${line(
         "Ocean",
-        chip(ICONS.swell, "Swell", `<b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, true) +
-          (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`) : "") +
+        chip(ICONS.swell, "Swell", `<b>${c.swell_m}m ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast["Calm water"], true) +
+          (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${c.water_c}°</b>`, water) : "") +
           (tides ? chip(ICONS.tide, "Tides", tides) : ""),
       )}
       ${line(

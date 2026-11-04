@@ -164,7 +164,11 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .stat-label { font-size: 12px; color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip.lead { font-size: 14px; border-color: var(--muted); }
+.chip.lead { font-size: 14px; }
+/* Traffic-light edges on the stats that are good or bad for a swim */
+.chip.edge-green { border-color: var(--r-green); }
+.chip.edge-amber { border-color: var(--r-amber); }
+.chip.edge-red { border-color: var(--r-red); }
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
   border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 13px; color: var(--muted);
