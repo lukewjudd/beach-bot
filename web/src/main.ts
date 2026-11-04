@@ -47,16 +47,28 @@ let markers: Record<string, Marker> = {};
 let current = 0; // index into data.sessions
 let week = 0; // 0 = this week, 1 = next
 let openSpot: string | null = null; // the card that's expanded
-type Activity = "all" | "swim" | "snorkel" | "pool" | "surf";
-let activity = (load("activity") as Activity) ?? "all";
+type Activity = "swim" | "snorkel" | "pool" | "surf";
+const ACTIVITIES: Activity[] = ["swim", "snorkel", "pool", "surf"];
+// Which activities to show spots for; all of them until you untick some (remembered per browser)
+let activities = new Set<Activity>(ACTIVITIES);
+try {
+  const saved = JSON.parse(load("activities") ?? "null");
+  if (Array.isArray(saved)) activities = new Set(saved.filter((a) => ACTIVITIES.includes(a)));
+} catch {
+  // nothing saved, or garbled: show everything
+}
 let sort = load("sort") ?? "best";
 let windOn = load("wind") === "on";
 
 const TAG: Record<SpotKind, string> = { swim: "Beach", pool: "Pool", surf: "Surf" };
 const tags = (spot: Spot) =>
   `<span class="tag">${TAG[spot.kind]}</span>` + (spot.snorkel ? `<span class="tag">Snorkel</span>` : "");
+// A spot shows if it suits any ticked activity (Clovelly is a swim and a snorkel spot)
 const shows = (spot: Spot) =>
-  activity === "all" || (activity === "snorkel" ? !!spot.snorkel : spot.kind === activity);
+  (activities.has("swim") && spot.kind === "swim") ||
+  (activities.has("snorkel") && !!spot.snorkel) ||
+  (activities.has("pool") && spot.kind === "pool") ||
+  (activities.has("surf") && spot.kind === "surf");
 
 // Notes that should change your mind stand out from the nice-to-knows ("wave pool fun")
 const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach/i;
@@ -172,15 +184,29 @@ function wireControls() {
   about.addEventListener("click", (e) => {
     if (e.target === about) about.close(); // a tap on the backdrop
   });
-  const act = $("activity") as HTMLSelectElement;
-  const srt = $("sort") as HTMLSelectElement;
-  act.value = activity;
-  srt.value = sort;
-  act.addEventListener("change", () => {
-    activity = act.value as Activity;
-    save("activity", activity);
-    render();
+  const act = $("activity") as HTMLDetailsElement;
+  const boxes = [...act.querySelectorAll<HTMLInputElement>("input[type=checkbox]")];
+  const summarise = () => {
+    const names = boxes.filter((b) => b.checked).map((b) => b.parentElement?.textContent?.trim());
+    $("activity-value").textContent =
+      names.length === ACTIVITIES.length ? "All" : names.length ? names.join(", ") : "None";
+  };
+  boxes.forEach((b) => {
+    b.checked = activities.has(b.value as Activity);
+    b.addEventListener("change", () => {
+      activities = new Set(boxes.filter((x) => x.checked).map((x) => x.value as Activity));
+      save("activities", JSON.stringify([...activities]));
+      summarise();
+      render();
+    });
   });
+  summarise();
+  // Close the dropdown when you tap away from it
+  document.addEventListener("click", (e) => {
+    if (act.open && !act.contains(e.target as Node)) act.open = false;
+  });
+  const srt = $("sort") as HTMLSelectElement;
+  srt.value = sort;
   srt.addEventListener("change", () => {
     sort = srt.value;
     save("sort", sort);
@@ -390,7 +416,7 @@ function renderSpots(s: Session) {
       .map((p) => card(s, p, byId[p.id]))
       .join("");
   }
-  $("spots").innerHTML = html || `<li class="empty">No spots for this activity.</li>`;
+  $("spots").innerHTML = html || `<li class="empty">No spots: tick an activity to see some.</li>`;
   $("spots")
     .querySelectorAll<HTMLElement>(".spot")
     .forEach((li) =>

@@ -11,7 +11,7 @@ From a round of UI feedback.
 - **Calendar links open their own session** (`?s=beach20261107am`), and the page keeps that link as you move around, so it can be shared.
 - **Summary card** has a heading saying which session it is, adds tide times, icons on each condition, and the coast-wide conditions ("Across the coast").
 - **Traffic lights**: red, amber and green for every score, using Beachwatch's red. Ruled-out spots show 0 in red instead of "–".
-- **Spots**: an Activity filter (All, Swim, Snorkel, Pool, Surf; all by default) and Sort (Best first, North to south, By place, which groups a beach with its surf break and pools).
+- **Spots**: an Activity filter you can tick several of (Swim, Snorkel, Pool, Surf; all by default) and Sort (Best first, North to south, By place, which groups a beach with its surf break and pools).
 - **Conditions live in the spot's card**: tap a card to open it, and tap a pin to open and scroll to its card. Pools are rated on calm in the pool and the tide, surf spots on wave size and wave quality.
 - **Map**: pins show an icon for the kind of spot plus the score (just the score when zoomed out), popups just name the spot with a link to its details, the zoom buttons and a proper Wind on/off switch sit bottom-left, and phones get a List / Map toggle.
 - **No water temperature row** in the conditions: it's one sea temperature for the whole coast, already a stat in the summary. It still counts in the scores, and "cold water" (under 20°) still shows as a note.

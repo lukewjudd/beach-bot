@@ -66,15 +66,16 @@
       <div id="map" role="region" aria-label="Map of spot scores"></div>
       <section class="panel" aria-label="Spots">
         <div class="controls">
-          <label>Activity
-            <select id="activity">
-              <option value="all">All</option>
-              <option value="swim">Swim</option>
-              <option value="snorkel">Snorkel</option>
-              <option value="pool">Pool</option>
-              <option value="surf">Surf</option>
-            </select>
-          </label>
+          <details class="multi" id="activity">
+            <summary>Activity <span class="value" id="activity-value">All</span></summary>
+            <fieldset>
+              <legend class="sr-only">Show spots for</legend>
+              <label><input type="checkbox" value="swim"> Swim</label>
+              <label><input type="checkbox" value="snorkel"> Snorkel</label>
+              <label><input type="checkbox" value="pool"> Pool</label>
+              <label><input type="checkbox" value="surf"> Surf</label>
+            </fieldset>
+          </details>
           <label>Sort
             <select id="sort">
               <option value="best">Best first</option>
