@@ -5,6 +5,7 @@ What changed and why, newest first. Dates are Sydney time.
 ## 2026-11-05
 
 - **More room for the map on desktop.** The week toggle sits beside the days, each day's AM and PM sit side by side under its date, the day heading shares a row with the verdict, and the coast ratings move into a column beside the stat lines. At 1440×900 the top goes from 529px to 349px and the map from 355px to 535px tall. Phones are unchanged.
+- Desktop week strip: AM and PM are centred in each day (they were spilling past the card's right edge), and on narrower desktop windows each label sits over its score.
 
 ## 2026-11-04 (night): northern beaches and harbour beaches
 
