@@ -200,6 +200,8 @@ def out_of_10(score):
 
 def report(sess, hours, ctx, beachwatch, today, spot=None):
     """Out-of-10 ratings per condition at one spot (a Beach, Pool or SurfSpot) during its best window.
+    No water temperature row: there's one sea temperature for the whole coast, so it's a stat in the summary
+    (and still counts in the scores), and cold water shows up as a note.
     Without a spot it's the top swim pick, which is what the calendar event shows.
     Wind, weather and water temp come from area-wide forecasts; how the wind and swell hit the spot,
     and its water quality, are the spot's own."""
@@ -227,25 +229,6 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         sector = swell_sector(hs_list[0].get("swell_wave_direction") or 0)
         hb = c["hs"] * (spot.k[sector] if sector else 0.1) * (1.3 if c["period"] >= 12 else 1)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
-
-    sea = c["sea"] or 20
-    water = (
-        10
-        if sea >= 22
-        else 9
-        if sea >= 21
-        else 8
-        if sea >= 20
-        else 7
-        if sea >= 19
-        else 6
-        if sea >= 18
-        else 5
-        if sea >= 17
-        else 3
-    )
-    if ctx.ne_days(sess.hours[0]) >= 3:
-        water -= 1
 
     air = c["air"]
     weather = 10 if air >= 26 else 8 if air >= 23 else 6 if air >= 21 else 4 if air >= 19 else 2
@@ -305,7 +288,6 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     return {
         "Wind": clamp(w),
         **waves,
-        "Water temp": clamp(water),
         "Weather": clamp(weather),
         "Water quality": clamp(quality),
     }

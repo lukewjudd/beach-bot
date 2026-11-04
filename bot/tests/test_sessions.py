@@ -120,7 +120,7 @@ def test_conditions_are_per_spot_where_they_should_be():
 
     assert clovelly["Calm water"] > maroubra["Calm water"]
     assert clovelly["Wind"] > maroubra["Wind"]  # cross-shore at Clovelly, onshore at Maroubra
-    assert clovelly["Water temp"] == maroubra["Water temp"]  # one sea temperature for the coast
+    assert "Water temp" not in clovelly  # one sea temperature for the coast: a summary stat, not a spot row
 
 
 def test_beachwatch_wins_over_the_rain_rules_for_water_quality():
