@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 332" role="img" aria-labelledby="water-t water-d" class="how-swell">
+<title id="water-t">How much rain each beach can take</title>
+<desc id="water-d">Bar chart of rain in the last 24 hours against each eastern beach: green where it's fine, amber where it loses points, red where it's ruled out. Enclosed and lightly flushed beaches like Tamarama and Malabar are ruled out after 5mm; Bondi, Clovelly and Maroubra take 20mm.</desc>
+<rect x="0" y="0" width="400" height="88" rx="6" fill="var(--hs-sea)" opacity=".35"/>
+<circle cx="52" cy="20" r="12" fill="var(--muted)" opacity=".75"/>
+<circle cx="68" cy="14" r="14" fill="var(--muted)" opacity=".75"/>
+<circle cx="86" cy="20" r="11" fill="var(--muted)" opacity=".75"/>
+<circle cx="68" cy="24" r="12" fill="var(--muted)" opacity=".75"/>
+<line x1="44" y1="36" x2="40" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="53" y1="36" x2="49" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="62" y1="36" x2="58" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="71" y1="36" x2="67" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="80" y1="36" x2="76" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="89" y1="36" x2="85" y2="48" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M0,44 Q60,46 110,58 L150,66 L150,88 L0,88Z" fill="var(--hs-land)"/>
+<path d="M140.0,64.0L140.0,62.3L144.0,61.4L148.0,60.7L152.0,60.2L156.0,60.0L160.0,60.2L164.0,60.8L168.0,61.6L172.0,62.5L176.0,63.3L180.0,63.8L184.0,64.0L188.0,63.8L192.0,63.2L196.0,62.4L200.0,61.5L204.0,60.7L208.0,60.2L212.0,60.0L216.0,60.2L220.0,60.7L224.0,61.5L228.0,62.4L232.0,63.2L236.0,63.8L240.0,64.0L244.0,63.8L248.0,63.3L252.0,62.5L256.0,61.7L260.0,60.8L264.0,60.3L268.0,60.0L272.0,60.1L276.0,60.6L280.0,61.4L284.0,62.3L288.0,63.1L292.0,63.7L296.0,64.0L300.0,63.9L304.0,63.4L308.0,62.7L312.0,61.8L316.0,60.9L320.0,60.3L324.0,60.0L328.0,60.1L332.0,60.6L336.0,61.3L340.0,62.2L344.0,63.0L348.0,63.6L352.0,64.0L356.0,63.9L360.0,63.5L364.0,62.8L368.0,61.9L372.0,61.1L376.0,60.4L380.0,60.0L384.0,60.1L388.0,60.5L392.0,61.2L396.0,62.0L400.0,62.9L400.0,88.0L140.0,88.0Z" fill="var(--hs-sea)"/>
+<path d="M140.0,64.0L140.0,62.3L144.0,61.4L148.0,60.7L152.0,60.2L156.0,60.0L160.0,60.2L164.0,60.8L168.0,61.6L172.0,62.5L176.0,63.3L180.0,63.8L184.0,64.0L188.0,63.8L192.0,63.2L196.0,62.4L200.0,61.5L204.0,60.7L208.0,60.2L212.0,60.0L216.0,60.2L220.0,60.7L224.0,61.5L228.0,62.4L232.0,63.2L236.0,63.8L240.0,64.0L244.0,63.8L248.0,63.3L252.0,62.5L256.0,61.7L260.0,60.8L264.0,60.3L268.0,60.0L272.0,60.1L276.0,60.6L280.0,61.4L284.0,62.3L288.0,63.1L292.0,63.7L296.0,64.0L300.0,63.9L304.0,63.4L308.0,62.7L312.0,61.8L316.0,60.9L320.0,60.3L324.0,60.0L328.0,60.1L332.0,60.6L336.0,61.3L340.0,62.2L344.0,63.0L348.0,63.6L352.0,64.0L356.0,63.9L360.0,63.5L364.0,62.8L368.0,61.9L372.0,61.1L376.0,60.4L380.0,60.0L384.0,60.1L388.0,60.5L392.0,61.2L396.0,62.0L400.0,62.9" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+<rect x="112" y="56" width="30" height="9" rx="2" fill="var(--muted)"/>
+<ellipse cx="205" cy="74" rx="70" ry="10" fill="#8a5a2b" opacity=".45"/>
+<ellipse cx="185" cy="72" rx="38" ry="7" fill="#8a5a2b" opacity=".45"/>
+<text x="228" y="71" text-anchor="middle" font-size="26">💩</text>
+<text x="390" y="22" text-anchor="end" class="hs-label">After rain, stormwater</text>
+<text x="390" y="38" text-anchor="end" class="hs-label">drains onto the beach</text>
+<g transform="translate(0,96)">
+<line x1="112.0" y1="22" x2="112.0" y2="210" stroke="var(--line)"/>
+<text x="112.0" y="224" text-anchor="middle" class="hs-small">0mm</text>
+<line x1="166.4" y1="22" x2="166.4" y2="210" stroke="var(--line)"/>
+<text x="166.4" y="224" text-anchor="middle" class="hs-small">5mm</text>
+<line x1="220.8" y1="22" x2="220.8" y2="210" stroke="var(--line)"/>
+<text x="220.8" y="224" text-anchor="middle" class="hs-small">10mm</text>
+<line x1="275.2" y1="22" x2="275.2" y2="210" stroke="var(--line)"/>
+<text x="275.2" y="224" text-anchor="middle" class="hs-small">15mm</text>
+<line x1="329.6" y1="22" x2="329.6" y2="210" stroke="var(--line)"/>
+<text x="329.6" y="224" text-anchor="middle" class="hs-small">20mm</text>
+<line x1="384.0" y1="22" x2="384.0" y2="210" stroke="var(--line)"/>
+<text x="384.0" y="224" text-anchor="middle" class="hs-small">25mm</text>
+<text x="104" y="39" text-anchor="end" class="hs-small">Malabar</text>
+<rect x="112.0" y="30" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="30" width="43.5" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="166.4" y="30" width="217.6" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="59" text-anchor="end" class="hs-small">Tamarama</text>
+<rect x="112.0" y="50" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="50" width="43.5" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="166.4" y="50" width="217.6" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="79" text-anchor="end" class="hs-small">Bronte</text>
+<rect x="112.0" y="70" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="70" width="97.9" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="220.8" y="70" width="163.2" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="99" text-anchor="end" class="hs-small">Coogee *</text>
+<rect x="112.0" y="90" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="90" width="97.9" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="220.8" y="90" width="163.2" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="119" text-anchor="end" class="hs-small">Gordons Bay</text>
+<rect x="112.0" y="110" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="110" width="97.9" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="220.8" y="110" width="163.2" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="139" text-anchor="end" class="hs-small">Little Bay</text>
+<rect x="112.0" y="130" width="10.9" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="122.9" y="130" width="97.9" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="220.8" y="130" width="163.2" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="159" text-anchor="end" class="hs-small">Bondi</text>
+<rect x="112.0" y="150" width="54.4" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="166.4" y="150" width="163.2" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="329.6" y="150" width="54.4" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="179" text-anchor="end" class="hs-small">Maroubra</text>
+<rect x="112.0" y="170" width="54.4" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="166.4" y="170" width="163.2" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="329.6" y="170" width="54.4" height="12" fill="var(--r-red)" opacity=".75"/>
+<text x="104" y="199" text-anchor="end" class="hs-small">Clovelly</text>
+<rect x="112.0" y="190" width="108.8" height="12" fill="var(--r-green)" opacity=".75"/>
+<rect x="220.8" y="190" width="108.8" height="12" fill="var(--r-amber)" opacity=".75"/>
+<rect x="329.6" y="190" width="54.4" height="12" fill="var(--r-red)" opacity=".75"/>
+<rect x="112" y="6" width="10" height="10" rx="2" fill="var(--r-green)" opacity=".75"/>
+<text x="127" y="15" class="hs-small">fine</text>
+<rect x="204" y="6" width="10" height="10" rx="2" fill="var(--r-amber)" opacity=".75"/>
+<text x="219" y="15" class="hs-small">loses points</text>
+<rect x="296" y="6" width="10" height="10" rx="2" fill="var(--r-red)" opacity=".75"/>
+<text x="311" y="15" class="hs-small">ruled out</text>
+</g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 190" role="img" aria-labelledby="pools-t pools-d" class="how-swell">
+<title id="pools-t">Ocean pools and the tide</title>
+<desc id="pools-d">A day's tide curve. Around high tide, two and a half hours either side, a big swell washes over the pool walls. Around low tide is when the low-tide pools, Wylie's Baths and McIver's, are at their best.</desc>
+<rect x="48.9" y="24" width="116.2" height="136" fill="var(--r-amber)" opacity=".15"/>
+<rect x="337.2" y="24" width="48.8" height="136" fill="var(--r-amber)" opacity=".15"/>
+<rect x="181.4" y="24" width="139.5" height="136" fill="var(--r-green)" opacity=".12"/>
+<path d="M14.0,116.0L19.8,109.6L25.6,103.0L31.4,96.1L37.2,89.2L43.1,82.4L48.9,75.7L54.7,69.3L60.5,63.2L66.3,57.6L72.1,52.6L77.9,48.2L83.8,44.4L89.6,41.5L95.4,39.3L101.2,38.0L107.0,37.6L112.8,38.0L118.6,39.3L124.4,41.5L130.2,44.4L136.1,48.2L141.9,52.6L147.7,57.6L153.5,63.2L159.3,69.3L165.1,75.7L170.9,82.4L176.8,89.2L182.6,96.1L188.4,103.0L194.2,109.6L200.0,116.0L205.8,121.9L211.6,127.4L217.4,132.4L223.2,136.6L229.1,140.2L234.9,143.0L240.7,145.0L246.5,146.1L252.3,146.4L258.1,145.8L263.9,144.3L269.8,142.0L275.6,138.9L281.4,135.0L287.2,130.5L293.0,125.3L298.8,119.6L304.6,113.5L310.4,107.0L316.2,100.2L322.1,93.4L327.9,86.5L333.7,79.7L339.5,73.1L345.3,66.8L351.1,60.9L356.9,55.5L362.8,50.7L368.6,46.6L374.4,43.2L380.2,40.5L386.0,38.7" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+<text x="107.0" y="16" text-anchor="middle" class="hs-small">high tide: big swell washes over</text>
+<text x="251.1" y="136.4" text-anchor="middle" class="hs-small">low tide: Wylie’s, McIver’s</text>
+<circle cx="107.0" cy="37.6" r="3.5" fill="var(--accent)"/>
+<circle cx="251.1" cy="146.4" r="3.5" fill="var(--accent)"/>
+<text x="37.2" y="176" text-anchor="middle" class="hs-small">6am</text>
+<text x="107.0" y="176" text-anchor="middle" class="hs-small">9am</text>
+<text x="176.8" y="176" text-anchor="middle" class="hs-small">noon</text>
+<text x="246.5" y="176" text-anchor="middle" class="hs-small">3pm</text>
+<text x="316.2" y="176" text-anchor="middle" class="hs-small">6pm</text>
+<text x="386.0" y="176" text-anchor="middle" class="hs-small">9pm</text>
+</svg>

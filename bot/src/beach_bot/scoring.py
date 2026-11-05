@@ -60,7 +60,6 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     sdir = h.get("swell_wave_direction") or 0
     wind = h["wind_speed_10m"]
     wdir = h["wind_direction_10m"]
-    hour = int(t[11:13])
     month = int(t[5:7])
 
     # Swell at the beach (§4.2, R-S7)
@@ -132,11 +131,6 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
             s -= pen * (2 if w24 >= 30 else 1)
             if pen >= 8:
                 notes.append("bluebottles possible")
-
-    # Patrols (R-PT1): no flags early/late, so exposed beaches lose points
-    last_patrol = 19 if month in (10, 11, 12, 1, 2, 3) else 17
-    if b.hazard >= 6 and (hour < 7 or hour >= last_patrol):
-        s -= 15
 
     return max(0, min(100, s)), notes
 

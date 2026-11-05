@@ -246,7 +246,7 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 - R-P10 Bronte (surf): rising tide +5 [S21]. Bondi South: mid, rising tide +5 [S19].
 
 ### 4.7 Patrol / time-slot rules
-- R-PT1 Weekday early morning (before ~7am) and evening (after 7pm): no patrols anywhere. Prefer low-hazard locations: Clovelly (2), Little Bay (2), Gordons (2), Malabar (3), Coogee (4) [S4–S9]. Then apply exposed beaches (hazard ≥6) −15. [Beachsafe hazard ratings]
+- R-PT1 Weekday early morning (before ~7am) and evening (after 7pm): no patrols anywhere. Prefer low-hazard locations: Clovelly (2), Little Bay (2), Gordons (2), Malabar (3), Coogee (4) [S4–S9]. Then apply exposed beaches (hazard ≥6) −15. [Beachsafe hazard ratings] **Removed 2026-11-06**: no points are taken off for unpatrolled hours; the bot no longer scores patrols.
 - R-PT2 Clovelly has lifeguards every day, sunrise to sunset, all year (since 2024) [S33]. Coogee and Maroubra 7am–7pm in daylight saving, 7am–5pm otherwise [S34]. Bondi year-round [S1]. Tamarama late Sept–Apr [S10]. Bronte Sept–May [S10]. Gordons, Malabar and Little Bay are unpatrolled [S10].
 - R-PT3 Summer weekday evening (Oct–Mar): assume a 28–37 km/h NE sea breeze from mid-afternoon to sunset or later [S26]. Apply R-W6 automatically even if the model under-forecasts. This favours Bondi North, Clovelly and pools over Gordons, Little Bay and Bronte. [DERIVED]
 - R-PT4 Weekend daytime: patrol bonus +5 at patrolled beaches. SLSC volunteers are on duty on weekends and holidays, late Sept–April [S34].

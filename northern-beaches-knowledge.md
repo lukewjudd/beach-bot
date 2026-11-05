@@ -61,7 +61,7 @@ Bearings are the direction the beach faces, looking out to sea. Wind and swell d
 ### 2a. Merged, dropped and optional
 - **North Steyne** is merged into **Manly**. It is the middle of the same 1.5 km beach and the same rip system (Beachsafe uses one text for Queenscliff, North Steyne and Manly [N1]). It keeps its own Beachwatch site ("North Steyne Beach", -33.7910, 151.2880; occ. 5 mm, often 20 mm [N2]). Add it as its own spot only if you want a third pin on that beach.
 - **Long Reef** is kept although it is the north end of the Dee Why beach. It is the one beach where the summer NE sea breeze blows offshore [N1]. On a hot weekday evening that is useful. Drop it if you want fewer pins: its water is Dee Why Lagoon's [N2].
-- **Bungan** is kept but has the thinnest patrol record (only late Dec–Jan in 2022-23 [N2]). Its hazard of 7 and the patrol penalty will usually rank it low.
+- **Bungan** is kept but has the thinnest patrol record (only late Dec–Jan in 2022-23 [N2]). Its hazard of 7 will usually rank it low.
 - **Not swim spots / left out**: Fairy Bower beach is "a sliver of sand… a few metres… at low tide" [N1], so it is a pool only (§4). Turimetta is unpatrolled, with "rocks in the surf, together with rips and often dumping waves" [N1]. Narrabeen and South Narrabeen are the middle of the 3.5 km Narrabeen–Collaroy beach, covered by Collaroy and North Narrabeen. **The Basin** (Mona Vale, "Bongin Bongin") is a calm option to add later: hazard 3, waves ~0.5 m behind a reef, shares the Mona Vale pool [N1]. But it is unpatrolled and has no Beachwatch site of its own.
 
 ---
@@ -213,7 +213,7 @@ Wind drives them; NE and southerly winds both bring them in [S25]. Locally, Manl
 
 ### 7.6 Patrols and time slots
 - R-NPT1 Council lifeguards work 9am–5pm daily ("longer in the summer peak") from the last weekend of September to the last weekend of April [N9]. **Manly** is patrolled all year [N9, N10]. **Freshwater** from the last weekend of August to late May [N9]. **Dee Why** all year per the council beaches page [N9], or Sept–May per the June 2025 release [N10] (conflict). Volunteer SLSC patrols run on weekends and holidays in season [N10].
-- R-NPT2 So hazard ≥ 6 beaches lose 15 points before 9am, and after 5pm (6pm Dec–Jan) — not 7am / 7pm as in the east [N9]. Weekday morning sessions are always unpatrolled.
+- R-NPT2 So hazard ≥ 6 beaches lose 15 points before 9am, and after 5pm (6pm Dec–Jan) — not 7am / 7pm as in the east [N9]. Weekday morning sessions are always unpatrolled. **Removed 2026-11-06**: the bot no longer takes points off for unpatrolled hours.
 - R-NPT3 Bungan and Warriewood: treat as unpatrolled on weekdays outside school holidays unless the 2025-26 roster says otherwise. In 2022-23 Bungan was patrolled only late Dec–Jan and Warriewood only in holidays [N2]. Council took over "9 beaches from Warriewood to North Palm Beach" from Sept 2025 [N10], which may have extended this.
 
 ### 7.7 Surf

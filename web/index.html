@@ -117,6 +117,57 @@
         and from the north-east round to the south-east it's onshore (red).</figcaption>
     </figure>
 
+    <h4>6. Is the water clean?</h4>
+    <p>Rain washes stormwater into the sea, and some beaches take it worse than others. If NSW Beachwatch has a
+      forecast for the day, that's what counts: "pollution likely" rules a beach out, "possible" costs points. If
+      not, the bot goes on the rain that's actually fallen. Each beach has its own limits, from its Beachwatch
+      grades: open, well-flushed beaches shrug off a shower, enclosed ones don't.</p>
+    <figure class="how-swell-fig">
+      <div data-how="water"></div>
+      <figcaption>Rain in the last 24 hours that costs each beach points (amber) and rules it out (red). Beaches
+        marked * have poorer grades and also wait three days after 5mm.</figcaption>
+    </figure>
+    <p>Rain also clouds the water for snorkelling for a couple of days, so the snorkelling spots lose their "good
+      snorkelling" bonus until it clears.</p>
+
+    <h4>7. How warm will it feel?</h4>
+    <p>A swim feels different at 19° and 29°. But a session's coldest hour isn't the whole story: a 7am dip on a
+      day heading to 30° is a warm-day swim. So mornings count the warmth still to come (to early afternoon) and
+      evenings keep the afternoon's, both 3° under, so only properly warm days get the full bonus. After a
+      southerly change, an evening counts the temperature it actually is.</p>
+    <figure class="how-swell-fig">
+      <div data-how="warmth"></div>
+      <figcaption>A day going to 30° that turns with a southerly at 4pm.</figcaption>
+    </figure>
+
+    <h4>8. The sky</h4>
+    <p>Storms rule a session out: lightning and water don't mix. Rain and heavy cloud cost points, warm air adds
+      them. Water temperature only ever helps: warm water earns a few points, cool water is just noted (Sydney's
+      water is cool much of the year, and that's no reason not to go). After a few days of north-easterlies the
+      bot also warns that cold upwelling is likely.</p>
+    <figure class="how-swell-fig">
+      <div data-how="sky"></div>
+      <figcaption>What the weather does to a score, in points out of 100.</figcaption>
+    </figure>
+
+    <h4>9. Ocean pools and the tide</h4>
+    <p>Pools stay flat when the beaches are rough, so they're scored differently: the walls keep the chop out, and
+      what matters is big swell washing over them, which happens around high tide. Some pools are best at a
+      particular tide (Wylie's and McIver's at low, Giles at mid), some are drained for cleaning one day a week, and
+      the gated ones keep opening hours.</p>
+    <figure class="how-swell-fig">
+      <div data-how="pools"></div>
+      <figcaption>A day's tide. Big swell over the walls is a problem in the hours around high tide.</figcaption>
+    </figure>
+
+    <h4>10. Bluebottles</h4>
+    <p>From November to March, a day of north-easterlies or southerlies at 20 km/h or more can blow bluebottles
+      onto the eastern beaches. Maroubra, open to both, cops it most; harbour beaches are spared.</p>
+    <figure class="how-swell-fig">
+      <div data-how="bluebottles"></div>
+      <figcaption>Maroubra: the winds that bring bluebottles in.</figcaption>
+    </figure>
+
     <h3>Where the numbers come from</h3>
     <ul>
       <li><a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>: wind, air temperature,

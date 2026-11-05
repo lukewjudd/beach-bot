@@ -17,7 +17,6 @@ class Beach:
     poor_grade: bool = False  # R-R3: 3-day rain rule
     snorkel: bool = False
     harbour: bool = False  # inside the harbour (or Pittwater): no ocean swell, often netted
-    patrolled_all_daylight: bool = False
     notes: list = field(default_factory=list)
 
 
@@ -34,7 +33,6 @@ BEACHES = [
         2,
         "Clovelly Beach",
         snorkel=True,
-        patrolled_all_daylight=True,
     ),
     Beach(
         "Gordons Bay",

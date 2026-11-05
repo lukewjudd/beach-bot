@@ -1,17 +1,13 @@
 // Beach calls: renders scores.json as a week of days, a summary of the chosen session, a map and a list of spots.
 
 import type { Map as LeafletMap, Marker } from "leaflet";
-import howPeriod from "./about/period.svg?raw";
-import howShare from "./about/share.svg?raw";
-import howWind from "./about/wind.svg?raw";
-import howWindWater from "./about/wind-water.svg?raw";
-import howWindow from "./about/window.svg?raw";
-import howWindowWide from "./about/window-wide.svg?raw";
-import howWrap from "./about/wrap.svg?raw";
 import { ICONS } from "./icons";
 import { pickRegion, REGIONS } from "./regions";
 import "./style.css";
 import type { Scores, Session, Spot, SpotKind, SpotScore } from "./types";
+
+// the About dialog's figures, drawn by bot/scripts/draw_about_figures.py
+const figures = import.meta.glob<string>("./about/*.svg", { query: "?raw", import: "default", eager: true });
 
 // Which stretch of coast: from the link, else the browser's last choice, else the eastern suburbs
 const params = new URLSearchParams(location.search);
@@ -221,16 +217,7 @@ function toggleWind() {
 
 function wireControls() {
   const about = $("about") as HTMLDialogElement;
-  const figures: Record<string, string> = {
-    window: howWindow,
-    "window-wide": howWindowWide,
-    wrap: howWrap,
-    share: howShare,
-    period: howPeriod,
-    wind: howWind,
-    "wind-water": howWindWater,
-  };
-  for (const el of about.querySelectorAll<HTMLElement>("[data-how]")) el.innerHTML = figures[el.dataset.how!] ?? "";
+  for (const el of about.querySelectorAll<HTMLElement>("[data-how]")) el.innerHTML = figures[`./about/${el.dataset.how}.svg`] ?? "";
   $("about-open").addEventListener("click", () => about.showModal());
   $("about-close").addEventListener("click", () => about.close());
   about.addEventListener("click", (e) => {
