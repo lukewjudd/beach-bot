@@ -3,7 +3,7 @@ from datetime import date
 from conftest import make_forecast, score
 
 from beach_bot.beaches import BEACHES
-from beach_bot.calendar import event_body
+from beach_bot.calendar import event_body, fingerprint
 from beach_bot.export import export_scores
 from beach_bot.forecast import Context
 from beach_bot.sessions import build_sessions, out_of_10, report, score_session
@@ -198,3 +198,29 @@ def test_harbour_beaches_never_lead_or_make_a_session_worth_it():
     assert am.best_swim is None or not am.best_swim[1].harbour
     harbour_best = max(sc for sc, b, _ in am.swim if b.harbour)
     assert am.best < harbour_best  # a calm harbour doesn't make the session worth it
+
+
+def test_the_event_title_is_just_the_call():
+    hours, sun = make_forecast(WED)
+    sessions, ctx = score(hours, sun, WED)
+    title, _ = event_body(sessions["am"], hours, ctx, {}, WED)
+    assert title.endswith("Clovelly · Wed morning")
+    assert "km/h" not in title and "°" not in title  # wind and temperatures live in the description
+
+
+def test_events_are_only_rewritten_when_the_call_changes():
+    hours, sun = make_forecast(WED)
+    sessions, ctx = score(hours, sun, WED)
+    title, desc = event_body(sessions["am"], hours, ctx, {}, WED)
+    body = {
+        "summary": title,
+        "description": desc,
+        "start": {"dateTime": "2026-11-04T06:00:00+11:00"},
+        "end": {"dateTime": "2026-11-04T10:00:00+11:00"},
+        "location": "Clovelly, NSW",
+    }
+    later = {**body, "description": desc.replace("Last changed", "Last changed (an hour on)")}
+    wobble = {**body, "description": desc.replace("Weather", "Weather (a point either way)")}
+    new_lead = {**body, "summary": title.replace("Clovelly", "Bronte")}
+    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble)
+    assert fingerprint(new_lead) != fingerprint(body)

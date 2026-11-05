@@ -1,10 +1,12 @@
 """Google Calendar events: one per good session, kept in sync with the forecast."""
 
+import hashlib
 import json
 import os
+import re
 from datetime import datetime
 
-from .config import EVENT_THRESHOLD, FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, TZ
+from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, TZ
 from .geo import wind_kind
 from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
 
@@ -13,22 +15,16 @@ def event_body(sess, hours, ctx, beachwatch, today):
     lead = headline(sess)
     keys = window_hours(sess, lead)
     c = conditions(sess, hours, keys)
-    swim, surf = sess.best_swim, sess.best_surf
+    swim = sess.best_swim
     best = sess.best
     fire = "🔥 " if best >= FIRE_THRESHOLD else ""
     kind = lead_kind(sess)
+    # Just the call: the score, where and when. The detail is in the description.
     # Surf spots share names with beaches, so they say "surf"; pool names already say Pool or Baths
-    parts = [lead + (f" surf {c['hs']:.1f}m" if kind == "surf" else "")] if lead else []
-    if kind == "surf" and swim and swim[0] >= EVENT_THRESHOLD:
-        parts.insert(0, swim[1].name)
-    elif kind != "surf" and surf:
-        parts.append(f"{surf[1].name} surf {c['hs']:.1f}m")
+    where = (lead + (" surf" if kind == "surf" else "")) if lead else "the coast"
+    title = f"{fire}{out_of_10(best)}/10 {where} · {sess.day:%a} {'morning' if sess.slot == 'am' else 'evening'}"
     b = swim[1] if swim and kind == "swim" else None  # wind direction only means something at a beach
     rel = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
-    wind_line = f"{c['wind_dir']} {c['wind']:.0f} km/h gust {c['gust']:.0f}"
-    title = f"{fire}{out_of_10(best)}/10 {' · '.join(parts)} · {wind_line} · {c['air']:.0f}°"
-    if c["sea"]:
-        title += f"/{c['sea']:.0f}° water"
 
     lines = [
         f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
@@ -50,10 +46,20 @@ def event_body(sess, hours, ctx, beachwatch, today):
         + (f" · water {c['sea']:.0f}°" if c["sea"] else "")
         + f" · rain chance {c['rain_prob']:.0f}% · UV {c['uv']:.0f}",
         "",
-        f"Updated {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if it drops below 7/10.",
+        f"Last changed {datetime.now(TZ):%a %-d %b %-I:%M%p}. The event is removed if it drops below 7/10.",
         f"Map and every spot's score: {SITE_URL}?s={sess.key}",  # opens the site on this session
     ]
     return title, "\n".join(lines)
+
+
+def fingerprint(body):
+    """What an event update is worth sending for: the title (score, spot, session), the times, the place, the
+    best window and the top 3 spots. Hourly wobbles in the finer detail (a condition going from 6 to 7/10, the
+    wind a few km/h either way) don't count, so Google doesn't email an "event updated" every run."""
+    desc = body["description"].splitlines()
+    keep = [x for x in desc if x.startswith(("Best window", "Overall")) or re.match(r"\s+\d\. ", x)]
+    parts = [body["summary"], body["start"]["dateTime"], body["end"]["dateTime"], body.get("location") or "", *keep]
+    return hashlib.sha1("\n".join(parts).encode()).hexdigest()[:16]
 
 
 def calendar_service():
@@ -111,6 +117,10 @@ def sync(sessions, hours, ctx, beachwatch, now, cal):
             "end": {"dateTime": sess.end.isoformat(), "timeZone": "Australia/Sydney"},
             "transparency": "transparent",  # don't show as busy
         }
+        fp = fingerprint(body)
+        body["extendedProperties"] = {"private": {"beachbot": fp}}
+        if live and existing.get("extendedProperties", {}).get("private", {}).get("beachbot") == fp:
+            continue  # nothing worth an update
         if existing:  # includes previously deleted ones; ids can't be re-inserted
             svc.events().update(calendarId=cal, eventId=sess.key, body=body).execute()
             print(f"{'updated ' if live else 'restored'} {sess.key}  {title}")
