@@ -84,6 +84,8 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: v
 .about-head { display: flex; align-items: baseline; justify-content: space-between; }
 .about-head h2 { margin: 0; font-size: 18px; }
 .about h3 { margin: 16px 0 4px; }
+.about h4 { margin: 14px 0 4px; font-size: 14px; }
+.about .how-swell-fig + p { margin-top: 8px; }
 .about p, .about li { font-size: 14px; }
 .about p { margin: 0; }
 .about ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }

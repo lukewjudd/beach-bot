@@ -1,7 +1,12 @@
 // Beach calls: renders scores.json as a week of days, a summary of the chosen session, a map and a list of spots.
 
 import type { Map as LeafletMap, Marker } from "leaflet";
-import howSwell from "./how-swell.svg?raw";
+import howPeriod from "./about/period.svg?raw";
+import howShare from "./about/share.svg?raw";
+import howWind from "./about/wind.svg?raw";
+import howWindow from "./about/window.svg?raw";
+import howWindowWide from "./about/window-wide.svg?raw";
+import howWrap from "./about/wrap.svg?raw";
 import { ICONS } from "./icons";
 import { pickRegion, REGIONS } from "./regions";
 import "./style.css";
@@ -215,7 +220,15 @@ function toggleWind() {
 
 function wireControls() {
   const about = $("about") as HTMLDialogElement;
-  $("how-swell").innerHTML = howSwell;
+  const figures: Record<string, string> = {
+    window: howWindow,
+    "window-wide": howWindowWide,
+    wrap: howWrap,
+    share: howShare,
+    period: howPeriod,
+    wind: howWind,
+  };
+  for (const el of about.querySelectorAll<HTMLElement>("[data-how]")) el.innerHTML = figures[el.dataset.how!] ?? "";
   $("about-open").addEventListener("click", () => about.showModal());
   $("about-close").addEventListener("click", () => about.close());
   about.addEventListener("click", (e) => {

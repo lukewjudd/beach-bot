@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-labelledby="wrap-t wrap-d" class="how-swell">
+<title id="wrap-t">Long swell wraps further into Collaroy</title>
+<desc id="wrap-d">Line chart of how much of a swell reaches Collaroy from each direction, north round to south. Both lines fade out at the edges of the open ocean rather than stopping dead. From the south-south-east, round Long Reef, about 59% of an 8 second swell gets in and 75% of a 14 second one.</desc>
+<rect x="86.1" y="22" width="174.6" height="172" fill="var(--accent)" opacity=".1"/>
+<text x="173.5" y="14" text-anchor="middle" class="hs-small">open ocean from Collaroy</text>
+<line x1="40" y1="194.0" x2="386" y2="194.0" stroke="var(--line)"/>
+<text x="34" y="198.0" text-anchor="end" class="hs-small">0%</text>
+<line x1="40" y1="151.0" x2="386" y2="151.0" stroke="var(--line)"/>
+<text x="34" y="155.0" text-anchor="end" class="hs-small">25%</text>
+<line x1="40" y1="108.0" x2="386" y2="108.0" stroke="var(--line)"/>
+<text x="34" y="112.0" text-anchor="end" class="hs-small">50%</text>
+<line x1="40" y1="65.0" x2="386" y2="65.0" stroke="var(--line)"/>
+<text x="34" y="69.0" text-anchor="end" class="hs-small">75%</text>
+<line x1="40" y1="22.0" x2="386" y2="22.0" stroke="var(--line)"/>
+<text x="34" y="26.0" text-anchor="end" class="hs-small">100%</text>
+<text x="40.0" y="210" text-anchor="middle" class="hs-small">N</text>
+<text x="114.1" y="210" text-anchor="middle" class="hs-small">NE</text>
+<text x="188.3" y="210" text-anchor="middle" class="hs-small">E</text>
+<text x="262.4" y="210" text-anchor="middle" class="hs-small">SE</text>
+<text x="336.6" y="210" text-anchor="middle" class="hs-small">S</text>
+<path d="M40.0,136.4L43.3,132.0L46.6,127.9L49.9,124.2L53.2,120.6L56.5,115.8L59.8,110.7L63.1,106.7L66.4,102.1L69.7,98.5L73.0,93.8L76.2,89.6L79.5,85.6L82.8,81.1L86.1,76.8L89.4,73.4L92.7,70.1L96.0,67.0L99.3,63.4L102.6,60.6L105.9,57.3L109.2,54.8L112.5,52.4L115.8,50.1L119.1,48.4L122.4,47.3L125.7,46.4L129.0,45.6L132.3,44.6L135.6,43.8L138.9,43.4L142.2,43.2L145.4,42.8L148.7,42.6L152.0,42.7L155.3,42.9L158.6,43.1L161.9,43.4L165.2,43.9L168.5,44.6L171.8,45.3L175.1,46.1L178.4,47.1L181.7,48.2L185.0,49.3L188.3,50.6L191.6,51.8L194.9,52.9L198.2,54.1L201.5,55.6L204.8,57.1L208.1,58.6L211.4,60.1L214.6,61.7L217.9,63.6L221.2,65.6L224.5,67.4L227.8,69.2L231.1,71.2L234.4,73.5L237.7,75.9L241.0,78.0L244.3,80.2L247.6,82.4L250.9,84.7L254.2,87.5L257.5,90.4L260.8,92.9L264.1,91.5L267.4,86.3L270.7,81.6L274.0,77.3L277.3,73.5L280.6,70.9L283.8,68.2L287.1,66.0L290.4,65.4L293.7,64.5L297.0,64.4L300.3,64.7L303.6,64.7L306.9,65.4L310.2,66.9L313.5,75.1L316.8,88.8L320.1,100.1L323.4,119.7L326.7,127.3L330.0,144.7L333.3,157.8L336.6,172.5L339.9,180.1L343.2,184.4L346.5,187.7L349.8,190.0L353.0,191.3L356.3,192.3L359.6,193.0L362.9,193.5L366.2,194.0L369.5,194.0L372.8,194.0L376.1,194.0L379.4,194.0L382.7,194.0L386.0,194.0" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+<path d="M40.0,149.3L43.3,145.9L46.6,142.7L49.9,137.9L53.2,133.1L56.5,129.0L59.8,125.3L63.1,121.9L66.4,116.5L69.7,111.2L73.0,107.0L76.2,101.0L79.5,95.3L82.8,91.7L86.1,88.4L89.4,81.2L92.7,78.1L96.0,75.2L99.3,70.6L102.6,66.2L105.9,63.7L109.2,58.3L112.5,56.1L115.8,54.5L119.1,50.9L122.4,50.0L125.7,48.2L129.0,46.6L132.3,46.2L135.6,45.1L138.9,44.2L142.2,44.1L145.4,43.0L148.7,43.2L152.0,43.0L155.3,43.0L158.6,43.5L161.9,43.8L165.2,44.2L168.5,45.0L171.8,45.9L175.1,46.9L178.4,48.3L181.7,49.9L185.0,51.1L188.3,52.8L191.6,54.5L194.9,55.7L198.2,58.1L201.5,59.4L204.8,61.5L208.1,63.8L211.4,65.3L214.6,67.8L217.9,70.4L221.2,72.1L224.5,74.9L227.8,77.9L231.1,79.8L234.4,82.9L237.7,86.2L241.0,88.3L244.3,91.7L247.6,95.4L250.9,97.5L254.2,99.7L257.5,105.3L260.8,107.5L264.1,106.3L267.4,104.0L270.7,100.1L274.0,98.9L277.3,95.9L280.6,93.3L283.8,93.8L287.1,92.1L290.4,93.8L293.7,93.1L297.0,93.0L300.3,93.2L303.6,92.9L306.9,93.2L310.2,94.1L313.5,106.0L316.8,112.4L320.1,124.3L323.4,139.1L326.7,150.7L330.0,161.8L333.3,170.3L336.6,173.9L339.9,177.7L343.2,181.9L346.5,184.8L349.8,187.6L353.0,189.0L356.3,190.3L359.6,191.4L362.9,192.5L366.2,194.0L369.5,194.0L372.8,194.0L376.1,194.0L379.4,194.0L382.7,194.0L386.0,194.0" fill="none" stroke="var(--r-amber)" stroke-dasharray="6 3" stroke-width="2.5"/>
+<line x1="300.3" y1="64.7" x2="300.3" y2="93.2" stroke="var(--text)" stroke-width="1"/>
+<text x="306.3" y="58.7" class="hs-label">14 s: 75%</text>
+<text x="306.3" y="107.2" class="hs-label">8 s: 59%</text>
+<path d="M40,232h18" stroke="var(--accent)" stroke-width="2.5"/>
+<text x="64" y="236" class="hs-small">14 s groundswell</text>
+<path d="M170,232h18" stroke="var(--r-amber)" stroke-width="2.5" stroke-dasharray="6 3"/>
+<text x="194" y="236" class="hs-small">8 s swell</text>
+</svg>

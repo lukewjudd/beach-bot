@@ -44,17 +44,70 @@
       a day going to 30° is a warm-day swim, but not after a southerly change. <b>8/10 or better is worth it</b> and goes in the shared calendar, which posts up to two days ahead.
       Further out is an early forecast: a guide, not a plan. 0 means ruled out (pollution, storms, too rough, closed).</p>
     <h3>How swell and wind are worked out</h3>
-    <p>Swell is forecast out at sea. For each spot we measure which directions have an open run of ocean, from the
-      coastline, and work out how much of each swell gets in. Swell bends toward the beach as the water gets
-      shallower, and long-period swell bends further, so it wraps into corners a short swell can't reach. Wind is
-      scored by how it crosses the beach: offshore (blowing from the land) keeps the water clean, onshore makes it
-      choppy.</p>
+    <p>The forecast describes the sea well offshore: a main swell, sometimes a second one, and chop from the local
+      wind, each with a height, a direction and a period (the seconds between waves). What matters for a swim is
+      what's left of that by the time it reaches the sand, and that's different at every beach. Here's how we get
+      from one to the other.</p>
+
+    <h4>1. Find the open ocean</h4>
+    <p>From just off each beach we draw a line every 2°, out to 30 km, over the OpenStreetMap coastline. Lines that
+      make it all the way are open ocean: swell from those directions has a clear run in. Lines that hit land are
+      blocked, usually by the beach's own headlands.</p>
     <figure class="how-swell-fig">
-      <div id="how-swell"></div>
-      <figcaption>North Bondi. Ben Buckler, the headland, blocks swell from the north-east and east; the shaded
-        wedge is the open ocean. Percentages are how much of a 10-second swell reaches the north end. Longer swell
-        breaks bigger: the same 1.5m south swell is about 1.2m here at 8 seconds and 1.4m at 14.</figcaption>
+      <div data-how="window"></div>
+      <figcaption>North Bondi up close. Ben Buckler stops every line to the north-east and east.</figcaption>
     </figure>
+    <figure class="how-swell-fig">
+      <div data-how="window-wide"></div>
+      <figcaption>The same lines zoomed out (the dashed box is the close-up). The ones just west of south cross the
+        bay but stop on the coast between Bronte and Maroubra. That leaves swell from the south-east round to the
+        south with a clear run to the north end.</figcaption>
+    </figure>
+
+    <h4>2. Let it bend</h4>
+    <p>Swell isn't a beam of light. As it reaches shallower water it bends toward the shore, and some spreads
+      sideways into the shadow behind a headland, so the edge of the window is a fade, not a cut. Long-period
+      groundswell feels the bottom sooner and bends further: it wraps into corners a short wind swell can't reach.
+      Swell that arrives side-on also spreads along more of the coast, which makes it smaller.</p>
+    <figure class="how-swell-fig">
+      <div data-how="wrap"></div>
+      <figcaption>Collaroy, tucked north of Long Reef: how much of a swell gets in from each direction. Neither
+        line stops dead at the edge of the open ocean. Round the reef from the south-south-east, 14-second
+        groundswell gets in noticeably better than an 8-second swell.</figcaption>
+    </figure>
+
+    <h4>3. Work out how much gets in</h4>
+    <p>Put those together and every spot gets a share for each direction and period. The geometry is then checked
+      against what locals already know about each beach (from surf guides, Beachsafe and councils): the two are
+      blended, so the model can't stray far from what's known to happen. Harbour beaches have no open ocean to
+      measure, so they go on local knowledge alone.</p>
+    <figure class="how-swell-fig">
+      <div data-how="share"></div>
+      <figcaption>North Bondi again, with its open ocean shaded blue and a line every 8°, coloured by how much of a 10-second swell from that
+        direction reaches the north end. Ben Buckler blocks the north-east, it opens up through the east, and swell
+        from the south-east round to the south gets in best.</figcaption>
+    </figure>
+
+    <h4>4. Size it up</h4>
+    <p>Longer swell carries more energy for its height, so it breaks bigger. At a swimming beach the effect is
+      gentle; at a surf break it's stronger, because a short, weak swell barely registers on a reef or bank.</p>
+    <figure class="how-swell-fig">
+      <div data-how="period"></div>
+      <figcaption>How big a 1.5m swell breaks, by period.</figcaption>
+    </figure>
+    <p>Each wave train is worked out on its own direction, then they're added up by energy. So a big south
+      groundswell can miss a beach that faces north-east while the east wind chop still gets in. The result is the
+      height at the beach, which is what the calm-water and surf scores are based on.</p>
+
+    <h4>5. Then the wind</h4>
+    <p>Wind is scored by how it crosses the beach. Offshore wind (blowing from the land) smooths the water and keeps
+      it clear; onshore wind piles up chop. Light wind is best either way.</p>
+    <figure class="how-swell-fig">
+      <div data-how="wind"></div>
+      <figcaption>Coogee faces east, so anything from south-west round to north-west is offshore there, and
+        north-east round to south-east is onshore.</figcaption>
+    </figure>
+
     <h3>Where the numbers come from</h3>
     <ul>
       <li><a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>: wind, air temperature,
@@ -66,6 +119,8 @@
         forecast for the day, recent rain stands in.</li>
       <li>Local knowledge: how each beach faces, what swell reaches it, ocean pool tides and cleaning days, gathered
         from councils, Beachsafe and surf guides.</li>
+      <li>Swell windows: measured from the <a href="https://openstreetmap.org/copyright" target="_blank"
+        rel="noopener">OpenStreetMap</a> coastline.</li>
       <li>Map: <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps</a> and
         <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.</li>
     </ul>

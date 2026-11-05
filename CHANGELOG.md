@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-06
 
+- **The About dialog walks through the swell model step by step**, with figures drawn from the bot's own data (`scripts/draw_about_figures.py`, replacing `draw_bondi_example.py`): finding North Bondi's open ocean from the coastline, up close and zoomed out to Maroubra (the lines just west of south cross the bay and land between Bronte and Maroubra), Collaroy's share by direction at 8 s and 14 s (soft window edges and wrap round Long Reef), how much of a swell reaches North Bondi from each direction (a fan of lines coloured green, amber and red, in the same style as the first figure), breaking height by period at a beach and a surf break, and which winds are offshore at Coogee. It also covers each wave train being scored on its own direction and the blend with local knowledge. The sources list now credits the OpenStreetMap coastline for the swell windows.
 - **Fewer "event updated" emails.** An event is now only rewritten when its title (score, spot, session), times, place, or the top 3 spots and their scores change. The 4am run rewrote Saturday's Clovelly event because the sea forecast nudged from just under 20° to 20°, which dropped a "cold water" note from the top 3 spots. Spot notes and the best window no longer count.
 
 ## 2026-11-05 (night): longer sessions, and warmth by the day

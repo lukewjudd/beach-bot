@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" role="img" aria-labelledby="period-t period-d" class="how-swell">
+<title id="period-t">Longer swell breaks bigger</title>
+<desc id="period-d">Line chart of how big a 1.5 metre swell breaks, by its period from 6 to 16 seconds. At a swimming beach it grows gently, from 1.3m at 6 seconds to 1.9m at 16. At a surf break it grows faster, and short swell is weaker there.</desc>
+<line x1="44" y1="157.7" x2="384" y2="157.7" stroke="var(--line)"/>
+<text x="38" y="161.7" text-anchor="end" class="hs-small">1m</text>
+<line x1="44" y1="101.0" x2="384" y2="101.0" stroke="var(--line)"/>
+<text x="38" y="105.0" text-anchor="end" class="hs-small">1.5m</text>
+<line x1="44" y1="44.3" x2="384" y2="44.3" stroke="var(--line)"/>
+<text x="38" y="48.3" text-anchor="end" class="hs-small">2m</text>
+<text x="44.0" y="202" text-anchor="middle" class="hs-small">6 s</text>
+<text x="112.0" y="202" text-anchor="middle" class="hs-small">8 s</text>
+<text x="180.0" y="202" text-anchor="middle" class="hs-small">10 s</text>
+<text x="248.0" y="202" text-anchor="middle" class="hs-small">12 s</text>
+<text x="316.0" y="202" text-anchor="middle" class="hs-small">14 s</text>
+<text x="384.0" y="202" text-anchor="middle" class="hs-small">16 s</text>
+<text x="384" y="216" text-anchor="end" class="hs-small">swell period</text>
+<path d="M44.0,126.5L52.5,124.1L61.0,121.7L69.5,119.5L78.0,117.3L86.5,115.1L95.0,113.0L103.5,110.9L112.0,108.8L120.5,106.8L129.0,104.8L137.5,102.9L146.0,101.0L154.5,99.1L163.0,97.3L171.5,95.5L180.0,93.7L188.5,91.9L197.0,90.2L205.5,88.5L214.0,86.8L222.5,85.1L231.0,83.5L239.5,81.9L248.0,80.3L256.5,78.7L265.0,77.1L273.5,75.6L282.0,74.1L290.5,72.6L299.0,71.1L307.5,69.6L316.0,68.1L324.5,66.7L333.0,65.3L341.5,63.9L350.0,62.5L358.5,61.1L367.0,59.7L375.5,58.4L384.0,57.0" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+<path d="M44.0,152.1L52.5,148.7L61.0,145.3L69.5,141.9L78.0,138.6L86.5,135.3L95.0,132.0L103.5,128.8L112.0,125.6L120.5,122.4L129.0,119.3L137.5,116.2L146.0,113.1L154.5,110.0L163.0,107.0L171.5,104.0L180.0,101.0L188.5,98.0L197.0,95.1L205.5,92.2L214.0,89.3L222.5,86.4L231.0,83.5L239.5,80.7L248.0,77.9L256.5,75.1L265.0,72.3L273.5,69.5L282.0,66.7L290.5,64.0L299.0,61.3L307.5,58.5L316.0,55.9L324.5,53.2L333.0,50.5L341.5,47.8L350.0,45.2L358.5,42.6L367.0,40.0L375.5,37.4L384.0,34.8" fill="none" stroke="var(--r-amber)" stroke-width="2.5" stroke-dasharray="6 3"/>
+<text x="146.0" y="91.0" text-anchor="middle" class="hs-label">swimming beach</text>
+<text x="86.0" y="154.6" class="hs-label">surf break</text>
+</svg>
