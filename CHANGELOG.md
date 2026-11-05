@@ -9,6 +9,7 @@ What changed and why, newest first. Dates are Sydney time.
 - **Period scales height smoothly** instead of jumping 1.3× at 12 s: period^0.4 at the swimming beaches (Komar & Gaughan's breaker formula), period^0.7 at the surf breaks (fitted to the old size-by-period table and the Bondi webcam check).
 - **The hand-set exposures stay as local knowledge**: each spot's result is halfway (in log terms) between the geometry and the old NE/E/SE/S numbers, until real data replaces them. They mostly agree for E and SE swell; harbour beaches keep their hand-set numbers.
 - Backtest since 2023: 191 posts instead of 185. Bondi's north end wins 8 more easterly-swell days that Clovelly used to lead (the geometry has Ben Buckler sheltering it more from the east than the old 0.5), and three south-swell surf days at Bondi's south end drop out (1.4 m of S swell now reads about 1.1 m at the break, below the sweet spot).
+- **How it works, on the site**: the About dialog has a North Bondi example, drawn from the bot's own data (`scripts/draw_bondi_example.py`): the coastline, Ben Buckler, the open swell window, how much of a NE, E, SE and S swell gets in, and which winds are offshore there.
 - Next: the NSW Nearshore Wave Tool (CC BY 4.0) has a modelled transfer to the 10 m contour off every open beach. Access has been requested; its numbers would replace the geometry and the hand-set prior.
 
 ## 2026-11-05

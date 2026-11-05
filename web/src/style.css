@@ -88,6 +88,19 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: v
 .about p { margin: 0; }
 .about ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .about a { color: var(--accent); }
+.how-swell-fig {
+  --hs-sea: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --hs-land: color-mix(in srgb, var(--muted) 30%, var(--surface));
+  margin: 10px 0 0;
+}
+.how-swell-fig svg { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+.how-swell-fig figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.how-swell text { paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; stroke-opacity: .85; }
+.how-swell .hs-label { font: 600 13px system-ui, sans-serif; fill: var(--text); }
+.how-swell .hs-num { font-weight: 700; }
+.how-swell .hs-place { font: 600 12px system-ui, sans-serif; fill: var(--text); }
+.how-swell .hs-italic { font-style: italic; font-weight: 500; fill: var(--muted); }
+.how-swell .hs-small { font: 11px system-ui, sans-serif; fill: var(--muted); }
 .about .fine { margin-top: 16px; color: var(--muted); font-size: 13px; }
 .stale-banner {
   margin-top: 6px; margin-bottom: 0; padding-top: 8px; padding-bottom: 8px; border-radius: 10px;
