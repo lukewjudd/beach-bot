@@ -177,9 +177,10 @@ def water_quality(b: Beach, t: str, ctx: Context, beachwatch: dict, today: date,
 
 
 def weather(h: dict, t: str, ctx: Context, notes: list):
-    """Points for air temperature, rain, cloud and water temperature (§4.5)."""
+    """Points for air temperature (where the day's heading: Context.warmth), rain, cloud and water temperature
+    (§4.5)."""
     s = 0
-    temp = h["temperature_2m"]
+    temp = ctx.warmth(t)
     s += 15 if temp >= 26 else 10 if temp >= 23 else 5 if temp >= 21 else 0 if temp >= 19 else -8 if temp >= 17 else -15
     if (h.get("precipitation") or 0) >= 0.5 or (h.get("precipitation_probability") or 0) >= 60:
         s -= 20
@@ -340,7 +341,7 @@ def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dic
         q -= 5
     if sp.bonus_dirs and in_range(sdir, *sp.bonus_dirs):
         q += 5
-    temp = h["temperature_2m"]
+    temp = ctx.warmth(t)
     q += 5 if temp >= 24 else 0 if temp >= 16 else -5
     if (h.get("precipitation_probability") or 0) >= 60:
         q -= 5

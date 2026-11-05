@@ -25,7 +25,8 @@ def test_calm_warm_morning_is_worth_it_at_clovelly():
 def test_a_chilly_first_hour_doesnt_sink_a_good_morning():
     def cold_dawn(t, h):
         if t.startswith(WED.isoformat()) and t[11:13] == "06":
-            h["temperature_2m"] = 15.0  # weekday mornings are only 6-9am, so one cold hour is enough to test
+            h["temperature_2m"] = 15.0
+            h["cloud_cover"] = 95  # and grey: still the worst hour, even with the day's warmth credited
         return h
 
     hours, sun = make_forecast(WED, cold_dawn)

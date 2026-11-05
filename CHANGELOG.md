@@ -2,6 +2,12 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-05 (night): longer sessions, and warmth by the day
+
+- **Weekday sessions run to 10am and start at 4pm** (were 9am and 5pm). Weekends are unchanged (to 11am, from 2pm).
+- **Warmth counts where the day's heading**, not just the hour. A morning gets credit for the warmth still to come up to 1pm, and an evening keeps the afternoon's, less 3° either way, so the full warmth bonus effectively needs a day of about 29°. After a southerly change (4° or more below the afternoon's peak) an evening is scored on the temperature it actually is. A 7am Clovelly swim on a day going to 30° used to score as a 22° swim and couldn't reach 10/10. The temperatures shown on the site and in events are still the real ones.
+- Backtest since 2023: 68 good days a year instead of 43 (321 posts instead of 191), and 🔥 days from about 6 to 18 a year. Summer (January to March) averages about 15 posts a month, up from 11. Without the 3° allowance it was about 100 good days a year, too many to mean "go today".
+
 ## 2026-11-05 (evening): swell from the coastline
 
 - **Each spot's swell window is measured from the coastline** instead of four hand-set numbers. From just off each beach (and from each surf break, near the sand where it breaks) a line is drawn every 2° out to sea against the OpenStreetMap coastline: bearings that reach open ocean are the window, and the headlands are the shadow. It picks up Ben Buckler over Bondi's north end, Wedding Cake Island off Coogee, Long Reef over Collaroy and Barrenjoey over Palm Beach without being told. `scripts/build_swell_windows.py` rebuilds it; the result is `swell_windows.json`.

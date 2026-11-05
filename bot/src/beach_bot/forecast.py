@@ -13,7 +13,7 @@ from statistics import mean, quantiles
 import requests
 
 from .beaches import EASTERN
-from .config import BOM_OBS_URL, FORECAST_DAYS, RAIN_MODELS, TZ
+from .config import BOM_OBS_URL, COOL_CHANGE, FORECAST_DAYS, RAIN_MODELS, TZ, WARMTH_AHEAD_TO, WARMTH_DISCOUNT
 
 
 def fetch_json(url, params):
@@ -204,6 +204,22 @@ class Context:
     def _window(self, t, h_from, h_to):
         i = self.index[t]
         return [self.hours[self.times[j]] for j in range(max(0, i - h_to), max(0, i - h_from))]
+
+    def warmth(self, t):
+        """Air temperature to score this hour's warmth on: where the day's heading (see WARMTH_DISCOUNT)."""
+        now = self.hours[t]["temperature_2m"]
+        day, hr = t[:10], int(t[11:13])
+        temps = {}
+        for k in range(24):
+            h = self.hours.get(f"{day}T{k:02d}:00")
+            if h and h.get("temperature_2m") is not None:
+                temps[k] = h["temperature_2m"]
+        if hr < 12:  # morning: the warmth still to come, up to early afternoon
+            ahead = max([now] + [v for k, v in temps.items() if hr <= k <= WARMTH_AHEAD_TO])
+        else:  # afternoon and evening: the afternoon's warmth, unless a change has since come through
+            peak = max([now] + [v for k, v in temps.items() if 12 <= k <= hr])
+            ahead = now if peak - now >= COOL_CHANGE else peak
+        return max(now, ahead - WARMTH_DISCOUNT)
 
     def rain(self, t, h_from, h_to):
         return sum((h.get("precipitation") or 0) for h in self._window(t, h_from, h_to))
