@@ -168,6 +168,8 @@ Compute `rel = angle_diff(wind_dir, facing_bearing)`, where `facing_bearing` is 
 - R-W7: IF wind_dir is 160–200° (S) → Bondi −15 (onshore) [DERIVED]. Bronte reef +5 [S21]. Maroubra −5. Coogee 0 (the S headland gives partial shelter, HEURISTIC).
 
 ### 4.2 Swell exposure and "too rough" limits
+
+> Since 2026-11-05 the bot measures each spot's swell window from the coastline and models refraction and period (`bot/src/beach_bot/swell.py`). The k coefficients below are now its prior: the result sits halfway between them and the geometry.
 Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sectors: NE 22.5–67.5°, E 67.5–112.5°, SE 112.5–157.5°, S 157.5–202.5°. Outside these sectors (W/N) use k = 0.1.
 
 **k coefficients [HEURISTIC]**, ranked using the sourced exposure statements in §1 (S14, S15 for Bondi; S6, S23 for Coogee's Wedding Cake Island shelter; S4, S5, S8, S9 for the sheltered bays):

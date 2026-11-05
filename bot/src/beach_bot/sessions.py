@@ -232,7 +232,7 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         surge = c["hs"] * spot.exposure
         calm = 10 if surge < 0.8 else 8 if surge < 1.2 else 6 if surge < 1.5 else 4 if surge < 2.0 else 2
     else:
-        hb = mean(at_beach(h, spot.k) for h in hs_list)
+        hb = mean(at_beach(h, spot) for h in hs_list)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
 
     air = c["air"]
@@ -257,7 +257,7 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     # and pools care about swell over the walls and the tide
     if isinstance(spot, SurfSpot):
         p = c["period"]
-        size = mean(at_break(h, spot.k) for h in hs_list)  # same as score_surf_hour
+        size = mean(at_break(h, spot) for h in hs_list)  # same as score_surf_hour
         if size < 0.3:
             size_r = 1  # flat
         elif size < 0.5:

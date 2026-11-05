@@ -105,9 +105,9 @@ def test_monday_2_nov_was_not_worth_it(real_forecast):
 
 
 def test_conditions_are_per_spot_where_they_should_be():
-    # A NE breeze and a 1.2m E swell: onshore and rough at Maroubra, sheltered inside Clovelly
+    # A NE breeze and a 1m E swell: onshore and rough at Maroubra, sheltered inside Clovelly
     def ne_breeze(t, h):
-        h.update(wind_speed_10m=22.0, wind_direction_10m=45, wind_gusts_10m=30.0, wave_height=1.2)
+        h.update(wind_speed_10m=22.0, wind_direction_10m=45, wind_gusts_10m=30.0, wave_height=1.0)
         h["swell_wave_direction"] = 90
         return h
 
@@ -187,7 +187,7 @@ def test_started_sessions_keep_their_last_call_until_the_week_is_out():
 def test_harbour_beaches_never_lead_or_make_a_session_worth_it():
     # A big swell rules the ocean beaches out; the harbour stays calm but must not post on its own
     def big_swell(t, h):
-        h.update(wave_height=3.5, swell_wave_direction=135, swell_wave_period=12, wind_direction_10m=200)
+        h.update(wave_height=5.0, swell_wave_direction=135, swell_wave_period=12, wind_direction_10m=200)
         return h
 
     sessions, _ = score(*make_forecast(WED, big_swell), WED)

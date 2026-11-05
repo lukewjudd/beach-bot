@@ -15,6 +15,9 @@ beach-bot = "beach_bot.cli:main"
 beach-backtest = "beach_bot.backtest:main"
 
 [dependency-groups]
+build = [
+    "shapely>=2.2.0",
+]
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [build-system]

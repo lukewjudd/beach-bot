@@ -2,6 +2,15 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-05 (evening): swell from the coastline
+
+- **Each spot's swell window is measured from the coastline** instead of four hand-set numbers. From just off each beach (and from each surf break, near the sand where it breaks) a line is drawn every 2° out to sea against the OpenStreetMap coastline: bearings that reach open ocean are the window, and the headlands are the shadow. It picks up Ben Buckler over Bondi's north end, Wedding Cake Island off Coogee, Long Reef over Collaroy and Barrenjoey over Palm Beach without being told. `scripts/build_swell_windows.py` rebuilds it; the result is `swell_windows.json`.
+- **Swell bends and wraps by period.** Long-period swell bends further toward the beach as it shallows, so a south groundswell gets into corners a short south swell doesn't (Collaroy in SSE: 0.58 of the swell at 8 s, 0.75 at 14 s). Window edges are soft, about 0.7 of the height right at a headland's line and fading behind it (Kraus's fit to Goda's diffraction diagrams), and wind chop spreads further round than groundswell. Oblique swell loses some height spreading along the coast.
+- **Period scales height smoothly** instead of jumping 1.3× at 12 s: period^0.4 at the swimming beaches (Komar & Gaughan's breaker formula), period^0.7 at the surf breaks (fitted to the old size-by-period table and the Bondi webcam check).
+- **The hand-set exposures stay as local knowledge**: each spot's result is halfway (in log terms) between the geometry and the old NE/E/SE/S numbers, until real data replaces them. They mostly agree for E and SE swell; harbour beaches keep their hand-set numbers.
+- Backtest since 2023: 191 posts instead of 185. Bondi's north end wins 8 more easterly-swell days that Clovelly used to lead (the geometry has Ben Buckler sheltering it more from the east than the old 0.5), and three south-swell surf days at Bondi's south end drop out (1.4 m of S swell now reads about 1.1 m at the break, below the sweet spot).
+- Next: the NSW Nearshore Wave Tool (CC BY 4.0) has a modelled transfer to the 10 m contour off every open beach. Access has been requested; its numbers would replace the geometry and the hand-set prior.
+
 ## 2026-11-05
 
 - **Smarter swell at the beaches** (ideas from spearoSpotter). Each beach's exposure to swell is now blended smoothly between NE, E, SE and S instead of four buckets (a 112° and a 113° swell used to be treated differently). And the sea is weighed as separate wave trains, the main swell, a second swell and the local wind chop, each against how exposed the beach is from its own direction, so a beach facing away from a south groundswell isn't hit by it just because an east chop is running too. Surf breaks keep the combined sea height (just with the smooth blend), since their size bands were set against it.

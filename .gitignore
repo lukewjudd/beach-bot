@@ -14,3 +14,5 @@ web/node_modules/
 __pycache__/
 .claude/
 web/public/map
+bot/scripts/coastline.json
+research/dcceew-email.md

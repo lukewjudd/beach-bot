@@ -31,7 +31,7 @@ def test_a_clean_south_groundswell_lights_up_bondi_but_not_coogee():
     sessions, _ = score(*make_forecast(WED, swell(1.4, 180, 11, wind=8, wind_dir=315)), WED)
 
     assert out_of_10(surf(sessions["am"], "Bondi (south end)")[0]) >= 8
-    assert out_of_10(surf(sessions["am"], "Coogee")[0]) <= 2  # Wedding Cake Island blocks southerlies
+    assert out_of_10(surf(sessions["am"], "Coogee")[0]) <= 3  # Wedding Cake Island blocks most of it: tiny
     assert sessions["am"].is_good
 
 
