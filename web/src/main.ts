@@ -4,6 +4,7 @@ import type { Map as LeafletMap, Marker } from "leaflet";
 import howPeriod from "./about/period.svg?raw";
 import howShare from "./about/share.svg?raw";
 import howWind from "./about/wind.svg?raw";
+import howWindWater from "./about/wind-water.svg?raw";
 import howWindow from "./about/window.svg?raw";
 import howWindowWide from "./about/window-wide.svg?raw";
 import howWrap from "./about/wrap.svg?raw";
@@ -227,6 +228,7 @@ function wireControls() {
     share: howShare,
     period: howPeriod,
     wind: howWind,
+    "wind-water": howWindWater,
   };
   for (const el of about.querySelectorAll<HTMLElement>("[data-how]")) el.innerHTML = figures[el.dataset.how!] ?? "";
   $("about-open").addEventListener("click", () => about.showModal());

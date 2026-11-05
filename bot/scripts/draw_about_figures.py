@@ -10,6 +10,7 @@ Writes web/src/about/*.svg:
   share.svg   North Bondi: how much of a NE, E, SE and S swell gets in
   period.svg  Breaking height of a 1.5 m swell by period, at a beach and at a surf break
   wind.svg    Coogee: which winds are offshore, cross-shore and onshore
+  wind-water.svg  side-on: the same swell under an offshore and an onshore wind
 
 Coastline © OpenStreetMap contributors.
 """
@@ -410,36 +411,45 @@ def period_fig():
     )
 
 
+KIND_COLOUR = {"offshore": "r-green", "cross": "r-amber", "onshore": "r-red"}
+
+
 def wind_fig():
-    """Coogee: the wind compass on the map, coloured by how each direction crosses the beach."""
+    """Coogee: an arrow blowing in from every 15 degrees, coloured by how that wind crosses the beach."""
     m = Map(-33.9290, 151.2470, -33.9130, 151.2740)
     b = BEACH["Coogee"]
     lat, lon = -33.9208, 151.2582
-    cx, cy, rr = 60, 56, 36
+    fx, fy = m.px(lat, lon)
+    arrows = []
+    for d in range(0, 360, 15):
+        kind = wind_kind(d, b.facing)
+        c = KIND_COLOUR[kind]
+        x0, y0 = toward(fx, fy, d, 150)
+        x1, y1 = toward(fx, fy, d, 26)
+        dash = ' stroke-dasharray="4 3"' if kind == "onshore" else ""
+        arrows.append(
+            f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="var(--{c})" stroke-width="2" '
+            f'opacity=".9" marker-end="url(#hs-wind-{c})"{dash}/>'
+        )
+    labels = []
+    for d, words, c in (
+        (b.facing + 180, "offshore", "r-green"),
+        (b.facing, "onshore", "r-red"),
+        (b.facing - 90, "cross-shore", "r-amber"),
+        (b.facing + 90, "cross-shore", "r-amber"),
+    ):
+        x, y = toward(fx, fy, d, 150)
+        x, y = min(max(x, 44), WIDTH - 44), min(max(y + 4, 14), m.height - 8)
+        labels.append(
+            f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="middle" class="hs-label" fill="var(--{c})">{words}</text>'
+        )
     body = [
+        arrow_defs("hs-wind", ("r-green", "r-amber", "r-red")),
         f'<rect width="{WIDTH}" height="{m.height}" fill="var(--hs-sea)"/>',
         *m.land(),
+        *arrows,
+        *labels,
         *pin(m, lat, lon, "Coogee", anchor="end", dx=-10, dy=-8),
-    ]
-    for a in range(0, 360, 10):
-        colour = {"offshore": "r-green", "cross": "r-amber", "onshore": "r-red"}[wind_kind(a + 5, b.facing)]
-        body.append(f'<path d="{wedge(cx, cy, a, a + 10, rr)}" fill="var(--{colour})" opacity=".8"/>')
-    body += [
-        f'<circle cx="{cx}" cy="{cy}" r="{rr * 0.5:.0f}" fill="var(--surface)"/>',
-        f'<text x="{cx}" y="{cy + 4}" text-anchor="middle" class="hs-small">wind</text>',
-        f'<text x="{cx}" y="{cy - rr - 5}" text-anchor="middle" class="hs-small">N</text>',
-    ]
-    for i, (colour, words) in enumerate((("r-green", "offshore"), ("r-amber", "cross-shore"), ("r-red", "onshore"))):
-        y = cy + rr + 18 + i * 16
-        body.append(f'<rect x="{cx - rr}" y="{y - 9}" width="10" height="10" rx="2" fill="var(--{colour})"/>')
-        body.append(f'<text x="{cx - rr + 15}" y="{y}" class="hs-small">{words}</text>')
-    fx, fy = m.px(lat, lon)
-    tx, ty = toward(fx, fy, b.facing, 60)
-    body += [
-        arrow_defs("hs-wind", ("muted",)),
-        f'<line x1="{fx:.1f}" y1="{fy:.1f}" x2="{tx:.1f}" y2="{ty:.1f}" stroke="var(--muted)" stroke-width="2" '
-        'marker-end="url(#hs-wind-muted)"/>',
-        f'<text x="{tx:.1f}" y="{ty + 16:.1f}" text-anchor="middle" class="hs-small">faces {b.facing}°</text>',
         *m.scale_bar(500),
     ]
     svg(
@@ -447,9 +457,76 @@ def wind_fig():
         WIDTH,
         m.height,
         "Which winds are offshore at Coogee",
-        f"Coogee faces {b.facing} degrees, a little south of east. A compass shows winds from the south-west round to "
-        "the north-west are offshore, blowing from the land out over the water; winds from the north-east round to "
-        "the south-east are onshore; the rest are cross-shore.",
+        f"Arrows blow in to Coogee from every direction. Coogee faces {b.facing} degrees, a little south of east, so "
+        "winds from the south-west round to the north-west, off the land, are offshore (green); winds from the "
+        "north-east round to the south-east, off the sea, are onshore (red, dashed); the rest are cross-shore "
+        "(amber).",
+        body,
+    )
+
+
+def wind_water_fig():
+    """Side-on: the same swell under an offshore and an onshore wind."""
+    w, h, gap = WIDTH, 150, 12
+    pw = (w - gap) / 2
+    base = 92
+
+    def panel(x0, offshore):
+        c = "r-green" if offshore else "r-red"
+        out = [
+            f'<rect x="{x0:.1f}" y="0" width="{pw:.1f}" height="{h}" rx="6" fill="var(--surface)" '
+            'stroke="var(--line)"/>'
+        ]
+        shore = x0 + 46
+        sea = [(shore, base + 6)]
+        for i in range(int(pw - 50) + 1):
+            x = shore + i
+            t = (x - shore) / (pw - 50)
+            swell_ = 6 * math.sin((x - shore) / 13) * (0.5 + 0.5 * t)  # waves grow away from the sand
+            chop = 0 if offshore else 2.6 * math.sin(x / 2.3) + 1.8 * math.sin(x / 1.4 + 1)
+            sea.append((x, base - swell_ - chop))
+        bottom = [(x0 + pw, h - 1), (shore - 10, h - 1)]
+        out.append(f'<path d="{path(sea + bottom)}" fill="var(--hs-sea)" stroke="var(--accent)" stroke-width="1.5"/>')
+        # sand rising to the left, the land the wind comes off (or blows onto)
+        out.append(
+            f'<path d="M{x0 + 1:.1f},{base - 18}Q{shore - 14:.1f},{base - 16} {shore + 8:.1f},{base + 10}'
+            f'L{shore + 8:.1f},{h - 1}L{x0 + 1:.1f},{h - 1}Z" fill="var(--hs-land)"/>'
+        )
+        if not offshore:
+            for x, y in sea[20::22]:
+                out.append(
+                    f'<path d="M{x - 3:.1f},{y - 1:.1f}l3,-3l3,3" fill="none" stroke="var(--text)" '
+                    'stroke-width="1.2" opacity=".7"/>'
+                )
+        for row, y in enumerate((30, 48)):
+            for k in range(3):
+                xa = x0 + 22 + k * 52 + row * 24
+                xb = xa + 36
+                if not offshore:
+                    xa, xb = xb, xa
+                out.append(
+                    f'<line x1="{xa:.1f}" y1="{y}" x2="{xb:.1f}" y2="{y}" stroke="var(--{c})" '
+                    f'stroke-width="2.5" marker-end="url(#hs-ww-{c})"/>'
+                )
+        out.append(
+            f'<text x="{x0 + 10:.1f}" y="16" class="hs-label" fill="var(--{c})">'
+            f"{'Offshore: clean' if offshore else 'Onshore: choppy'}</text>"
+        )
+        out.append(
+            f'<text x="{x0 + pw - 8:.1f}" y="{h - 10}" text-anchor="end" class="hs-small">'
+            f"{'smooth, clear water' if offshore else 'chop, stirred-up water'}</text>"
+        )
+        return out
+
+    body = [arrow_defs("hs-ww", ("r-green", "r-red")), *panel(0, True), *panel(pw + gap, False)]
+    svg(
+        "wind-water",
+        w,
+        h,
+        "What offshore and onshore wind do to the water",
+        "Two side-on drawings of the same beach and swell. With an offshore wind blowing from the land out to sea, "
+        "the water is smooth and clear. With an onshore wind blowing in from the sea, the surface is broken up by "
+        "chop and whitecaps.",
         body,
     )
 
@@ -461,3 +538,4 @@ if __name__ == "__main__":
     share_fig()
     period_fig()
     wind_fig()
+    wind_water_fig()

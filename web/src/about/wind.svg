@@ -1,59 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 286" role="img" aria-labelledby="wind-t wind-d" class="how-swell">
 <title id="wind-t">Which winds are offshore at Coogee</title>
-<desc id="wind-d">Coogee faces 100 degrees, a little south of east. A compass shows winds from the south-west round to the north-west are offshore, blowing from the land out over the water; winds from the north-east round to the south-east are onshore; the rest are cross-shore.</desc>
+<desc id="wind-d">Arrows blow in to Coogee from every direction. Coogee faces 100 degrees, a little south of east, so winds from the south-west round to the north-west, off the land, are offshore (green); winds from the north-east round to the south-east, off the sea, are onshore (red, dashed); the rest are cross-shore (amber).</desc>
+<defs><marker id="hs-wind-r-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="var(--r-green)"/></marker><marker id="hs-wind-r-amber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="var(--r-amber)"/></marker><marker id="hs-wind-r-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="var(--r-red)"/></marker></defs>
 <rect width="400" height="286" fill="var(--hs-sea)"/>
 <path d="M192.4,285.7L0.0,285.7L0.0,0.0L362.4,0.0L363.0,1.4L365.9,3.7L368.8,6.8L366.6,11.6L363.7,13.8L362.8,16.0L362.8,21.5L363.6,23.7L358.4,27.3L361.5,29.2L360.3,31.8L360.8,34.3L356.8,41.7L355.1,43.9L349.4,36.8L344.5,36.2L338.1,37.5L325.2,36.4L325.8,34.5L327.1,32.3L326.2,31.7L324.3,29.9L316.6,27.1L315.0,25.6L308.5,23.8L306.8,22.5L303.6,19.9L302.2,18.3L298.4,12.9L297.2,12.4L296.0,14.0L293.4,15.1L291.3,15.4L289.2,16.9L291.5,18.5L292.8,19.2L293.2,18.5L293.8,19.0L297.4,21.6L297.4,21.6L300.1,23.6L303.7,26.3L307.7,29.7L311.9,34.1L314.2,37.0L315.6,37.6L316.9,38.2L313.8,42.7L314.6,45.1L310.2,48.5L305.0,56.6L299.0,62.1L295.4,62.8L291.4,60.0L284.4,61.7L278.3,57.5L270.0,54.0L263.7,48.4L250.9,40.3L241.5,36.1L232.6,33.0L228.0,34.4L225.7,35.1L216.9,33.5L214.3,34.6L212.6,35.4L211.6,37.9L214.1,43.8L215.3,45.7L216.3,47.2L216.9,48.0L217.8,49.5L218.8,51.0L219.3,51.7L221.2,54.3L228.2,63.9L233.2,69.1L236.2,75.6L237.0,80.7L235.5,86.5L231.7,90.3L221.4,96.4L216.7,99.3L213.2,100.3L209.1,105.1L206.1,110.3L205.2,116.1L205.6,119.7L208.0,125.4L204.6,132.1L202.7,132.4L201.5,131.7L194.8,128.0L193.9,125.8L194.4,123.0L191.9,121.1L190.5,120.1L186.6,119.6L180.3,123.8L175.0,129.3L170.9,134.5L164.9,144.4L163.3,150.0L162.9,154.3L161.7,160.1L162.0,166.4L162.4,172.5L162.5,174.4L163.5,177.1L168.3,188.9L173.4,196.3L176.3,199.6L177.4,208.7L180.7,212.9L181.5,218.2L183.9,217.9L186.7,221.6L192.2,232.7L204.3,243.6L207.9,247.0L211.3,250.1L212.5,253.0L212.7,255.4L212.4,257.4L214.4,259.2L214.9,264.1L215.0,267.2L213.0,269.4L205.0,276.0L201.3,277.2L197.8,278.4L196.4,279.4L194.5,280.7L192.5,283.7L192.4,285.7Z" fill="var(--hs-land)" stroke="var(--line)" stroke-width="1"/>
 <path d="M273.7,238.4L272.8,237.1L271.8,236.0L270.0,234.6L268.1,227.6L267.6,224.8L270.7,220.9L274.2,220.9L276.2,222.4L278.8,222.1L279.4,222.1L279.8,222.4L280.7,222.7L281.4,222.2L281.5,222.4L281.7,222.6L281.9,222.9L281.8,223.1L281.8,223.5L281.7,224.4L281.2,224.9L280.8,224.9L280.3,225.0L280.2,224.8L279.8,224.8L279.6,225.0L279.6,225.4L279.8,225.9L280.0,226.1L279.9,226.3L279.6,226.2L278.6,225.5L278.5,225.9L278.9,227.6L278.0,228.1L277.0,229.2L276.4,230.1L277.1,231.3L278.0,233.0L278.8,233.5L280.9,232.6L281.2,233.1L281.4,234.4L281.1,235.2L281.6,236.6L281.3,237.2L279.7,241.1L278.3,241.3L276.2,239.1L275.8,237.5L273.7,238.4Z" fill="var(--hs-land)" stroke="var(--line)" stroke-width="1"/>
+<line x1="165.9" y1="-10.7" x2="165.9" y2="113.3" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="204.7" y1="-5.6" x2="172.7" y2="114.1" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="240.9" y1="9.4" x2="178.9" y2="116.7" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="272.0" y1="33.2" x2="184.3" y2="120.9" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="295.8" y1="64.3" x2="188.4" y2="126.3" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="310.8" y1="100.4" x2="191.0" y2="132.5" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="315.9" y1="139.3" x2="191.9" y2="139.3" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="310.8" y1="178.1" x2="191.0" y2="146.0" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="295.8" y1="214.3" x2="188.4" y2="152.3" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="272.0" y1="245.3" x2="184.3" y2="157.6" stroke="var(--r-red)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-red)" stroke-dasharray="4 3"/>
+<line x1="240.9" y1="269.2" x2="178.9" y2="161.8" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="204.7" y1="284.1" x2="172.7" y2="164.4" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="165.9" y1="289.3" x2="165.9" y2="165.3" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="127.1" y1="284.1" x2="159.2" y2="164.4" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="90.9" y1="269.2" x2="152.9" y2="161.8" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="59.9" y1="245.3" x2="147.5" y2="157.6" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="36.0" y1="214.3" x2="143.4" y2="152.3" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="21.0" y1="178.1" x2="140.8" y2="146.0" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="15.9" y1="139.3" x2="139.9" y2="139.3" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="21.0" y1="100.4" x2="140.8" y2="132.5" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="36.0" y1="64.3" x2="143.4" y2="126.3" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="59.9" y1="33.2" x2="147.5" y2="120.9" stroke="var(--r-green)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-green)"/>
+<line x1="90.9" y1="9.4" x2="152.9" y2="116.7" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<line x1="127.1" y1="-5.6" x2="159.2" y2="114.1" stroke="var(--r-amber)" stroke-width="2" opacity=".9" marker-end="url(#hs-wind-r-amber)"/>
+<text x="44.0" y="117.2" text-anchor="middle" class="hs-label" fill="var(--r-green)">offshore</text>
+<text x="313.6" y="169.3" text-anchor="middle" class="hs-label" fill="var(--r-red)">onshore</text>
+<text x="192.0" y="14.0" text-anchor="middle" class="hs-label" fill="var(--r-amber)">cross-shore</text>
+<text x="139.9" y="278.0" text-anchor="middle" class="hs-label" fill="var(--r-amber)">cross-shore</text>
 <circle cx="165.9" cy="139.3" r="5" fill="var(--text)" stroke="var(--surface)" stroke-width="2"/>
 <text x="155.9" y="131.3" text-anchor="end" class="hs-place">Coogee</text>
-<path d="M60.0,56.0L60.0,20.0L61.3,20.0L62.5,20.1L63.8,20.2L65.0,20.4L66.3,20.5Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L66.3,20.5L67.5,20.8L68.7,21.1L69.9,21.4L71.1,21.8L72.3,22.2Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L72.3,22.2L73.5,22.6L74.6,23.1L75.8,23.6L76.9,24.2L78.0,24.8Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L78.0,24.8L79.1,25.5L80.1,26.2L81.2,26.9L82.2,27.6L83.1,28.4Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L83.1,28.4L84.1,29.2L85.0,30.1L85.9,31.0L86.8,31.9L87.6,32.9Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L87.6,32.9L88.4,33.8L89.1,34.8L89.8,35.9L90.5,36.9L91.2,38.0Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L91.2,38.0L91.8,39.1L92.4,40.2L92.9,41.4L93.4,42.5L93.8,43.7Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L93.8,43.7L94.2,44.9L94.6,46.1L94.9,47.3L95.2,48.5L95.5,49.7Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L95.5,49.7L95.6,51.0L95.8,52.2L95.9,53.5L96.0,54.7L96.0,56.0Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L96.0,56.0L96.0,57.3L95.9,58.5L95.8,59.8L95.6,61.0L95.5,62.3Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L95.5,62.3L95.2,63.5L94.9,64.7L94.6,65.9L94.2,67.1L93.8,68.3Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L93.8,68.3L93.4,69.5L92.9,70.6L92.4,71.8L91.8,72.9L91.2,74.0Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L91.2,74.0L90.5,75.1L89.8,76.1L89.1,77.2L88.4,78.2L87.6,79.1Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L87.6,79.1L86.8,80.1L85.9,81.0L85.0,81.9L84.1,82.8L83.1,83.6Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L83.1,83.6L82.2,84.4L81.2,85.1L80.1,85.8L79.1,86.5L78.0,87.2Z" fill="var(--r-red)" opacity=".8"/>
-<path d="M60.0,56.0L78.0,87.2L76.9,87.8L75.8,88.4L74.6,88.9L73.5,89.4L72.3,89.8Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L72.3,89.8L71.1,90.2L69.9,90.6L68.7,90.9L67.5,91.2L66.3,91.5Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L66.3,91.5L65.0,91.6L63.8,91.8L62.5,91.9L61.3,92.0L60.0,92.0Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L60.0,92.0L58.7,92.0L57.5,91.9L56.2,91.8L55.0,91.6L53.7,91.5Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L53.7,91.5L52.5,91.2L51.3,90.9L50.1,90.6L48.9,90.2L47.7,89.8Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L47.7,89.8L46.5,89.4L45.4,88.9L44.2,88.4L43.1,87.8L42.0,87.2Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L42.0,87.2L40.9,86.5L39.9,85.8L38.8,85.1L37.8,84.4L36.9,83.6Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L36.9,83.6L35.9,82.8L35.0,81.9L34.1,81.0L33.2,80.1L32.4,79.1Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L32.4,79.1L31.6,78.2L30.9,77.2L30.2,76.1L29.5,75.1L28.8,74.0Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L28.8,74.0L28.2,72.9L27.6,71.8L27.1,70.6L26.6,69.5L26.2,68.3Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L26.2,68.3L25.8,67.1L25.4,65.9L25.1,64.7L24.8,63.5L24.5,62.3Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L24.5,62.3L24.4,61.0L24.2,59.8L24.1,58.5L24.0,57.3L24.0,56.0Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L24.0,56.0L24.0,54.7L24.1,53.5L24.2,52.2L24.4,51.0L24.5,49.7Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L24.5,49.7L24.8,48.5L25.1,47.3L25.4,46.1L25.8,44.9L26.2,43.7Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L26.2,43.7L26.6,42.5L27.1,41.4L27.6,40.2L28.2,39.1L28.8,38.0Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L28.8,38.0L29.5,36.9L30.2,35.9L30.9,34.8L31.6,33.8L32.4,32.9Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L32.4,32.9L33.2,31.9L34.1,31.0L35.0,30.1L35.9,29.2L36.9,28.4Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L36.9,28.4L37.8,27.6L38.8,26.9L39.9,26.2L40.9,25.5L42.0,24.8Z" fill="var(--r-green)" opacity=".8"/>
-<path d="M60.0,56.0L42.0,24.8L43.1,24.2L44.2,23.6L45.4,23.1L46.5,22.6L47.7,22.2Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L47.7,22.2L48.9,21.8L50.1,21.4L51.3,21.1L52.5,20.8L53.7,20.5Z" fill="var(--r-amber)" opacity=".8"/>
-<path d="M60.0,56.0L53.7,20.5L55.0,20.4L56.2,20.2L57.5,20.1L58.7,20.0L60.0,20.0Z" fill="var(--r-amber)" opacity=".8"/>
-<circle cx="60" cy="56" r="18" fill="var(--surface)"/>
-<text x="60" y="60" text-anchor="middle" class="hs-small">wind</text>
-<text x="60" y="15" text-anchor="middle" class="hs-small">N</text>
-<rect x="24" y="101" width="10" height="10" rx="2" fill="var(--r-green)"/>
-<text x="39" y="110" class="hs-small">offshore</text>
-<rect x="24" y="117" width="10" height="10" rx="2" fill="var(--r-amber)"/>
-<text x="39" y="126" class="hs-small">cross-shore</text>
-<rect x="24" y="133" width="10" height="10" rx="2" fill="var(--r-red)"/>
-<text x="39" y="142" class="hs-small">onshore</text>
-<defs><marker id="hs-wind-muted" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="var(--muted)"/></marker></defs>
-<line x1="165.9" y1="139.3" x2="225.0" y2="149.7" stroke="var(--muted)" stroke-width="2" marker-end="url(#hs-wind-muted)"/>
-<text x="225.0" y="165.7" text-anchor="middle" class="hs-small">faces 100°</text>
 <path d="M305.8,268V272H386.0V268" fill="none" stroke="var(--text)" stroke-width="1.5"/>
 <text x="345.9" y="265" text-anchor="middle" class="hs-small">500 m</text>
 </svg>
