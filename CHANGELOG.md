@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-06
 
+- The poo in the About dialog's stormwater picture is drawn in SVG instead of an emoji (a floater, not a cartoon pile), so it looks the same on every device and in both themes.
 - **No penalty for unpatrolled hours.** Exposed beaches (Beachsafe hazard 6 or more: Bondi, Tamarama, Bronte, Maroubra and the northern equivalents) lost 15 points before 7am and after 7pm (5pm in winter) for having no flags up. That's gone: a dawn or dusk swim is scored on the conditions.
 - **The About dialog covers everything a score takes in**, with a figure for each: water quality after rain (how much rain each beach can take, with a stormwater drain and what comes out of it), warmth by where the day is heading (a day going to 30° with a southerly), what rain, cloud, storms and air and water temperature are worth in points, ocean pools and the tide, and the winds that bring bluebottles. The figures load from `web/src/about/` on their own, and the map drawing decides land from sea with three rays instead of one (Maroubra came out inside out).
 - **The About dialog's wind step is drawn, not just a compass.** A side-on picture of the same swell under an offshore wind (smooth and clear) and an onshore one (chop and whitecaps), and Coogee's map with arrows blowing in from every 15°, coloured offshore, cross-shore or onshore. The text now also covers wind strength: glassy under about 8 km/h, offshore stops helping past about 25 km/h, and gusts count against any wind.

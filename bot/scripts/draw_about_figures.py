@@ -555,6 +555,42 @@ def hour_label(hr):
     return "noon" if hr == 12 else f"{hr % 12 or 12}{'am' if hr < 12 else 'pm'}"
 
 
+def poo(cx, base):
+    """A turd floating at (cx, base): a lumpy, slightly bent log, half in the water."""
+    brown, dark = "#6b4423", "#4a2e16"
+    n, length = 48, 42
+    top, bottom, centre = [], [], []
+    for i in range(n + 1):
+        t = i / n
+        x = cx - length / 2 + t * length
+        y = base - 1 + 3 * math.sin(math.pi * t) - 2 * math.sin(2 * math.pi * t)  # a gentle S bend
+        r = (4.4 + 0.7 * math.cos(t * 2 * math.pi * 3)) * (math.sin(math.pi * t) ** 0.5)  # three lumps
+        top.append((x, y - r))
+        bottom.append((x, y + r))
+        centre.append((x, y))
+    out = [
+        f'<path d="{path(top + bottom[::-1])}" fill="{brown}" stroke="{dark}" stroke-width=".8" '
+        'stroke-linejoin="round"/>'
+    ]
+    for i in (8, 24, 40):  # creases between the lumps
+        (x, y), (_, yt), (_, yb) = centre[i], top[i], bottom[i]
+        out.append(
+            f'<path d="M{x - 0.8:.1f},{yt + 0.6:.1f}Q{x + 1.2:.1f},{y:.1f} {x - 0.4:.1f},{yb - 0.6:.1f}" '
+            f'fill="none" stroke="{dark}" stroke-width=".9" opacity=".8"/>'
+        )
+    shine = [(x, y - (y - yt) * 0.55) for (x, y), (_, yt) in zip(centre[6:42], top[6:42], strict=True)]
+    out.append(
+        f'<path d="{path(shine, close=False)}" fill="none" stroke="#fff" stroke-width="1" opacity=".22" '
+        'stroke-linecap="round"/>'
+    )
+    # ripples where it sits in the water
+    out.append(
+        f'<path d="M{cx - length / 2 - 4:.1f},{base + 6:.1f}q4,-2 8,0t8,0M{cx + 8:.1f},{base + 6:.1f}q4,-2 8,0t8,0" '
+        'fill="none" stroke="var(--accent)" stroke-width="1" opacity=".7"/>'
+    )
+    return out
+
+
 def stormwater_scene(w, h):
     """Rain on the hill, a stormwater drain on the sand, and what comes out of it."""
     sea_y = 62
@@ -578,7 +614,7 @@ def stormwater_scene(w, h):
     out.append(f'<rect x="112" y="{sea_y - 6}" width="30" height="9" rx="2" fill="var(--muted)"/>')
     out.append(f'<ellipse cx="205" cy="{sea_y + 12}" rx="70" ry="10" fill="#8a5a2b" opacity=".45"/>')
     out.append(f'<ellipse cx="185" cy="{sea_y + 10}" rx="38" ry="7" fill="#8a5a2b" opacity=".45"/>')
-    out.append(f'<text x="228" y="{sea_y + 9}" text-anchor="middle" font-size="26">💩</text>')
+    out += poo(228, sea_y + 6)
     out.append(f'<text x="{w - 10}" y="22" text-anchor="end" class="hs-label">After rain, stormwater</text>')
     out.append(f'<text x="{w - 10}" y="38" text-anchor="end" class="hs-label">drains onto the beach</text>')
     return out
