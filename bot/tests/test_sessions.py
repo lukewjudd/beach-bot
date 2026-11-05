@@ -221,6 +221,9 @@ def test_events_are_only_rewritten_when_the_call_changes():
     }
     later = {**body, "description": desc.replace("Last changed", "Last changed (an hour on)")}
     wobble = {**body, "description": desc.replace("Weather", "Weather (a point either way)")}
+    # 6 Nov: the sea warmed to 20 overnight and "cold water" dropped off the top 3 spots' notes
+    notes = {**body, "description": desc.replace("(good snorkelling)", "(cold water, good snorkelling)")}
+    window = {**body, "description": desc.replace("Best window: 6am", "Best window: 7am")}
     new_lead = {**body, "summary": title.replace("Clovelly", "Bronte")}
-    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble)
+    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble) == fingerprint(notes) == fingerprint(window)
     assert fingerprint(new_lead) != fingerprint(body)

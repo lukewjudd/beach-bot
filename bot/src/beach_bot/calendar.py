@@ -53,9 +53,17 @@ def event_body(sess, hours, ctx, beachwatch, today):
 
 
 def fingerprint(body):
-    """What an event update is worth sending for: the title (score, spot, session), the times, the place, the
-    best window and the top 3 spots. Hourly wobbles in the finer detail (a condition going from 6 to 7/10, the
-    wind a few km/h either way) don't count, so Google doesn't email an "event updated" every run."""
+    """What an event update is worth sending for: the title (score, spot, session), the times, the place and
+    the top 3 spots with their scores. Everything else (a spot's notes like "cold water", the best window, the
+    condition ratings, the wind) wobbles from run to run, and an update makes Google email an "event updated"."""
+    top3 = [re.sub(r"\s*\(.*\)$", "", x).strip() for x in body["description"].splitlines() if re.match(r"\s+\d\. ", x)]
+    parts = [body["summary"], body["start"]["dateTime"], body["end"]["dateTime"], body.get("location") or "", *top3]
+    return hashlib.sha1("\n".join(parts).encode()).hexdigest()[:16]
+
+
+def _fingerprint_v1(body):
+    """The first version (5 Nov 2026), which also counted spot notes and the best window. Only used so events it
+    stamped aren't rewritten just because the fingerprint changed; safe to drop once they've passed."""
     desc = body["description"].splitlines()
     keep = [x for x in desc if x.startswith(("Best window", "Overall")) or re.match(r"\s+\d\. ", x)]
     parts = [body["summary"], body["start"]["dateTime"], body["end"]["dateTime"], body.get("location") or "", *keep]
@@ -118,8 +126,9 @@ def sync(sessions, hours, ctx, beachwatch, now, cal):
             "transparency": "transparent",  # don't show as busy
         }
         fp = fingerprint(body)
-        body["extendedProperties"] = {"private": {"beachbot": fp}}
-        if live and existing.get("extendedProperties", {}).get("private", {}).get("beachbot") == fp:
+        body["extendedProperties"] = {"private": {"beachbot2": fp}}
+        stamp = existing.get("extendedProperties", {}).get("private", {}) if existing else {}
+        if live and (stamp.get("beachbot2") == fp or stamp.get("beachbot") == _fingerprint_v1(body)):
             continue  # nothing worth an update
         if existing:  # includes previously deleted ones; ids can't be re-inserted
             svc.events().update(calendarId=cal, eventId=sess.key, body=body).execute()

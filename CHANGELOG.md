@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-06
+
+- **Fewer "event updated" emails.** An event is now only rewritten when its title (score, spot, session), times, place, or the top 3 spots and their scores change. The 4am run rewrote Saturday's Clovelly event because the sea forecast nudged from just under 20° to 20°, which dropped a "cold water" note from the top 3 spots. Spot notes and the best window no longer count.
+
 ## 2026-11-05 (night): longer sessions, and warmth by the day
 
 - **Calendar titles are just the call**: "8/10 Clovelly · Sat morning". The wind and the air/water temperatures ("23°/20° water") move out of the title; they were already in the description.
