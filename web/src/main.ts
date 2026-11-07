@@ -404,6 +404,9 @@ function whyNotWorth(s: Session) {
 // "2pm" -> 14
 const hourOfLabel = (t: string) => (parseInt(t, 10) % 12) + (t.endsWith("pm") ? 12 : 0);
 
+// "2pm", "4pm" -> "2–4pm"; "11am", "1pm" -> "11am–1pm"
+const span = (a: string, b: string) => (a.slice(-2) === b.slice(-2) ? `${a.slice(0, -2)}–${b}` : `${a}–${b}`);
+
 // A row of hours for one spot: each coloured by its own score, the best two hours (what the score is) ringed,
 // storms and ruled-out hours marked, and hours already gone faded. The score stays the best stretch; this shows
 // how the rest of the session goes, so a lovely 2pm doesn't hide a stormy 5pm.
@@ -430,10 +433,14 @@ function strip(s: Session, sc: SpotScore | undefined, name: string) {
         <span class="cell ${cls}">${inner}</span><span class="t">${t}</span></li>`;
     })
     .join("");
+  // Under the strip, in words: when the best two hours are, and what ends the session early if anything does
+  const best = sc.window ? `Best ${span(sc.window[0], sc.window[1])}` : "";
+  const note = [best && `<span>${esc(best)}</span>`, sc.later && `<span class="later">${esc(sc.later)}</span>`]
+    .filter(Boolean)
+    .join(`<span aria-hidden="true"> · </span>`);
   return `<div class="strip-wrap">
-    <div class="strip-head"><span>Hour by hour at ${esc(name)}</span>${sc.window ? `<span class="strip-key"><span class="ring"></span>best two hours</span>` : ""}</div>
     <ol class="strip" aria-label="${esc(`Hour by hour at ${name}: ${words.join(", ")}`)}">${cells}</ol>
-    ${sc.later ? `<p class="later">${esc(sc.later)}</p>` : ""}
+    ${note ? `<p class="strip-note">${note}</p>` : ""}
   </div>`;
 }
 
