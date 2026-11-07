@@ -98,9 +98,9 @@ def test_monday_2_nov_was_not_worth_it(real_forecast):
         score_session(s, hours, ctx, beachwatch, now.date())
     monday = {s.slot: s for s in sessions if s.day == now.date()}
 
-    # Glassy but only 16-19°: Clovelly's the pick, but it's a 6
+    # Glassy but only 16-19°: Clovelly's the pick, but it's a 7 (glassy earns full wind points whichever way)
     assert monday["am"].best_swim[1].name == "Clovelly"
-    assert out_of_10(monday["am"].best_swim[0]) == 6
+    assert out_of_10(monday["am"].best_swim[0]) == 7
     assert not monday["am"].is_good
     # NE sea breeze gusting past 40 km/h under full cloud
     assert not monday["pm"].is_good
@@ -281,4 +281,32 @@ def test_weather_rates_a_cool_start_to_a_hot_day_like_the_score_does():
 
     hours, sun = make_forecast(WED, wet)
     sessions, ctx = score(hours, sun, WED)
-    assert report(sessions["am"], hours, ctx, {}, WED)["Weather"] <= 4  # 26° but raining (it used to read 7)
+    assert report(sessions["am"], hours, ctx, {}, WED)["Weather"] <= 5  # 26° but raining (it used to read 7)
+
+
+def test_a_light_breeze_is_good_whichever_way_it_blows():
+    # 7 Nov 2026 midday at Clovelly: 6-10 km/h across the inlet scored like a breezy day
+    def light_ne(t, h):
+        h.update(wind_speed_10m=10.0, wind_direction_10m=45, wind_gusts_10m=15.0)
+        return h
+
+    hours, sun = make_forecast(WED, light_ne)
+    sessions, ctx = score(hours, sun, WED)
+    clovelly = next(b for _, b, _ in sessions["am"].swim if b.name == "Clovelly")
+    assert report(sessions["am"], hours, ctx, {}, WED, clovelly)["Wind"] >= 9
+
+
+def test_the_bars_add_up_to_the_score():
+    # Each bar step is 5 of the score's points, so the bars account for the score to within the extras
+    # (snorkelling, bluebottles) and rounding
+    def mixed(t, h):
+        h.update(wind_speed_10m=17.0, wind_direction_10m=100, wind_gusts_10m=28.0, temperature_2m=22.0)
+        h.update(wave_height=1.1, precipitation_probability=45)
+        return h
+
+    hours, sun = make_forecast(WED, mixed)
+    sessions, ctx = score(hours, sun, WED)
+    for sc, b, _ in sessions["am"].swim:
+        bars = report(sessions["am"], hours, ctx, {}, WED, b)
+        expected = 95 - 5 * sum(10 - v for v in bars.values())
+        assert abs(sc - expected) <= 12, (b.name, sc, bars)

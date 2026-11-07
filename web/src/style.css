@@ -90,6 +90,12 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: v
 .about p { margin: 0; }
 .about ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .about a { color: var(--accent); }
+/* A small table of points, e.g. what each wind is worth */
+.about table.points { width: 100%; margin: 10px 0 0; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.about table.points caption { text-align: left; color: var(--muted); padding-bottom: 4px; }
+.about table.points th, .about table.points td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+.about table.points th:first-child { text-align: left; font-weight: 600; }
+.about table.points thead th { color: var(--muted); font-weight: 600; }
 .how-swell-fig {
   --hs-sea: color-mix(in srgb, var(--accent) 22%, var(--surface));
   --hs-land: color-mix(in srgb, var(--muted) 30%, var(--surface));

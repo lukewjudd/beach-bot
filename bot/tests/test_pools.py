@@ -108,16 +108,16 @@ def test_pools_feel_the_same_breeze_as_their_beach():
 
     assert pool(onshore["pm"], "Ross Jones Pool")[0] < pool(offshore["pm"], "Ross Jones Pool")[0]
 
-    # The conditions row matches the beach it sits on
+    # The Wind bar is the pool's own wind points, so it shows the sea breeze too
     from beach_bot.beaches import POOLS
+    from beach_bot.forecast import Context
     from beach_bot.sessions import report
 
-    hours = make_forecast(WED, breeze(60))[0]
     rj = next(p for p in POOLS if p.name == "Ross Jones Pool")
-    assert (
-        report(onshore["pm"], hours, ctx, {}, WED, rj)["Wind"]
-        == report(onshore["pm"], hours, ctx, {}, WED, rj.beach)["Wind"]
-    )
+    on_h, off_h = make_forecast(WED, breeze(60))[0], make_forecast(WED, breeze(270))[0]
+    on_bar = report(onshore["pm"], on_h, ctx, {}, WED, rj)["Wind"]
+    off_bar = report(offshore["pm"], off_h, Context(off_h), {}, WED, rj)["Wind"]
+    assert on_bar < off_bar
 
 
 def test_pools_are_rated_on_calm_and_tide():

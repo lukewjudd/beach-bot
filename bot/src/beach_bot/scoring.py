@@ -50,12 +50,33 @@ def storm(h: dict):
     return (h.get("cape") or 0) >= STORM_CAPE and (h.get("precipitation_probability") or 0) >= STORM_RAIN_PROB
 
 
-def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
-    """Returns (score, notes). score None = no-go."""
+SWIM_BASE = 45  # where every swim hour starts; the parts' best add up to 100 (15 + 15 + 20 + 5 extras)
+
+# Wind points at a swimming beach, by strength then direction (§4.1): (under km/h, offshore, cross, onshore).
+# Under 8 km/h it's glassy whichever way it blows. Past that, offshore keeps the water smooth while cross-shore
+# and onshore chop it up, more the stronger it gets; and past 20 km/h it's blowy on the sand whatever the water.
+WIND_POINTS = [
+    (8, 15, 15, 15),
+    (15, 12, 8, 3),
+    (20, 10, 0, -15),
+    (25, 5, -13, -20),
+    (28, -5, -13, -20),
+    (float("inf"), -5, -13, -40),
+]
+
+
+def wind_points(wind, kind):
+    row = next(r for r in WIND_POINTS if wind < r[0])
+    return row[{"offshore": 1, "cross": 2, "onshore": 3}[kind]]
+
+
+def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """The points for each part of a swim hour: (parts, notes, nogo). parts holds Calm water, Wind, Weather and
+    Water quality (what the site's bars show) and Extras (snorkelling, bluebottles); a part that rules the hour
+    out is None, and nogo says why."""
+    notes, nogo = [], None
     if storm(h):
-        return None, ["storms ⚡"]
-    notes = []
-    s = 45
+        nogo = "storms ⚡"
     hs = h.get("wave_height") or 0
     sdir = h.get("swell_wave_direction") or 0
     wind = h["wind_speed_10m"]
@@ -65,59 +86,47 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     # Swell at the beach (§4.2, R-S7)
     sector = swell_sector(sdir)
     hb = at_beach(h, b)
+    calm = 15 if hb < 0.5 else -20 if hb > 0.8 else 0
     if b.name == "Clovelly" and hs > 2.5 and sector in ("E", "SE"):  # R-S3
-        return None, ["too much swell in the inlet"]
-    if b.name == "Gordons Bay" and hs > 1.2 and sector in ("NE", "E", "SE"):  # R-S5
-        return None, ["waves in the bay"]
-    if hb > b.swim_limit:
-        return None, [f"~{hb:.1f}m at the beach"]
-    if hb < 0.5:
-        s += 15
-    elif hb > 0.8:
-        s -= 20
+        calm, nogo = None, nogo or "too much swell in the inlet"
+    elif b.name == "Gordons Bay" and hs > 1.2 and sector in ("NE", "E", "SE"):  # R-S5
+        calm, nogo = None, nogo or "waves in the bay"
+    elif hb > b.swim_limit:
+        calm, nogo = None, nogo or f"~{hb:.1f}m at the beach"
 
     # Wind (§4.1)
     kind = wind_kind(wdir, b.facing)
-    if kind == "offshore" and wind <= 25:
-        s += 10
-    elif kind == "onshore" and wind >= 28:
-        s -= 35
-    elif kind == "onshore" and wind >= 15:
-        s -= 15
-    elif kind == "cross" and wind >= 20:
-        s -= 8
+    w = wind_points(wind, kind)
     if wind >= 40 and b.hazard >= 6:
-        s -= 25
-    if wind < 8:
-        s += 5
-    elif wind >= 20:
-        s -= 5  # blowy on the sand even where the water is sheltered
+        w -= 25
     gust = h.get("wind_gusts_10m") or 0
-    s -= 15 if gust >= 45 else 8 if gust >= 35 else 0
+    w -= 15 if gust >= 45 else 8 if gust >= 35 else 0
     if 0 <= wdir <= 70 and b.name == "Bondi (north end)":  # R-W6
-        s += 10
+        w += 10
     if 160 <= wdir <= 200 and b.name == "Bondi (north end)":  # R-W7
-        s -= 15
-    if (h.get("wind_gusts_10m") or 0) >= 54 and 160 <= wdir <= 250:  # R-W5
-        s -= 20 if b.name in ("Clovelly", "Bronte") else 40
+        w -= 15
+    if gust >= 54 and 160 <= wdir <= 250:  # R-W5
+        w -= 20 if b.name in ("Clovelly", "Bronte") else 40
         notes.append("southerly change")
 
-    q = water_quality(b, t, ctx, beachwatch, today, notes)
+    q_notes = []
+    q = water_quality(b, t, ctx, beachwatch, today, q_notes)
     if q is None:
-        return None, notes[-1:]  # just the reason it's a no-go
-    s += q
+        nogo = nogo or q_notes[-1]
+    notes += q_notes
 
     # Snorkelling (R-S4, R-R4): small swell, and clear water. Rain and runoff cloud it for a couple of days.
+    extras = 0
     if b.snorkel:
         murky = ctx.rain(t, 0, 48) >= 10 or beachwatch_says(b, t, beachwatch, today) == "Possible"
         if murky:
             notes.append("murky for snorkelling")
             if not beachwatch_says(b, t, beachwatch, today):
-                s -= 10
+                extras -= 10
         elif hs < 1.0 and not (kind == "onshore" and wind >= 15):
-            s += 5
+            extras += 5
             notes.append("good snorkelling")
-    s += weather(h, t, ctx, notes)
+    wx = None if storm(h) else weather(h, t, ctx, notes)
 
     # Bluebottles (R-B1)
     if month in (11, 12, 1, 2, 3) and not b.harbour:  # they don't make it into the harbour
@@ -128,11 +137,20 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
             pen = {"Maroubra": 20, "Coogee": 10, "Bronte": 10, "Tamarama": 10, "Clovelly": 3 if ne else 8}.get(
                 b.name, 5
             )
-            s -= pen * (2 if w24 >= 30 else 1)
+            extras -= pen * (2 if w24 >= 30 else 1)
             if pen >= 8:
                 notes.append("bluebottles possible")
 
-    return max(0, min(100, s)), notes
+    parts = {"Calm water": calm, "Wind": w, "Weather": wx, "Water quality": q, "Extras": extras}
+    return parts, notes, nogo
+
+
+def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """Returns (score, notes). score None = no-go."""
+    parts, notes, nogo = swim_parts(b, t, h, ctx, beachwatch, today)
+    if nogo:
+        return None, [nogo]  # just the reason it's a no-go
+    return max(0, min(100, SWIM_BASE + sum(parts.values()))), notes
 
 
 def beachwatch_says(b: Beach, t: str, beachwatch: dict, today: date):
@@ -195,13 +213,16 @@ def weather(h: dict, t: str, ctx: Context, notes: list):
     return s
 
 
-def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
-    """Returns (score, notes) for an ocean pool (beach-knowledge.md §2, rules R-P*). None = closed or unsafe.
-    Pools stay flat when the beaches are rough; what matters is swell over the walls near high tide."""
+POOL_BASE = 45
+
+
+def pool_parts(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """The points for each part of an hour at an ocean pool (beach-knowledge.md §2, rules R-P*): (parts, notes,
+    nogo). parts holds Calm in the pool, Tide, Wind, Weather and Water quality (the site's bars) and Extras (a
+    cleaning day). Pools stay flat when the beaches are rough; what matters is swell over the walls near high tide."""
+    notes, nogo = [], None
     if storm(h):
-        return None, ["storms ⚡"]
-    notes = []
-    s = 45
+        nogo = "storms ⚡"
     hs = h.get("wave_height") or 0
     wind = h["wind_speed_10m"]
     hour = int(t[11:13])
@@ -210,84 +231,97 @@ def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, to
 
     # Cleaning days (R-P7) and opening hours (R-P8). Only Bronte's cleaning window is known (the ~4h before low
     # tide); for the others it's a few hours sometime that day, so it's a warning rather than a closure.
+    extras = 0
     if p.cleaning_day == day.weekday():
         if p.cleaning_before_low:
             if tide and 0 <= tide[1] <= 4:
-                return None, ["closed for cleaning before low tide"]
+                nogo = nogo or "closed for cleaning before low tide"
         else:
-            s -= 15
+            extras -= 15
             notes.append(f"may be shut for cleaning ({day:%A}s)")
     if p.opens is not None:
         summer = (day.month, day.day) >= (10, 1) or (day.month, day.day) <= (4, 12)
         if hour < p.opens or hour >= (p.closes_summer if summer else p.closes_winter):
-            return None, [f"closed until {p.opens}am" if hour < p.opens else "closed for the day"]
+            nogo = nogo or (f"closed until {p.opens}am" if hour < p.opens else "closed for the day")
 
     # Swell over the walls (R-P3)
     near_high = tide is not None and abs(tide[0]) <= 2.5
     surge = hs * p.exposure
-    if surge >= 2.5 and (near_high or tide is None):
-        return None, ["waves over the walls"]
-    if surge >= 3.2:
-        return None, ["waves over the walls"]
-    if surge >= 1.5 and near_high:
-        s -= 20
+    calm = 0
+    if surge >= 3.2 or (surge >= 2.5 and (near_high or tide is None)):
+        calm, nogo = None, nogo or "waves over the walls"
+    elif surge >= 1.5 and near_high:
+        calm = -20
         notes.append("washy at high tide")
     elif surge >= 2.0:
-        s -= 10
-    if surge < 1.0:
-        s += 15
+        calm = -10
+    elif surge < 1.0:
+        calm = 15
     elif surge < 1.5:
-        s += 8
+        calm = 8
 
     # Tide preferences (R-P1, R-P3, R-P5)
+    tide_pts = 0
     if tide is not None:
         to_high, to_low = abs(tide[0]), abs(tide[1])
         if p.best_tide == "low" and to_low <= 3:
-            s += 10
+            tide_pts = 10
             notes.append("low tide")
         elif p.best_tide == "mid" and min(to_high, to_low) >= 1.5 and hs < 1.0:
-            s += 10
+            tide_pts = 10
             notes.append("mid tide")
         elif p.best_tide == "mid_high" and to_high <= 3 and hs < 1.2:
-            s += 5
+            tide_pts = 5
             notes.append("wave pool fun")
 
     # Wind: the walls keep the chop out, so direction counts for about half what it does at the beach,
     # but you're still on the deck in the same breeze
     kind = wind_kind(h["wind_direction_10m"], p.facing)
+    w = 0
     if kind == "offshore" and wind <= 25:
-        s += 5
+        w += 5
     elif kind == "onshore" and wind >= 28:
-        s -= 15
+        w -= 15
     elif kind == "onshore" and wind >= 15:
-        s -= 8
+        w -= 8
     if wind < 8:
-        s += 5
+        w += 5
     elif wind >= 28:
-        s -= 15
+        w -= 15
     elif wind >= 20:
-        s -= 5
+        w -= 5
     gust = h.get("wind_gusts_10m") or 0
-    s -= 10 if gust >= 45 else 5 if gust >= 35 else 0
+    w -= 10 if gust >= 45 else 5 if gust >= 35 else 0
 
-    q = water_quality(p.beach, t, ctx, beachwatch, today, notes)  # R-R5: pools share the beach's water
+    q_notes = []
+    q = water_quality(p.beach, t, ctx, beachwatch, today, q_notes)  # R-R5: pools share the beach's water
     if q is None:
-        return None, notes[-1:]  # just the reason it's a no-go
-    s += q
-    s += weather(h, t, ctx, notes)
-    return max(0, min(100, s)), notes
+        nogo = nogo or q_notes[-1]
+    notes += q_notes
+    wx = None if storm(h) else weather(h, t, ctx, notes)
+    parts = {"Calm in the pool": calm, "Tide": tide_pts, "Wind": w, "Weather": wx, "Water quality": q, "Extras": extras}
+    return parts, notes, nogo
 
 
-def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
-    """Returns (score, notes) for surfing. Every spot always gets a score: flat or blown out is just low.
-    Size at the break sets the ceiling (no waves = 1/10 however nice the wind); the gap between waves
-    and the wind decide how much of that ceiling you get. Storms and dirty water drop it to the floor."""
-    if storm(h):
-        return 10, ["storms ⚡"]
+def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """Returns (score, notes) for an ocean pool. None = closed or unsafe."""
+    parts, notes, nogo = pool_parts(p, t, h, ctx, beachwatch, today)
+    if nogo:
+        return None, [nogo]
+    return max(0, min(100, POOL_BASE + sum(parts.values()))), notes
+
+
+def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """The points for each part of a surf hour: (parts, factor, notes, nogo). parts holds Wave size, Wave quality
+    (the gap between waves), Wind, Weather and Water quality. Size sets the ceiling: the quality points (period,
+    wind and weather) only count for `factor` of themselves, so no waves is 1/10 however nice the wind."""
     notes = []
-    q_water = water_quality(sp.beach, t, ctx, beachwatch, today, notes)
+    nogo = "storms ⚡" if storm(h) else None
+    q_notes = []
+    q_water = water_quality(sp.beach, t, ctx, beachwatch, today, q_notes)
     if q_water is None:
-        return 10, notes
+        nogo = nogo or q_notes[-1]
+    notes += q_notes
     sdir = h.get("swell_wave_direction") or 0
     period = h.get("swell_wave_period") or 0
     wind = h["wind_speed_10m"]
@@ -316,29 +350,39 @@ def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dic
         notes.append("closing out")
 
     # Quality: gap between waves (short wind chop is mushy, groundswell is clean) and wind
-    q = 0 if period < 6 else 5 if period < 8 else 10 if period < 10 else 15 if period < 12 else 22
-    q += 3 if period >= 14 else 0
+    per = 0 if period < 6 else 5 if period < 8 else 10 if period < 10 else 15 if period < 12 else 22
+    per += 3 if period >= 14 else 0
+    if sp.bonus_dirs and in_range(sdir, *sp.bonus_dirs):
+        per += 5
     if period < 6:
         notes.append("short, choppy swell")
     kind = wind_kind(h["wind_direction_10m"], sp.facing)
     if wind < 8:
-        q += 28
+        w = 28
     elif kind == "offshore":
-        q += 30 if wind <= 12 else 22 if wind <= 20 else 12
+        w = 30 if wind <= 12 else 22 if wind <= 20 else 12
     elif kind == "cross":
-        q += 15 if wind < 12 else 8 if wind < 20 else 3
+        w = 15 if wind < 12 else 8 if wind < 20 else 3
         notes.append("cross-shore wind")
     else:
-        q += 6 if wind < 12 else 1 if wind < 20 else 0
+        w = 6 if wind < 12 else 1 if wind < 20 else 0
         notes.append("onshore wind")
     if (h.get("wind_gusts_10m") or 0) >= 40:
-        q -= 5
-    if sp.bonus_dirs and in_range(sdir, *sp.bonus_dirs):
-        q += 5
+        w -= 5
     temp = ctx.warmth(t)
-    q += 5 if temp >= 24 else 0 if temp >= 16 else -5
+    wx = 5 if temp >= 24 else 0 if temp >= 16 else -5
     if (h.get("precipitation_probability") or 0) >= 60:
-        q -= 5
+        wx -= 5
+    parts = {"Wave size": size_pts, "Wave quality": per, "Wind": w, "Weather": wx, "Water quality": q_water}
+    return parts, factor, notes, nogo
 
-    s = 5 + size_pts + max(0, q) * factor + q_water
+
+def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
+    """Returns (score, notes) for surfing. Every spot always gets a score: flat or blown out is just low, and
+    storms and dirty water drop it to the floor."""
+    parts, factor, notes, nogo = surf_parts(sp, t, h, ctx, beachwatch, today)
+    if nogo:
+        return 10, [nogo]
+    quality = parts["Wave quality"] + parts["Wind"] + parts["Weather"]
+    s = 5 + parts["Wave size"] + max(0, quality) * factor + parts["Water quality"]
     return max(10, min(100, round(s))), notes  # 1/10 is the floor

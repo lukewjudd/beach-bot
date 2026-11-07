@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import EASTERN, Pool, Region, SurfSpot
+from .beaches import EASTERN, Beach, Pool, Region, SurfSpot
 from .config import (
     DAYS_AHEAD,
     EVENT_THRESHOLD,
@@ -14,9 +14,15 @@ from .config import (
     TZ,
     WINDOW_HOURS,
 )
-from .geo import compass, wind_kind, wind_words
-from .scoring import at_beach, at_break, score_pool_hour, score_surf_hour, score_swim_hour, storm
-from .scoring import weather as weather_points
+from .geo import compass, wind_words
+from .scoring import (
+    pool_parts,
+    score_pool_hour,
+    score_surf_hour,
+    score_swim_hour,
+    surf_parts,
+    swim_parts,
+)
 
 
 @dataclass
@@ -209,98 +215,47 @@ def out_of_10(score):
     return max(1, min(10, int(score // 10)))  # 80-89 -> 8, so 8/10 always means it cleared the bar
 
 
+# Each bar is one part of the score, out of 10: 10 is the most that part can add, and every step down is 5 points
+# the score didn't get. So a spot with every bar at 10 scores about 95-100, and two bars at 8 cost it 20 points.
+# Water quality can only take points away, so it's 10 until it does. Surf quality points are scaled by the wave
+# size (no waves, no surf), so there a bar shows the part's own points before that.
+BAR_STEP = 5
+BAR_TOPS = {
+    Beach: {"Wind": 15, "Calm water": 15, "Weather": 20, "Water quality": 0},
+    Pool: {"Wind": 10, "Calm in the pool": 15, "Tide": 10, "Weather": 20, "Water quality": 0},
+    SurfSpot: {"Wind": 30, "Wave size": 35, "Wave quality": 30, "Weather": 5, "Water quality": 0},
+}
+
+
+def bar(points, top):
+    """A part's points as an out-of-10 bar; None (the part that rules a spot out) is 1."""
+    return 1 if points is None else max(1, min(10, round(10 - (top - points) / BAR_STEP)))
+
+
 def report(sess, hours, ctx, beachwatch, today, spot=None):
-    """Out-of-10 ratings per condition at one spot (a Beach, Pool or SurfSpot) during its best window.
-    No water temperature row: there's one sea temperature for the whole coast, so it's a stat in the summary
-    (and still counts in the scores), and cold water shows up as a note.
-    Without a spot it's the top swim pick, which is what the calendar event shows.
-    Wind, weather and water temp come from area-wide forecasts; how the wind and swell hit the spot,
-    and its water quality, are the spot's own."""
+    """Out-of-10 bars per part of the score at one spot (a Beach, Pool or SurfSpot) over its best window: the
+    score's own points for that part, averaged over the window (see BAR_TOPS). No water temperature bar: it's one
+    sea temperature for the whole coast, a stat in the summary, and its points sit in Weather. Without a spot it's
+    the top swim pick, which is what the calendar event shows."""
     spot = spot or (sess.best_swim[1] if sess.best_swim else sess.region.beaches[0])
     keys = window_hours(sess, spot.name)
-    c = conditions(sess, hours, keys)
-    hs_list = [hours[t] for t in keys]
-    facing = spot.facing  # pools take their beach's (see Pool.facing)
-    water_beach = spot.beach if isinstance(spot, Pool | SurfSpot) else spot
-
-    wind = c["wind"]
-    w = 10 if wind < 8 else 8 if wind < 15 else 6 if wind < 20 else 4 if wind < 28 else 2
-    if facing is not None:
-        kinds = [wind_kind(h["wind_direction_10m"], facing) for h in hs_list]
-        if kinds.count("onshore") > len(kinds) / 2 and wind >= 12:
-            w -= 2
-        elif kinds.count("offshore") > len(kinds) / 2:
-            w += 1
-    w -= 3 if c["gust"] >= 45 else 2 if c["gust"] >= 35 else 0
-
-    if isinstance(spot, Pool):  # calm inside unless swell is coming over the walls
-        surge = c["hs"] * spot.exposure
-        calm = 10 if surge < 0.8 else 8 if surge < 1.2 else 6 if surge < 1.5 else 4 if surge < 2.0 else 2
-    else:
-        hb = mean(at_beach(h, spot) for h in hs_list)
-        calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
-
-    # Weather is what the score itself counts for it, hour by hour: warmth where the day's heading, rain, heavy
-    # cloud and warm water (scoring.weather, -40 to +20 points), averaged over the window. A dry 19-21° day (0
-    # points) is 6/10, a step for every 3 points: a warm-day morning (+10) is 9, a hot one (+15) 10, rain about
-    # (-20) 2. It used to rate the hour's air alone, so a sunny 7am on a day going to 29° read 6/10.
-    weather = round(6 + mean(weather_points(h, t, ctx, []) for t, h in zip(keys, hs_list, strict=True)) / 3)
-    if any(storm(h) for h in hs_list):
-        weather -= 5
-
-    b = water_beach
-    bw = beachwatch.get(b.beachwatch) if sess.day == today else None
-    rain24 = ctx.rain(sess.hours[0], 0, 24)
-    quality = {"Likely": 2, "Possible": 5, "Unlikely": 10}.get(
-        bw, 10 if rain24 < b.rain_occ else 6 if rain24 < b.rain_often else 3
-    )
-    # R-R3: Poor-graded sites take up to 3 days to clear after rain. Only when Beachwatch has no forecast
-    # (it covers today only); its own forecast always wins.
-    if bw is None and b.poor_grade and quality == 10 and ctx.rain(sess.hours[0], 0, 72) >= 1:
-        quality = 6
-
-    clamp = lambda x: max(1, min(10, x))  # noqa: E731
-    # Each kind of spot is rated on what matters for it: swimmers want calm water, surfers want waves,
-    # and pools care about swell over the walls and the tide
     if isinstance(spot, SurfSpot):
-        p = c["period"]
-        size = mean(at_break(h, spot) for h in hs_list)  # same as score_surf_hour
-        if size < 0.3:
-            size_r = 1  # flat
-        elif size < 0.5:
-            size_r = 3
-        elif size < 0.8:
-            size_r = 5
-        elif size < 1.0:
-            size_r = 7
-        elif size < 1.4:
-            size_r = 8
-        elif size <= 2.0:
-            size_r = 10  # the sweet spot for these breaks
-        else:
-            size_r = 8 if size <= spot.max_hs else 3  # then closing out
-        waves = {
-            "Wave size": clamp(size_r),
-            "Wave quality": clamp(2 if p < 6 else 4 if p < 8 else 6 if p < 10 else 8 if p < 12 else 10),
-        }
+        parts = [surf_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
     elif isinstance(spot, Pool):
-        waves = {"Calm in the pool": clamp(calm)}
-        tides = [ctx.tide(t) for t in keys]
-        if spot.best_tide and all(tides):
-            fit = {
-                "low": lambda hi, lo: abs(lo) <= 3,
-                "mid": lambda hi, lo: min(abs(hi), abs(lo)) >= 1.5,
-                "mid_high": lambda hi, lo: abs(hi) <= 3,
-            }[spot.best_tide]
-            waves["Tide"] = clamp(round(4 + 6 * sum(fit(*td) for td in tides) / len(tides)))
+        parts = [pool_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
     else:
-        waves = {"Calm water": clamp(calm)}
-    return {
-        "Wind": clamp(w),
-        **waves,
-        "Weather": clamp(weather),
-        "Water quality": clamp(quality),
-    }
+        parts = [swim_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
+    tops = dict(BAR_TOPS[type(spot)])
+    if isinstance(spot, Pool):  # only pools with a best tide get a tide bar, out of what that tide's worth
+        if spot.best_tide is None:
+            del tops["Tide"]
+        elif spot.best_tide == "mid_high":
+            tops["Tide"] = 5
+    out = {}
+    for k, top in tops.items():
+        vals = [p[k] for p in parts]
+        out[k] = bar(None if None in vals else mean(vals), top)
+    return out
 
 
 def coast_report(sess, hours, ctx, beachwatch, today):

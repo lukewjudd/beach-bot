@@ -48,6 +48,14 @@
       <figcaption>Each day's three sessions on a 24-hour clock, noon at the top. Sunrise and sunset move through
         the year.</figcaption>
     </figure>
+    <h3>What the bars mean</h3>
+    <p>A score starts at 45 and each part of the forecast adds or takes away points: up to 15 for calm water, 15
+      for wind and 20 for the weather (warmth, rain, cloud and warm water), with a few more for good snorkelling.
+      Water quality can only take points away. Each bar under a spot is one of those parts out of 10: 10 is the
+      most it can add, and every step down is 5 points the score didn't get. So all 10s is a 9 or 10, and a spot
+      with Wind 8 and Weather 8 has lost 20 points to them. Pools score the same way with their own parts (calm
+      in the pool and the tide); a surf spot's bars are its waves, wind and weather, scaled by how big the waves
+      are.</p>
     <h3>How swell and wind are worked out</h3>
     <p>The forecast describes the sea well offshore: a main swell, sometimes a second one, and chop from the local
       wind, each with a height, a direction and a period (the seconds between waves). What matters for a swim is
@@ -114,8 +122,20 @@
       <figcaption>The same swell, twice: wind off the land, and wind off the sea.</figcaption>
     </figure>
     <p>Which direction counts as offshore depends on which way each beach faces, so it's worked out spot by spot.
-      Strength matters too: under about 8 km/h the water stays glassy whichever way it blows, an offshore stops
-      helping past about 25 km/h, and strong gusts count against any wind.</p>
+      Strength comes first, though: under 8 km/h the water stays glassy whichever way it blows, and a light breeze
+      is still pleasant from any side. Direction matters more the stronger it gets, and past 20 km/h it's blowy
+      on the sand whichever way. Gusts of 35 km/h or more cost points too, whatever the wind.</p>
+    <table class="points">
+      <caption>Wind points at a beach (out of 15)</caption>
+      <thead><tr><th>Wind</th><th>Offshore</th><th>Cross-shore</th><th>Onshore</th></tr></thead>
+      <tbody>
+        <tr><th>Under 8 km/h</th><td>15</td><td>15</td><td>15</td></tr>
+        <tr><th>8–15 km/h</th><td>12</td><td>8</td><td>3</td></tr>
+        <tr><th>15–20 km/h</th><td>10</td><td>0</td><td>−15</td></tr>
+        <tr><th>20–25 km/h</th><td>5</td><td>−13</td><td>−20</td></tr>
+        <tr><th>25 km/h or more</th><td>−5</td><td>−13</td><td>−20 (−40 from 28)</td></tr>
+      </tbody>
+    </table>
     <figure class="how-swell-fig">
       <div data-how="wind"></div>
       <figcaption>Coogee faces east, so wind from the south-west round to the north-west is offshore there (green),
