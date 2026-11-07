@@ -154,3 +154,18 @@ def test_an_event_says_when_storms_end_the_session_early():
     svc = FakeCalendar()
     run(SAT, datetime(2026, 11, 7, 4, tzinfo=TZ), svc, storms_from_5)
     assert "(then ⚡ storms from 5pm)" in svc.store["beach20261107"]["description"]
+
+
+def test_pumping_surf_gets_its_own_clearly_labelled_event():
+    def pumping(t, h):  # 1.6m east groundswell at 12s, light offshore
+        h.update(wave_height=1.6, swell_wave_direction=100, swell_wave_period=12.0)
+        h.update(wind_speed_10m=6.0, wind_direction_10m=270, wind_gusts_10m=10.0)
+        return h
+
+    svc = FakeCalendar()
+    run(SAT, datetime(2026, 11, 7, 4, tzinfo=TZ), svc, pumping)
+    surf = svc.store["beach20261107su"]
+    assert surf["summary"].startswith("🏄 Surf ")
+    assert "not a swim" in surf["description"]
+    swim = svc.store.get("beach20261107")
+    assert swim is None or not swim["summary"].startswith("🏄")  # the two scales never share an event

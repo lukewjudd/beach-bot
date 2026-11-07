@@ -314,6 +314,13 @@ button:disabled { opacity: .45; cursor: default; }
   color: var(--on-pill); font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums;
 }
 .score .icon { width: 14px; height: 14px; }
+/* Surf is scored on its own scale, so its badges and pins are outlined in the score's colour, not filled */
+.score.surf, .marker.surf { background: var(--surface); }
+.score.surf.r-green, .marker.surf.r-green { color: var(--r-green); }
+.score.surf.r-amber, .marker.surf.r-amber { color: var(--r-amber); }
+.score.surf.r-red, .marker.surf.r-red { color: var(--r-red); }
+.score.surf { box-shadow: inset 0 0 0 2px currentColor; }
+.marker.surf { box-shadow: inset 0 0 0 2px currentColor, 0 1px 4px rgba(0, 0, 0, .3); }
 /* Opening a card scrolls it into view: clear the sticky filters above it */
 .spot { scroll-margin-top: 64px; scroll-margin-bottom: 12px; }
 .spot .name { font-weight: 600; }

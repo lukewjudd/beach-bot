@@ -7,7 +7,7 @@ import os
 import re
 from datetime import datetime, timedelta
 
-from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, SLOT_NAMES, TZ
+from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, SLOT_NAMES, SURF_KEEP_THRESHOLD, TZ
 from .export import clock
 from .geo import wind_kind
 from .sessions import conditions, headline, later_warning, lead_kind, out_of_10, report, top_spots, window_hours
@@ -72,12 +72,43 @@ def day_body(sessions, hours, ctx, beachwatch, today):
         "and the event once none are left.",
         f"Map and every spot's score: {SITE_URL}?s={top.key}",  # opens the site on the day's best session
     ]
-    return title, "\n".join(lines)
+    location = top.best_swim[1].name + ", NSW" if top.best_swim else None
+    return title, "\n".join(lines), location
+
+
+def surf_day_body(sessions, hours, ctx, beachwatch, today):
+    """Title and description for a day's surf event: "🏄 Surf 8/10 Maroubra · Sat morning". Always says surf,
+    so it's never read as a swim score."""
+    sessions = sorted(sessions, key=lambda s: s.start)
+    top = max(sessions, key=lambda s: s.surf[0][0])
+    sc, spot, _ = top.surf[0]
+    names = [SLOT_NAMES[s.slot][1] for s in sessions]
+    when = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " & " + names[-1]
+    title = f"🏄 Surf {out_of_10(sc)}/10 {spot.name} · {top.day:%a} {when}"
+    lines = ["Surf's pumping. This is the surf score, on its own scale: waves, wind and swell, not a swim.", ""]
+    for s in sessions:
+        keys = window_hours(s, s.surf[0][1].name)
+        c = conditions(s, hours, keys)
+        lines += [
+            f"{SLOT_NAMES[s.slot][1].capitalize()} {clock(s.start)}–{clock(s.end)}: surf {out_of_10(s.surf[0][0])}/10 "
+            f"{s.surf[0][1].name}",
+            f"Swell: {c['hs']:.1f}m {c['swell_dir']} @ {c['period']:.0f}s (open ocean)",
+            f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}",
+            "Top 3 breaks:",
+        ]
+        for i, (bsc, b, notes) in enumerate(s.surf[:3], 1):
+            lines.append(f"  {i}. {b.name}: {out_of_10(bsc)}/10 surf" + (f" ({', '.join(notes)})" if notes else ""))
+        lines.append("")
+    lines += [
+        f"Last changed {datetime.now(TZ):%a %-d %b %-I:%M%p}. A session comes off if the surf drops below 7/10.",
+        f"Map and every spot's score: {SITE_URL}?s={top.key}",
+    ]
+    return title, "\n".join(lines), spot.name + ", NSW"
 
 
 def event_body(sess, hours, ctx, beachwatch, today):
-    """A single session as its own day event (what the dry run prints)."""
-    return day_body([sess], hours, ctx, beachwatch, today)
+    """A single session as its own day event (what the dry run prints): title and description."""
+    return day_body([sess], hours, ctx, beachwatch, today)[:2]
 
 
 def fingerprint(body):
@@ -104,10 +135,10 @@ def calendar_service():
 
 
 def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
-    """One event per day, covering that day's sessions at 9/10+ (weekday middays never go in). A session already
-    in the event stays until it drops below 8/10 (KEEP_THRESHOLD), so one hovering around 9 doesn't come and go
-    every hour; the event goes once no sessions are left. Once the event has started it's left alone.
-    Returns the keys of the sessions that are in a live event."""
+    """One swim event per day, covering that day's sessions at 9/10+ (weekday middays never go in), and a separate
+    surf event on days the surf is pumping. A session already in an event stays until it drops a step below the
+    bar, so one hovering around it doesn't come and go every hour; an event goes once no sessions are left, and
+    once it has started it's left alone. Returns the keys of the sessions in a live swim event."""
     from googleapiclient.errors import HttpError
 
     svc = svc or calendar_service()
@@ -137,7 +168,54 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         if not token:
             break
     is_live = lambda e: bool(e) and e.get("status") != "cancelled"  # noqa: E731
-    print(f"calendar ok, {sum(s.for_calendar for s in sessions)} session(s) at 9/10+")
+    print(
+        f"calendar ok, {sum(s.for_calendar for s in sessions)} swim session(s) at 9/10+, "
+        f"{sum(s.surf_for_calendar for s in sessions)} surf session(s) pumping"
+    )
+
+    def put(key, todays, wanted, still_ok, body_fn):
+        """Create, update or remove one day's event from the sessions it should cover. Returns their keys."""
+        ev = existing.get(key)
+        live = is_live(ev)
+        had = set(ev.get("extendedProperties", {}).get("private", {}).get("sessions", "").split()) if live else set()
+        if live and datetime.fromisoformat(ev["start"]["dateTime"]) <= now:  # under way: leave it be
+            return {s.key for s in todays if s.slot in had}
+        keep = [s for s in todays if s.in_calendar and s.start > now and (wanted(s) or (s.slot in had and still_ok(s)))]
+        if not keep:
+            if live:
+                svc.events().delete(calendarId=cal, eventId=key).execute()
+                print(f"deleted  {key}")
+            return set()
+
+        title, desc, location = body_fn(keep, hours, ctx, beachwatch, now.date())
+        body = {
+            "id": key,
+            "summary": title,
+            "description": desc,
+            "status": "confirmed",
+            "location": location,
+            "start": {"dateTime": keep[0].start.isoformat(), "timeZone": "Australia/Sydney"},
+            "end": {"dateTime": keep[-1].end.isoformat(), "timeZone": "Australia/Sydney"},
+            "transparency": "transparent",  # don't show as busy
+        }
+        fp = fingerprint(body)
+        body["extendedProperties"] = {"private": {"beachbot2": fp, "sessions": " ".join(s.slot for s in keep)}}
+        keys = {s.key for s in keep}
+        if live and ev.get("extendedProperties", {}).get("private", {}).get("beachbot2") == fp:
+            return keys  # nothing worth an update
+        if ev:  # includes previously deleted ones; ids can't be re-inserted
+            svc.events().update(calendarId=cal, eventId=key, body=body).execute()
+            print(f"{'updated ' if live else 'restored'} {key}  {title}")
+            return keys
+        try:
+            svc.events().insert(calendarId=cal, body=body).execute()
+            print(f"created  {key}  {title}")
+        except HttpError as e:
+            if e.resp.status != 409:  # deleted long ago and missing from the listing: it still owns the id
+                raise
+            svc.events().update(calendarId=cal, eventId=key, body=body).execute()
+            print(f"restored {key}  {title}")
+        return keys
 
     posted = set()
     for day in days:
@@ -151,52 +229,16 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
                     svc.events().delete(calendarId=cal, eventId=s.key).execute()
                     print(f"deleted  {s.key} (now part of the day's event)")
 
-        key = day_key(todays[0])
-        ev = existing.get(key)
-        live = is_live(ev)
-        had = set(ev.get("extendedProperties", {}).get("private", {}).get("sessions", "").split()) if live else set()
-        if live and datetime.fromisoformat(ev["start"]["dateTime"]) <= now:  # under way: leave it be
-            posted |= {s.key for s in todays if s.slot in had}
-            continue
-
-        keep = [
-            s
-            for s in todays
-            if s.in_calendar and s.start > now and (s.for_calendar or (s.slot in had and s.best >= KEEP_THRESHOLD))
-        ]
-        if not keep:
-            if live:
-                svc.events().delete(calendarId=cal, eventId=key).execute()
-                print(f"deleted  {key}")
-            continue
-        posted |= {s.key for s in keep}
-
-        title, desc = day_body(keep, hours, ctx, beachwatch, now.date())
-        top = max(keep, key=lambda s: s.best)
-        body = {
-            "id": key,
-            "summary": title,
-            "description": desc,
-            "status": "confirmed",
-            "location": top.best_swim[1].name + ", NSW" if top.best_swim else None,
-            "start": {"dateTime": keep[0].start.isoformat(), "timeZone": "Australia/Sydney"},
-            "end": {"dateTime": keep[-1].end.isoformat(), "timeZone": "Australia/Sydney"},
-            "transparency": "transparent",  # don't show as busy
-        }
-        fp = fingerprint(body)
-        body["extendedProperties"] = {"private": {"beachbot2": fp, "sessions": " ".join(s.slot for s in keep)}}
-        if live and ev.get("extendedProperties", {}).get("private", {}).get("beachbot2") == fp:
-            continue  # nothing worth an update
-        if ev:  # includes previously deleted ones; ids can't be re-inserted
-            svc.events().update(calendarId=cal, eventId=key, body=body).execute()
-            print(f"{'updated ' if live else 'restored'} {key}  {title}")
-            continue
-        try:
-            svc.events().insert(calendarId=cal, body=body).execute()
-            print(f"created  {key}  {title}")
-        except HttpError as e:
-            if e.resp.status != 409:  # deleted long ago and missing from the listing: it still owns the id
-                raise
-            svc.events().update(calendarId=cal, eventId=key, body=body).execute()
-            print(f"restored {key}  {title}")
+        # The day's swim event (9/10+, kept until it drops below 8), and, separately, a surf event when it's
+        # pumping (8/10+ on the surf scale, kept until 7): two scales, so never in the same event
+        posted |= put(
+            day_key(todays[0]), todays, lambda s: s.for_calendar, lambda s: s.best >= KEEP_THRESHOLD, day_body
+        )
+        put(
+            day_key(todays[0]) + "su",
+            todays,
+            lambda s: s.surf_for_calendar,
+            lambda s: bool(s.surf) and s.surf[0][0] >= SURF_KEEP_THRESHOLD,
+            surf_day_body,
+        )
     return posted

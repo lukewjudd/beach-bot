@@ -50,3 +50,16 @@ def test_onshore_wind_ruins_good_swell():
 
     assert surf(onshore["am"], "Maroubra")[0] < surf(clean["am"], "Maroubra")[0] - 25
     assert "onshore wind" in surf(onshore["am"], "Maroubra")[2]
+
+
+def test_surf_never_leads_or_scores_a_session():
+    # Pumping: 1.6m east groundswell, light offshore. Great surf, too rough for most beaches
+    sessions, _ = score(*make_forecast(WED, swell(1.6, 100, 12, wind=6, wind_dir=270)), WED)
+    am = sessions["am"]
+
+    from beach_bot.sessions import headline, lead_kind
+
+    assert out_of_10(am.surf[0][0]) >= 8 and am.surf_for_calendar
+    assert lead_kind(am) != "surf"
+    assert headline(am) in {x[1].name for x in (am.best_swim, am.best_pool) if x}
+    assert am.best == max(x[0] for x in (am.best_swim, am.best_pool) if x)  # surf isn't in the session's score

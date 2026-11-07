@@ -11,7 +11,10 @@ EVENT_THRESHOLD = 80  # "worth it" on the site (8/10)
 CALENDAR_THRESHOLD = 90  # a session goes in the calendar at 9/10: an event should mean drop everything and go
 KEEP_THRESHOLD = 80  # a session in an event stays until it drops below this (8/10), so it doesn't flip-flop
 FIRE_THRESHOLD = 100  # a 🔥 in the title: 10/10, every part of the score at full marks
-SURF_THRESHOLD = EVENT_THRESHOLD
+# Surf is scored on its own scale (waves, not calm water), so it never leads a session or counts towards its
+# score: it's a swimming app. Surfers get their own calendar event, clearly labelled, when it's pumping.
+SURF_THRESHOLD = 80  # a surf break's 8/10: pumping, worth a surf event (about 8 days a year in the east)
+SURF_KEEP_THRESHOLD = 70  # a surf event stays until the surf drops below 7/10
 FAVOURITE_TOLERANCE = 5  # R-TB1: a region's favourite (Clovelly in the east) wins if within this many points
 WINDOW_HOURS = 2  # sessions are judged on their best stretch this long, not the whole slot
 SITE_URL = "https://lukewjudd.github.io/beach-bot/"  # linked at the bottom of every event

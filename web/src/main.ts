@@ -21,9 +21,10 @@ const $ = (id: string) => document.getElementById(id) as HTMLElement;
 // Traffic lights: green is worth going (the calendar's bar), amber is so-so, red is don't bother
 const ratingClass = (r: number) => (r >= 8 ? "r-green" : r >= 5 ? "r-amber" : "r-red");
 const pill = (r: number) => `<span class="pill ${ratingClass(r)}" aria-label="${r} out of 10">${r}</span>`;
-// A spot's score with an icon for its kind: the same badge as its pin on the map
+// A spot's score with an icon for its kind: the same badge as its pin on the map. Surf is on its own scale
+// (waves, not a swim), so its badge is outlined rather than filled and says "surf" to screen readers
 const badge = (kind: SpotKind, r: number, label = `${r} out of 10`) =>
-  `<span class="score ${ratingClass(r)}" aria-label="${label}">${ICONS[kind]}<span>${r}</span></span>`;
+  `<span class="score ${kind} ${ratingClass(r)}" aria-label="${kind === "surf" ? `surf ${label}` : label}">${ICONS[kind]}<span>${r}</span></span>`;
 const esc = (s: unknown) =>
   String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 const save = (k: string, v: string) => {
@@ -516,7 +517,7 @@ function renderHero(s: Session) {
 // ---------------------------------------------------------------- spots: list and map
 function popup(spot: Spot, sc: SpotScore | undefined) {
   // Just enough to say which spot it is; its details and warnings live in its card, not twice
-  return `<div class="popup"><span class="t">${esc(spot.name)}</span> · ${sc ? sc.rating : 0}/10
+  return `<div class="popup"><span class="t">${esc(spot.name)}</span> · ${spot.kind === "surf" ? "surf " : ""}${sc ? sc.rating : 0}/10
     <span class="tag">${TAG[spot.kind]}</span> <button type="button" class="link" data-details="${spot.id}">Details</button></div>`;
 }
 
@@ -554,7 +555,9 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
 function renderSpots(s: Session) {
   const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
   const spots = data.spots.filter(shows);
-  const best = (a: Spot, b: Spot) => rankScore(byId[b.id]) - rankScore(byId[a.id]);
+  // Swims and pools first: surf is on its own scale, so a surf 8 never sits above a swim 7
+  const best = (a: Spot, b: Spot) =>
+    Number(a.kind === "surf") - Number(b.kind === "surf") || rankScore(byId[b.id]) - rankScore(byId[a.id]);
   const north = (a: Spot, b: Spot) => b.lat - a.lat;
   let html: string;
   if (sort === "area") {

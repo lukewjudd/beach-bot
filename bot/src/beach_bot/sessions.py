@@ -55,7 +55,13 @@ class Session:
 
     @property
     def best_surf(self):
+        """The best surf break when it's pumping (8/10+), else None. Surf never leads or scores a session."""
         return self.surf[0] if self.surf and self.surf[0][0] >= SURF_THRESHOLD else None
+
+    @property
+    def surf_for_calendar(self):
+        """Pumping surf, for the day's surf event (its own event, so a surf 8 is never read as a swim 8)."""
+        return self.in_calendar and self.best_surf is not None
 
     @property
     def best_pool(self):
@@ -63,8 +69,8 @@ class Session:
 
     @property
     def best(self):
-        """Top score across beaches, pools and surf: what decides worth it on the site and the calendar."""
-        return max([x[0] for x in (self.best_swim, self.best_pool, self.surf[0] if self.surf else None) if x] or [0])
+        """The session's score: the best ocean beach or pool. Surf is on another scale and doesn't count."""
+        return max([x[0] for x in (self.best_swim, self.best_pool) if x] or [0])
 
     @property
     def is_good(self):
@@ -199,24 +205,20 @@ def later_warning(sess, spot):
 
 
 def headline(sess):
-    """The spot the event leads with. A beach wins close calls with a pool (Clovelly first, R-TB1),
-    and surf leads when it beats a postable swim."""
-    swim, pool, surf = sess.best_swim, sess.best_pool, sess.best_surf
+    """The spot the session leads with: a beach or a pool, never surf. A beach wins close calls with a pool
+    (Clovelly first, R-TB1)."""
+    swim, pool = sess.best_swim, sess.best_pool
     lead = swim
     # The beach wins a close call, unless the pool is what makes the session worth it: then it's the headline
     # (no "Clovelly 8/10" when Clovelly is a 7 and the 8 is Wylie's)
     if pool and (not swim or pool[0] > swim[0] + FAVOURITE_TOLERANCE or swim[0] < EVENT_THRESHOLD <= pool[0]):
         lead = pool
-    if surf and (not lead or lead[0] < EVENT_THRESHOLD or surf[0] > lead[0]):
-        return surf[1].name
     return lead[1].name if lead else None
 
 
 def lead_kind(sess):
-    """'swim', 'harbour', 'pool' or 'surf' for the headline spot."""
+    """'swim', 'harbour' or 'pool' for the headline spot."""
     name = headline(sess)
-    if sess.best_surf and sess.best_surf[1].name == name:
-        return "surf"
     if sess.best_pool and sess.best_pool[1].name == name and not (sess.best_swim and sess.best_swim[1].name == name):
         return "pool"
     return "harbour" if sess.best_swim and sess.best_swim[1].harbour else "swim"
