@@ -89,6 +89,7 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: v
 .about p, .about li { font-size: 14px; }
 .about p { margin: 0; }
 .about ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.about p + ul, .about table.points + p { margin-top: 8px; } /* a list or note after its lead-in */
 .about a { color: var(--accent); }
 /* A small table of points, e.g. what each wind is worth */
 .about table.points { width: 100%; margin: 10px 0 0; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
