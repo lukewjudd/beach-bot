@@ -24,6 +24,9 @@ WEEKEND_SESSIONS = {"am": (None, 11), "pm": (14, None)}
 WARMTH_DISCOUNT = 3  # degrees off the warmth still to come (backtested: the bar for the full warmth bonus)
 WARMTH_AHEAD_TO = 13  # a morning looks ahead to this hour
 COOL_CHANGE = 4  # degrees below the afternoon peak that means a change has come through
+# Where the day's heading is read off the land cell's high (the blend with the sea cell runs 4-5° under it on
+# sea-breeze days), but only once the water is this warm: a hot westerly in spring is still an 18° swim
+WARMTH_LAND_MIN_SEA = 20
 
 # BOM rain gauges (each region lists its own), from the NSW observations bundle on BOM's public FTP
 BOM_OBS_URL = "ftp://ftp.bom.gov.au/anon/gen/fwo/IDN60910.tgz"

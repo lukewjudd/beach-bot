@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-07
+
+- **Where the day's heading is read off the land, not the land/sea blend.** The bot averages an inland and an offshore grid cell to get the temperature at the beach, and on sea-breeze days the sea cell drags that 4-5° under the day's real high. On 7 Nov the land cell said 28°, Observatory Hill measured 29.4° and the blend said 24°, so Freshwater's morning got no warmth points and scored 76 instead of 85. A morning now looks ahead to the land cell's high (an evening keeps the afternoon's land high, and a southerly change is spotted on the land series too), still less 3°, so the full warmth bonus needs a day of about 29° as intended. The hour itself is still scored on the blend, and the temperatures shown are unchanged. Only once the water is 20° or warmer: a hot spring westerly heats the land but an 18° sea is still an 18° swim. Backtested from Nov 2024 (eastern suburbs): 15 more sessions posted (186 to 201), none lost, and 9/10s up from 39 to 66, mostly hot summer mornings.
+
 ## 2026-11-06
 
 - The poo in the About dialog's stormwater picture is drawn in SVG instead of an emoji (a floater, not a cartoon pile), so it looks the same on every device and in both themes.

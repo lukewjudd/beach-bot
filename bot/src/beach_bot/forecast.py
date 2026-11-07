@@ -13,7 +13,16 @@ from statistics import mean, quantiles
 import requests
 
 from .beaches import EASTERN
-from .config import BOM_OBS_URL, COOL_CHANGE, FORECAST_DAYS, RAIN_MODELS, TZ, WARMTH_AHEAD_TO, WARMTH_DISCOUNT
+from .config import (
+    BOM_OBS_URL,
+    COOL_CHANGE,
+    FORECAST_DAYS,
+    RAIN_MODELS,
+    TZ,
+    WARMTH_AHEAD_TO,
+    WARMTH_DISCOUNT,
+    WARMTH_LAND_MIN_SEA,
+)
 
 
 def fetch_json(url, params):
@@ -51,6 +60,10 @@ def fetch_weather(url, params):
             out["hourly"][k] = [
                 a if b is None else b if a is None else (a + b) / 2 for a, b in zip(lv, sv, strict=True)
             ]
+    if "temperature_2m" in land["hourly"]:
+        # The land cell on its own is the day's headline high (it sits by Observatory Hill in the east): what
+        # Context.warmth reads for where the day's heading. On sea-breeze days the blend runs 4-5° under it.
+        out["hourly"]["temperature_2m_land"] = land["hourly"]["temperature_2m"]
     return out
 
 
@@ -206,19 +219,27 @@ class Context:
         return [self.hours[self.times[j]] for j in range(max(0, i - h_to), max(0, i - h_from))]
 
     def warmth(self, t):
-        """Air temperature to score this hour's warmth on: where the day's heading (see WARMTH_DISCOUNT)."""
+        """Air temperature to score this hour's warmth on: where the day's heading (see WARMTH_DISCOUNT).
+        The hour itself is the land/sea blend; where the day's heading is the land cell's headline high, since
+        the sea cell drags the blend 4-5° under it on sea-breeze days (7 Nov 2026: land 28°, Observatory Hill
+        29°, blend 24°). Falls back to the blend when there's no land series."""
         now = self.hours[t]["temperature_2m"]
         day, hr = t[:10], int(t[11:13])
+        sst = self.hours[t].get("sea_surface_temperature")
+        land = sst is None or sst >= WARMTH_LAND_MIN_SEA  # cold water: a hot day on land doesn't make the swim
         temps = {}
         for k in range(24):
-            h = self.hours.get(f"{day}T{k:02d}:00")
-            if h and h.get("temperature_2m") is not None:
-                temps[k] = h["temperature_2m"]
+            h = self.hours.get(f"{day}T{k:02d}:00") or {}
+            v = h.get("temperature_2m_land") if land else None
+            v = h.get("temperature_2m") if v is None else v
+            if v is not None:
+                temps[k] = v
+        here = temps.get(hr, now)  # this hour on the same series, for spotting a change
         if hr < 12:  # morning: the warmth still to come, up to early afternoon
             ahead = max([now] + [v for k, v in temps.items() if hr <= k <= WARMTH_AHEAD_TO])
         else:  # afternoon and evening: the afternoon's warmth, unless a change has since come through
-            peak = max([now] + [v for k, v in temps.items() if 12 <= k <= hr])
-            ahead = now if peak - now >= COOL_CHANGE else peak
+            peak = max([here] + [v for k, v in temps.items() if 12 <= k <= hr])
+            ahead = now if peak - here >= COOL_CHANGE else peak
         return max(now, ahead - WARMTH_DISCOUNT)
 
     def rain(self, t, h_from, h_to):
