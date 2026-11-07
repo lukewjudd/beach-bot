@@ -95,7 +95,10 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 "start": sess.start.isoformat(),
                 "end": sess.end.isoformat(),
                 "started": sess.start <= now,
-                "posted": sess.key in posted if posted is not None else bool(sess.is_good),
+                # A good weekday midday is worth it on the site even though it never gets an event
+                "posted": (sess.key in posted or (sess.is_good and not sess.in_calendar))
+                if posted is not None
+                else bool(sess.is_good),
                 # Past a couple of days the forecast is a guide, not a plan (and the calendar doesn't post it)
                 "confidence": "high" if sess.day <= now.date() + timedelta(days=DAYS_AHEAD) else "low",
                 "sun": (

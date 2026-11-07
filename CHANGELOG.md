@@ -5,6 +5,7 @@ What changed and why, newest first. Dates are Sydney time.
 ## 2026-11-07
 
 - **Every day is three sessions: morning (sunrise to 11am), midday (11am to 2pm) and evening (2pm to sunset)**, the same on weekdays and weekends. Weekdays used to be before work (to 10am) and after work (from 4pm), and weekends skipped 11am to 2pm; not everyone works nine to five. Each is still scored on its best two hours, locked in when it starts and posted like the others ("8/10 Bondi (north end) · Sat midday"). Backtested from Nov 2024 (eastern suburbs): 364 posts instead of 201, mostly new middays (124) and weekday evenings now starting at 2pm (63, up from 36).
+- **Weekday middays are on the site but never in the calendar**: most people can't get away at lunch on a workday. A good one still says "Worth it" on the site. That leaves 274 calendar posts in the backtest instead of 364 (201 before the three sessions).
 - **The site stacks AM, MID and PM under each date** on phones and desktops alike, and finished sessions can be opened again: greyed in the week, with "Finished" on their card and the call they had before they started. A midday card shows the tides from 9am to 4pm and no sunrise or sunset.
 - **No more best-window times** ("best 11am–1pm") on the site or in calendar events. The score still comes from a spot's best two hours; the session's times are the ones that matter.
 - **The About dialog has a 24-hour clock of the three sessions**, and the warmth figure shades all three.

@@ -1,9 +1,10 @@
-from datetime import date
+from datetime import date, datetime
 
 from conftest import make_forecast, score
 
 from beach_bot.beaches import BEACHES
 from beach_bot.calendar import event_body, fingerprint
+from beach_bot.config import TZ
 from beach_bot.export import export_scores
 from beach_bot.forecast import Context
 from beach_bot.sessions import build_sessions, out_of_10, report, score_session
@@ -240,3 +241,23 @@ def test_every_day_is_three_sessions_end_to_end():
         assert sessions["md"].key.endswith("md")  # base32hex, so it can be a Google event id
         title, _ = event_body(sessions["md"], hours, ctx, {}, day)
         assert title.endswith(f"· {day:%a} midday")
+
+
+def test_weekday_middays_are_on_the_site_but_not_the_calendar():
+    sat = date(2026, 11, 7)
+    weekday, _ = score(*make_forecast(WED), WED)
+    weekend, _ = score(*make_forecast(sat), sat)
+    assert not weekday["md"].in_calendar
+    assert weekday["am"].in_calendar and weekday["pm"].in_calendar
+    assert all(s.in_calendar for s in weekend.values())
+
+    hours, sun = make_forecast(WED)
+    ctx = Context(hours)
+    now = datetime(2026, 11, 4, 3, tzinfo=TZ)
+    sessions = build_sessions(hours, sun, now, days=[WED])
+    for s in sessions:
+        score_session(s, hours, ctx, {}, WED)
+    md = next(s for s in sessions if s.slot == "md")
+    assert md.is_good
+    data = export_scores(sessions, hours, ctx, {}, now, posted=set())  # the calendar posted nothing
+    assert next(x for x in data["sessions"] if x["key"] == md.key)["posted"]  # still worth it on the site

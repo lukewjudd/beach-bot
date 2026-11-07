@@ -59,6 +59,12 @@ class Session:
     def is_good(self):
         return self.best >= EVENT_THRESHOLD
 
+    @property
+    def in_calendar(self):
+        """Weekday middays are on the site but never posted: most people can't get to the beach at lunch on a
+        workday, and an event there is noise in their calendar."""
+        return not (self.slot == "md" and self.day.weekday() < 5)
+
 
 def build_sessions(hours, sun, now, days=None, region=EASTERN):
     sessions = []

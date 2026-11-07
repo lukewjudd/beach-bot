@@ -91,7 +91,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal):
     svc = calendar_service()
     # Fails loudly if the calendar isn't shared with the bot (a missing event alone looks like a 404)
     svc.events().list(calendarId=cal, maxResults=1).execute()
-    print(f"calendar ok, {sum(s.is_good for s in sessions)} good session(s)")
+    print(f"calendar ok, {sum(s.is_good and s.in_calendar for s in sessions)} good session(s)")
     posted = set()
     for sess in sessions:
         try:
@@ -106,7 +106,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal):
                 posted.add(sess.key)
             continue
 
-        if not (sess.is_good or (live and sess.best >= KEEP_THRESHOLD)):
+        if not sess.in_calendar or not (sess.is_good or (live and sess.best >= KEEP_THRESHOLD)):
             if live:
                 svc.events().delete(calendarId=cal, eventId=sess.key).execute()
                 print(f"deleted  {sess.key}")
