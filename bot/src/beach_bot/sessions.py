@@ -16,6 +16,7 @@ from .config import (
 )
 from .geo import compass, wind_kind, wind_words
 from .scoring import at_beach, at_break, score_pool_hour, score_surf_hour, score_swim_hour, storm
+from .scoring import weather as weather_points
 
 
 @dataclass
@@ -239,9 +240,11 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
         hb = mean(at_beach(h, spot) for h in hs_list)
         calm = 10 if hb < 0.3 else 8 if hb < 0.5 else 6 if hb < 0.8 else 4 if hb < 1.2 else 2
 
-    air = c["air"]
-    weather = 10 if air >= 26 else 8 if air >= 23 else 6 if air >= 21 else 4 if air >= 19 else 2
-    weather -= 3 if c["rain_prob"] >= 60 else 1 if c["rain_prob"] >= 40 else 0
+    # Weather is what the score itself counts for it, hour by hour: warmth where the day's heading, rain, heavy
+    # cloud and warm water (scoring.weather, -40 to +20 points), averaged over the window. A dry 19-21° day (0
+    # points) is 6/10, a step for every 3 points: a warm-day morning (+10) is 9, a hot one (+15) 10, rain about
+    # (-20) 2. It used to rate the hour's air alone, so a sunny 7am on a day going to 29° read 6/10.
+    weather = round(6 + mean(weather_points(h, t, ctx, []) for t, h in zip(keys, hs_list, strict=True)) / 3)
     if any(storm(h) for h in hs_list):
         weather -= 5
 

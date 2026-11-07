@@ -261,3 +261,24 @@ def test_weekday_middays_are_on_the_site_but_not_the_calendar():
     assert md.is_good
     data = export_scores(sessions, hours, ctx, {}, now, posted=set())  # the calendar posted nothing
     assert next(x for x in data["sessions"] if x["key"] == md.key)["posted"]  # still worth it on the site
+
+
+def test_weather_rates_a_cool_start_to_a_hot_day_like_the_score_does():
+    def hot_day(t, h):  # 7 Nov 2026 at Clovelly: 17-22° through the morning, the land going to 29°, sunny
+        hr = int(t[11:13])
+        h["temperature_2m"] = 17.0 + max(0, min(hr - 6, 5))
+        h["temperature_2m_land"] = 19.0 + max(0, min(hr - 6, 7)) * 1.5
+        h["sea_surface_temperature"] = 20.5
+        return h
+
+    hours, sun = make_forecast(WED, hot_day)
+    sessions, ctx = score(hours, sun, WED)
+    assert report(sessions["am"], hours, ctx, {}, WED)["Weather"] >= 8  # was 6: the hour's 22° air alone
+
+    def wet(t, h):
+        h.update(precipitation_probability=80, precipitation=1.0, cloud_cover=100)
+        return h
+
+    hours, sun = make_forecast(WED, wet)
+    sessions, ctx = score(hours, sun, WED)
+    assert report(sessions["am"], hours, ctx, {}, WED)["Weather"] <= 4  # 26° but raining (it used to read 7)
