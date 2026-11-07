@@ -255,9 +255,12 @@ def out_of_10(score):
 
 # Each bar is one part of the score, out of 10: 10 is the most that part can add, and every step down is 5 points
 # the score didn't get. So a spot with every bar at 10 scores about 95-100, and two bars at 8 cost it 20 points.
-# Water quality can only take points away, so it's 10 until it does. Surf quality points are scaled by the wave
-# size (no waves, no surf), so there a bar shows the part's own points before that.
+# Water quality can only take points away, so it's 10 until it does.
+# Surf is scored differently: from 5, with the wave size setting a ceiling that scales the quality, wind and
+# weather points (tiny waves keep a third of them). So a surf bar is what the part actually adds after that
+# scaling, as a share of the most it could add: on a tiny, choppy day they're all low, like the score.
 BAR_STEP = 5
+SURF_PARTS = ("Wave quality", "Wind", "Weather")  # the parts the wave size scales
 BAR_TOPS = {  # the score's own tops (scoring.SWIM_TOPS, POOL_TOPS), in the order the bars show
     Beach: {k: SWIM_TOPS[k] for k in ("Wind", "Calm water", "Weather", "Water quality")},
     Pool: {k: POOL_TOPS[k] for k in ("Wind", "Calm in the pool", "Tide", "Weather", "Water quality")},
@@ -278,8 +281,17 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     spot = spot or (sess.best_swim[1] if sess.best_swim else sess.region.beaches[0])
     keys = window_hours(sess, spot.name)
     if isinstance(spot, SurfSpot):
-        parts = [surf_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
-    elif isinstance(spot, Pool):
+        out = {}
+        hourly = [surf_parts(spot, t, hours[t], ctx, beachwatch, today) for t in keys]
+        for k, top in BAR_TOPS[SurfSpot].items():
+            if k == "Water quality":  # None when it rules the break out
+                vals = [p[k] for p, *_ in hourly]
+                out[k] = bar(None if None in vals else mean(vals), top)
+                continue
+            added = mean(max(0, p[k]) * (factor if k in SURF_PARTS else 1) for p, factor, *_ in hourly)
+            out[k] = max(1, min(10, round(10 * added / top)))
+        return out
+    if isinstance(spot, Pool):
         parts = [pool_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
     else:
         parts = [swim_parts(spot, t, hours[t], ctx, beachwatch, today)[0] for t in keys]
