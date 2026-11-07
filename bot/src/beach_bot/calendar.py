@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, SLOT_NAMES, TZ
 from .export import clock
 from .geo import wind_kind
-from .sessions import conditions, headline, lead_kind, out_of_10, report, top_spots, window_hours
+from .sessions import conditions, headline, later_warning, lead_kind, out_of_10, report, top_spots, window_hours
 
 
 def day_key(sess):
@@ -28,9 +28,12 @@ def session_lines(sess, hours, ctx, beachwatch, today):
     where = (lead + (" surf" if kind == "surf" else "")) if lead else "the coast"
     b = swim[1] if swim and kind == "swim" else None  # wind direction only means something at a beach
     rel = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
+    picks = {"swim": sess.swim, "pool": sess.pools, "surf": sess.surf}.get(kind, [])
+    spot = next((x[1] for x in picks if x[1].name == lead), None)
+    later = later_warning(sess, spot) if spot else None
     lines = [
         f"{SLOT_NAMES[sess.slot][1].capitalize()} {clock(sess.start)}–{clock(sess.end)}: "
-        f"{out_of_10(sess.best)}/10 {where}",
+        f"{out_of_10(sess.best)}/10 {where}" + (f" (then {later})" if later else ""),
         f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
         + (f" ({rel} at {b.name})" if b else ""),
         "Top 3 spots:",

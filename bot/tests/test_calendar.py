@@ -143,3 +143,14 @@ def test_an_8_is_worth_it_on_the_site_but_not_an_event():
     assert any(s.is_good for s in sessions.values())
     assert not any(s.for_calendar for s in sessions.values())
     assert svc.log == [] and posted == set()
+
+
+def test_an_event_says_when_storms_end_the_session_early():
+    def storms_from_5(t, h):
+        if t.startswith("2026-11-07") and int(t[11:13]) >= 17:
+            h["weather_code"] = 95
+        return h
+
+    svc = FakeCalendar()
+    run(SAT, datetime(2026, 11, 7, 4, tzinfo=TZ), svc, storms_from_5)
+    assert "(then ⚡ storms from 5pm)" in svc.store["beach20261107"]["description"]

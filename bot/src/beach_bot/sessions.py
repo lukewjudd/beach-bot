@@ -39,6 +39,7 @@ class Session:
     surf: list = field(default_factory=list)  # [(score, spot, notes)] best first, every spot
     pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
     windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
+    hourly: dict = field(default_factory=dict)  # (kind, name) -> [(score or None, notes)] for every hour
     ruled_out: dict = field(default_factory=dict)  # spot name -> why it's a no-go all session
     region: Region = EASTERN
 
@@ -125,6 +126,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
     region = sess.region
     for b in region.beaches:
         results = [score_swim_hour(b, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
+        sess.hourly[spot_key(b)] = results
         best = best_window(sess, [r[0] for r in results])
         if not best:
             sess.ruled_out[b.name] = main_reason(results)
@@ -143,6 +145,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
 
     for p in region.pools:
         results = [score_pool_hour(p, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
+        sess.hourly[spot_key(p)] = results
         best = best_window(sess, [r[0] for r in results])
         if not best:
             sess.ruled_out[p.name] = main_reason(results)
@@ -155,6 +158,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
 
     for sp in region.surf:
         results = [score_surf_hour(sp, t, hours[t], ctx, beachwatch, today) for t in sess.hours]
+        sess.hourly[spot_key(sp)] = results
         sc, i = best_window(sess, [r[0] for r in results])  # never None: surf always scores
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
         sess.surf.append((round(sc), sp, notes))
@@ -168,6 +172,30 @@ def window_hours(sess, name):
         return sess.hours
     first, last = sess.windows[name]
     return sess.hours[sess.hours.index(first) : sess.hours.index(last) + 1]
+
+
+def spot_key(spot):
+    """Surf breaks share names with their beaches, so spots are told apart by kind and name."""
+    return type(spot).__name__, spot.name
+
+
+def later_warning(sess, spot):
+    """What rules out the rest of a session after a spot's best stretch, e.g. "⚡ storms from 4pm", or None.
+    The score is the best two hours, so without this a lovely 2pm hides a stormy 5pm."""
+    results = sess.hourly.get(spot_key(spot))
+    if not results or spot.name not in sess.windows:
+        return None
+    end = sess.hours.index(sess.windows[spot.name][1])
+    for t, (sc, notes) in zip(sess.hours[end + 1 :], results[end + 1 :], strict=True):
+        why = notes[0] if notes else ""
+        if sc is None or "storms" in why:  # surf scores storms as 1/10 rather than ruling them out
+            when = hour_label(t, 0)
+            if "storms" in why:
+                return f"⚡ storms from {when}"
+            if why == "closed for the day":
+                return f"closes at {when}"
+            return f"{why} from {when}"
+    return None
 
 
 def headline(sess):

@@ -324,3 +324,29 @@ def test_no_part_goes_past_its_top():
     sc, bondi, _ = next(x for x in sessions["am"].swim if x[1].name == "Bondi (north end)")
     assert sc < 100
     assert report(sessions["am"], hours, ctx, {}, WED, bondi)["Wind"] == 10
+
+
+def test_storms_after_the_best_hours_show_on_the_strip_and_as_a_warning():
+    # 7 Nov 2026 at Clovelly: a good 2-4pm, then storms from 4pm. The score is the good stretch; the strip and
+    # the warning show the rest
+    def storms_from_4(t, h):
+        if t.startswith(WED.isoformat()) and int(t[11:13]) >= 16:
+            h["weather_code"] = 95
+        return h
+
+    hours, sun = make_forecast(WED, storms_from_4)
+    ctx = Context(hours)
+    now = datetime(2026, 11, 4, 3, tzinfo=TZ)
+    sessions = build_sessions(hours, sun, now, days=[WED])
+    for s in sessions:
+        score_session(s, hours, ctx, {}, WED)
+    pm = next(s for s in sessions if s.slot == "pm")
+    assert pm.is_good  # 2-4pm is still worth it
+
+    data = export_scores(sessions, hours, ctx, {}, now, posted=set())
+    out = next(x for x in data["sessions"] if x["key"] == pm.key)
+    assert out["hours"][:3] == ["2pm", "3pm", "4pm"]
+    clovelly = next(x for x in out["scores"] if x["id"] == "swim-clovelly")
+    assert clovelly["hourly"][0] >= 80 and clovelly["hourly"][2] is None
+    assert clovelly["why"]["2"] == "storms ⚡"
+    assert clovelly["later"] == "⚡ storms from 4pm"

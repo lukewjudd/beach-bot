@@ -400,6 +400,43 @@ function whyNotWorth(s: Session) {
   return weak.length ? `${top} · ${weak.join(", ")}` : top;
 }
 
+// ---------------------------------------------------------------- hour by hour
+// "2pm" -> 14
+const hourOfLabel = (t: string) => (parseInt(t, 10) % 12) + (t.endsWith("pm") ? 12 : 0);
+
+// A row of hours for one spot: each coloured by its own score, the best two hours (what the score is) ringed,
+// storms and ruled-out hours marked, and hours already gone faded. The score stays the best stretch; this shows
+// how the rest of the session goes, so a lovely 2pm doesn't hide a stormy 5pm.
+function strip(s: Session, sc: SpotScore | undefined, name: string) {
+  if (!sc?.hourly || !s.hours || sc.hourly.length !== s.hours.length) return "";
+  const offset = s.start.slice(-6); // the session's UTC offset, e.g. +11:00
+  const [w0, w1] = sc.window ? [hourOfLabel(sc.window[0]), hourOfLabel(sc.window[1])] : [-1, -1];
+  const live = !isPast(s);
+  const words: string[] = [];
+  const cells = s.hours
+    .map((t, i) => {
+      const score = sc.hourly![i];
+      const why = sc.why?.[String(i)] ?? "";
+      const storm = why.includes("storms");
+      const r = score == null ? 0 : Math.max(1, Math.min(10, Math.floor(score / 10)));
+      const hr = hourOfLabel(t);
+      const best = hr >= w0 && hr < w1;
+      const gone = live && new Date(`${s.date}T${String(hr + 1).padStart(2, "0")}:00:00${offset}`) <= new Date();
+      const said = storm ? "storms" : score == null ? why || "ruled out" : `${r} out of 10`;
+      words.push(`${t} ${said}${best ? " (best)" : ""}`);
+      const cls = storm ? "storm" : score == null ? "none" : ratingClass(r);
+      const inner = storm ? "⚡" : score == null ? "–" : String(r);
+      return `<li class="hr${best ? " best" : ""}${gone ? " gone" : ""}" title="${esc(`${t}: ${said}`)}">
+        <span class="cell ${cls}">${inner}</span><span class="t">${t}</span></li>`;
+    })
+    .join("");
+  return `<div class="strip-wrap">
+    <div class="strip-head"><span>Hour by hour at ${esc(name)}</span>${sc.window ? `<span class="strip-key"><span class="ring"></span>best two hours</span>` : ""}</div>
+    <ol class="strip" aria-label="${esc(`Hour by hour at ${name}: ${words.join(", ")}`)}">${cells}</ol>
+    ${sc.later ? `<p class="later">${esc(sc.later)}</p>` : ""}
+  </div>`;
+}
+
 function renderHero(s: Session) {
   const c = s.conditions;
   const lead = s.lead;
@@ -414,9 +451,8 @@ function renderHero(s: Session) {
   // tides (a midday shows the ones from 9am to 4pm, and no sun times)
   const slot = slotOf(s);
   const morning = slot === "am";
-  const hourOf = (time: string) => (parseInt(time, 10) % 12) + (time.endsWith("pm") ? 12 : 0); // "1pm" -> 13
   const tides = (s.tides ?? [])
-    .filter((t) => (slot === "md" ? hourOf(t.time) >= 9 && hourOf(t.time) <= 16 : t.time.endsWith(morning ? "am" : "pm")))
+    .filter((t) => (slot === "md" ? hourOfLabel(t.time) >= 9 && hourOfLabel(t.time) <= 16 : t.time.endsWith(morning ? "am" : "pm")))
     .map((t) => `${t.kind === "high" ? "High" : "Low"} <b>${t.time}</b>`)
     .join(" · ");
   // A chip's border is a traffic light when the stat is good or bad for a swim, using the bot's own rules;
@@ -443,6 +479,7 @@ function renderHero(s: Session) {
       ${verdict}
     </div>
     </div>
+    ${lead.id ? strip(s, s.scores.find((x) => x.id === lead.id), lead.name ?? "") : ""}
     ${isPast(s) ? `<p class="done">Finished. This is the call the bot made before it started.</p>` : ""}
     ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
     <div class="stats-wrap">
@@ -503,7 +540,7 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details"><h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div></div>` : ""}
+    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div></div>` : ""}
   </li>`;
 }
 

@@ -20,10 +20,18 @@ export interface SpotScore {
   rating: number;
   window: [string, string] | null;
   notes: string[];
+  /** Every hour of the session, for the hour-by-hour strip: the score, or null when ruled out */
+  hourly?: (number | null)[];
+  /** Why an hour was ruled out or stormy, by its index in hourly */
+  why?: Record<string, string>;
+  /** What rules out the rest of the session after the best hours, e.g. "⚡ storms from 4pm" */
+  later?: string;
 }
 
 export interface Session {
   key: string;
+  /** The start of each hour in the session ("2pm"), matching each spot's hourly */
+  hours?: string[];
   date: string;
   label: string;
   start: string;

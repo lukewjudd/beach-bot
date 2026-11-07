@@ -5,7 +5,18 @@ from datetime import timedelta
 
 from .beaches import EASTERN, Pool, SurfSpot
 from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD, SLOT_NAMES
-from .sessions import coast_report, conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
+from .sessions import (
+    coast_report,
+    conditions,
+    headline,
+    hour_label,
+    later_warning,
+    lead_kind,
+    out_of_10,
+    report,
+    spot_key,
+    window_hours,
+)
 
 
 def slug(name, kind):
@@ -69,27 +80,27 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
             w = sess.windows.get(name)
             return [hour_label(w[0], 0), hour_label(w[1], 1)] if w else None
 
-        scores = [
-            {"id": spot_id(b), "score": sc, "rating": out_of_10(sc), "window": window(b.name), "notes": notes}
-            for sc, b, notes in sess.swim
-        ]
-        scores += [
-            {
-                "id": spot_id(sp),
-                "score": sc,
-                "rating": out_of_10(sc),
-                "window": window(sp.name),
-                "notes": notes,
-            }
-            for sc, sp, notes in sess.surf
-        ]
-        scores += [
-            {"id": spot_id(p), "score": sc, "rating": out_of_10(sc), "window": window(p.name), "notes": notes}
-            for sc, p, notes in sess.pools
-        ]
+        def entry(sc, spot, notes, sess=sess):
+            """A spot's call, plus every hour of the session for the site's hour-by-hour strip: the score (None
+            when ruled out) and, for hours ruled out or stormy, why."""
+            results = sess.hourly.get(spot_key(spot), [])
+            why = {str(k): ns[0] for k, (s, ns) in enumerate(results) if ns and (s is None or "storms" in ns[0])}
+            out = {"id": spot_id(spot), "score": sc, "rating": out_of_10(sc), "window": window(spot.name)}
+            out["notes"] = notes
+            out["hourly"] = [None if s is None else round(s) for s, _ in results]
+            if why:
+                out["why"] = why
+            if later := later_warning(sess, spot):
+                out["later"] = later
+            return out
+
+        scores = [entry(sc, b, notes) for sc, b, notes in sess.swim]
+        scores += [entry(sc, sp, notes) for sc, sp, notes in sess.surf]
+        scores += [entry(sc, p, notes) for sc, p, notes in sess.pools]
         out_sessions.append(
             {
                 "key": sess.key,
+                "hours": [hour_label(t, 0) for t in sess.hours],  # each hour's start, for the strip
                 "date": sess.day.isoformat(),
                 "label": f"{sess.start:%a} {SLOT_NAMES[sess.slot][0]}",
                 "start": sess.start.isoformat(),
