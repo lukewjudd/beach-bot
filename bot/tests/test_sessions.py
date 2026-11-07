@@ -38,8 +38,8 @@ def test_a_chilly_first_hour_doesnt_sink_a_good_morning():
 
 def test_heavy_rain_the_day_before_rules_out_clovelly():
     def downpour(t, h):
-        if t.startswith("2026-11-03") and 6 <= int(t[11:13]) < 12:
-            h["precipitation"] = 5.0  # 30mm over the morning, past Clovelly's 20mm limit
+        if t.startswith("2026-11-03") and 6 <= int(t[11:13]):
+            h["precipitation"] = 5.0  # 90mm from 6am on: every morning hour is past Clovelly's 20mm limit
         return h
 
     hours, sun = make_forecast(WED, downpour)
@@ -223,7 +223,20 @@ def test_events_are_only_rewritten_when_the_call_changes():
     wobble = {**body, "description": desc.replace("Weather", "Weather (a point either way)")}
     # 6 Nov: the sea warmed to 20 overnight and "cold water" dropped off the top 3 spots' notes
     notes = {**body, "description": desc.replace("(good snorkelling)", "(cold water, good snorkelling)")}
-    window = {**body, "description": desc.replace("Best window: 6am", "Best window: 7am")}
     new_lead = {**body, "summary": title.replace("Clovelly", "Bronte")}
-    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble) == fingerprint(notes) == fingerprint(window)
+    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble) == fingerprint(notes)
     assert fingerprint(new_lead) != fingerprint(body)
+
+
+def test_every_day_is_three_sessions_end_to_end():
+    for day in (WED, date(2026, 11, 7)):  # a weekday and a Saturday: the same split
+        hours, sun = make_forecast(day)
+        sessions, ctx = score(hours, sun, day)
+
+        assert list(sessions) == ["am", "md", "pm"]
+        assert sessions["am"].hours[-1][11:13] == "10"  # to 11am
+        assert [t[11:13] for t in sessions["md"].hours] == ["11", "12", "13"]  # 11am to 2pm, no gap either side
+        assert sessions["pm"].hours[0][11:13] == "14"
+        assert sessions["md"].key.endswith("md")  # base32hex, so it can be a Google event id
+        title, _ = event_body(sessions["md"], hours, ctx, {}, day)
+        assert title.endswith(f"· {day:%a} midday")

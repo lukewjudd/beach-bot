@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 214" role="img" aria-labelledby="warmth-t warmth-d" class="how-swell">
 <title id="warmth-t">Warmth counts where the day is heading</title>
 <desc id="warmth-d">Line chart of a day going to 30 degrees with a southerly change at 4pm. At 7am it's 19 degrees, but the score counts 27, three under the warmth still to come. Through the afternoon it counts the warmth, three under the peak, until the change drops it four degrees or more; after that it counts the real temperature.</desc>
-<rect x="34.0" y="26" width="117.3" height="154" fill="var(--accent)" opacity=".1"/>
-<text x="92.7" y="18" text-anchor="middle" class="hs-small">morning session</text>
-<rect x="292.1" y="26" width="93.9" height="154" fill="var(--accent)" opacity=".1"/>
-<text x="339.1" y="18" text-anchor="middle" class="hs-small">evening session</text>
+<rect x="34.0" y="26" width="140.8" height="154" fill="var(--accent)" opacity=".06"/>
+<text x="104.4" y="18" text-anchor="middle" class="hs-small">morning</text>
+<rect x="174.8" y="26" width="70.4" height="154" fill="var(--accent)" opacity=".14"/>
+<text x="210.0" y="18" text-anchor="middle" class="hs-small">midday</text>
+<rect x="245.2" y="26" width="140.8" height="154" fill="var(--accent)" opacity=".06"/>
+<text x="315.6" y="18" text-anchor="middle" class="hs-small">evening</text>
 <line x1="34" y1="180.0" x2="386" y2="180.0" stroke="var(--line)"/>
 <text x="29" y="184.0" text-anchor="end" class="hs-small">16°</text>
 <line x1="34" y1="141.5" x2="386" y2="141.5" stroke="var(--line)"/>

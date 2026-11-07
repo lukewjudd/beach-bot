@@ -2,8 +2,10 @@
 bot's own data. Colours are the site's CSS variables, so they follow light and dark mode when inlined.
 
   uv run --group build python scripts/draw_about_figures.py   # needs coastline.json from build_swell_windows.py
+  uv run --group build python scripts/draw_about_figures.py sessions warmth   # just these (no coastline needed)
 
 Writes web/src/about/*.svg:
+  sessions.svg  a 24-hour clock: the morning, midday and evening sessions every day
   window.svg  North Bondi: rays cast from the beach, open ocean vs the headland's shadow
   window-wide.svg  the same, zoomed out to Maroubra: where the southern rays land
   wrap.svg    Collaroy: how far round Long Reef an 8 s and a 14 s swell reach
@@ -20,8 +22,10 @@ Writes web/src/about/*.svg:
 Coastline © OpenStreetMap contributors.
 """
 
+import functools
 import json
 import math
+import sys
 from pathlib import Path
 
 from shapely import LineString, MultiLineString, box, polygonize, unary_union
@@ -33,7 +37,14 @@ from beach_bot.geo import wind_kind
 HERE = Path(__file__).parent
 OUT = HERE.parent.parent / "web" / "src" / "about"
 BEACH = {b.name: b for r in (EASTERN, NORTHERN) for b in r.beaches}
-WAYS = json.loads((HERE / "coastline.json").read_text())
+
+
+@functools.cache
+def coastline():
+    """OSM coastline ways, read on first use so figures without a map don't need the file."""
+    return json.loads((HERE / "coastline.json").read_text())
+
+
 WIDTH = 400
 
 
@@ -69,7 +80,7 @@ class Map:
     def land(self):
         """The box cut up by the coastline, keeping the pieces on the land side (odd crossings going east)."""
         frame = box(self.w, self.s, self.e, self.n)
-        ways = [LineString([(lon, lat) for lat, lon in w]) for w in WAYS if len(w) > 1]
+        ways = [LineString([(lon, lat) for lat, lon in w]) for w in coastline() if len(w) > 1]
         coast = [c for c in (w.intersection(frame) for w in ways) if not c.is_empty]
         lines = MultiLineString([list(w.coords) for w in ways])
         out = []
@@ -665,6 +676,68 @@ def water_fig():
     )
 
 
+def sessions_fig():
+    """Every day's three sessions on a 24-hour clock, noon at the top: night shaded, sunrise and sunset loose."""
+    from beach_bot.config import SESSIONS, SLOT_NAMES
+
+    w, h = WIDTH, 316
+    cx, cy, r, band = w / 2, 138, 100, 30
+    rise, sset = 5.75, 19.5  # around now (summer); they move through the year, so the edges are dashed
+
+    def at(hr, rad_):  # noon at the top, clockwise
+        return toward(cx, cy, (hr - 12) * 15, rad_)
+
+    def arc(h0, h1, r0, r1):
+        n = max(2, int((h1 - h0) * 4))
+        outer = [at(h0 + (h1 - h0) * i / n, r1) for i in range(n + 1)]
+        inner = [at(h1 - (h1 - h0) * i / n, r0) for i in range(n + 1)]
+        return path(outer + inner)
+
+    body = [
+        f'<circle cx="{cx}" cy="{cy}" r="{r + 4}" fill="var(--surface)" stroke="var(--line)"/>',
+        # night: sunset round through midnight to sunrise
+        f'<path d="{arc(sset, rise + 24, r - band, r)}" fill="var(--muted)" opacity=".18"/>',
+    ]
+    colours = {"am": "var(--r-amber)", "md": "var(--accent)", "pm": "var(--r-green)"}
+    bounds = {k: (rise if a is None else a, sset if b is None else b) for k, (a, b) in SESSIONS.items()}
+    for slot, (h0, h1) in bounds.items():
+        short, name = SLOT_NAMES[slot]
+        body.append(f'<path d="{arc(h0, h1, r - band, r)}" fill="{colours[slot]}" opacity=".85"/>')
+        # legend under the clock: one column per session, in the day's order
+        lx = w * (0.5 + list(bounds).index(slot)) / len(bounds)
+        when = f"{'sunrise' if h0 == rise else hour_label(int(h0))}–{'sunset' if h1 == sset else hour_label(int(h1))}"
+        body += [
+            f'<rect x="{lx - 34:.1f}" y="{h - 40}" width="10" height="10" rx="2" fill="{colours[slot]}"/>',
+            f'<text x="{lx - 20:.1f}" y="{h - 31}" class="hs-label">{name.capitalize()}</text>',
+            f'<text x="{lx - 34:.1f}" y="{h - 14}" class="hs-small">{when}</text>',
+        ]
+    for hr in range(24):  # ticks every hour, numbers every three
+        x0, y0 = at(hr, r + 4)
+        x1, y1 = at(hr, r + (10 if hr % 3 == 0 else 7))
+        body.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="var(--muted)"/>')
+        if hr % 3 == 0:
+            tx, ty = at(hr, r + 22)
+            label = "midnight" if hr == 0 else hour_label(hr)
+            body.append(f'<text x="{tx:.1f}" y="{ty + 4:.1f}" text-anchor="middle" class="hs-small">{label}</text>')
+    for hr in (rise, sset):  # the session ends at sunrise and sunset, which move through the year
+        x0, y0 = at(hr, r - band - 2)
+        x1, y1 = at(hr, r + 2)
+        body.append(
+            f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="var(--text)" '
+            'stroke-width="1.5" stroke-dasharray="3 2"/>'
+        )
+    body.append(f'<text x="{cx}" y="{cy + 5}" text-anchor="middle" class="hs-label">every day</text>')
+    svg(
+        "sessions",
+        w,
+        h,
+        "Three sessions a day",
+        "A 24-hour clock with noon at the top. Every day is cut into three sessions: morning from sunrise to 11am, "
+        "midday from 11am to 2pm, and evening from 2pm to sunset. The night, from sunset to sunrise, isn't scored.",
+        body,
+    )
+
+
 def warmth_fig():
     """A day going to 30 that turns with a southerly at 4pm: the temperature, and the warmth the score counts."""
     from beach_bot.forecast import Context
@@ -693,11 +766,11 @@ def warmth_fig():
     w, h, left, right, top, bottom = WIDTH, 210, 34, 14, 26, 30
     xy = axis_chart(w, h, left, right, top, bottom, 5, 20, 16, 32)
     body = []
-    for x0, x1, label in ((5, 10, "morning session"), (16, 20, "evening session")):
+    for i, (x0, x1, label) in enumerate(((5, 11, "morning"), (11, 14, "midday"), (14, 20, "evening"))):
         (a, _), (b, _) = xy(x0, 0), xy(x1, 0)
-        body.append(
+        body.append(  # alternate shades so the three sessions read apart
             f'<rect x="{a:.1f}" y="{top}" width="{b - a:.1f}" height="{h - top - bottom}" '
-            'fill="var(--accent)" opacity=".1"/>'
+            f'fill="var(--accent)" opacity="{".14" if i % 2 else ".06"}"/>'
         )
         body.append(f'<text x="{(a + b) / 2:.1f}" y="{top - 8}" text-anchor="middle" class="hs-small">{label}</text>')
     for v in (16, 20, 24, 28, 32):
@@ -890,6 +963,11 @@ def bluebottle_fig():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:  # just the named figures
+        for name in sys.argv[1:]:
+            globals()[f"{name.replace('-', '_')}_fig"]()
+        sys.exit()
+    sessions_fig()
     window_fig()
     window_wide_fig()
     wrap_fig()

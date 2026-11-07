@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 316" role="img" aria-labelledby="sessions-t sessions-d" class="how-swell">
+<title id="sessions-t">Three sessions a day</title>
+<desc id="sessions-d">A 24-hour clock with noon at the top. Every day is cut into three sessions: morning from sunrise to 11am, midday from 11am to 2pm, and evening from 2pm to sunset. The night, from sunset to sunrise, isn't scored.</desc>
+<circle cx="200.0" cy="138" r="104" fill="var(--surface)" stroke="var(--line)"/>
+<path d="M292.4,176.3L289.7,182.2L286.6,188.0L283.1,193.6L279.3,198.9L275.2,203.9L270.7,208.7L265.9,213.2L260.9,217.3L255.6,221.1L250.0,224.6L244.2,227.7L238.3,230.4L232.1,232.7L225.9,234.6L219.5,236.1L213.1,237.1L206.5,237.8L200.0,238.0L193.5,237.8L186.9,237.1L180.5,236.1L174.1,234.6L167.9,232.7L161.7,230.4L155.8,227.7L150.0,224.6L144.4,221.1L139.1,217.3L134.1,213.2L129.3,208.7L124.8,203.9L120.7,198.9L116.9,193.6L113.4,188.0L110.3,182.2L107.6,176.3L105.3,170.1L103.4,163.9L101.9,157.5L100.9,151.1L100.2,144.5L130.1,142.6L130.6,147.1L131.3,151.7L132.4,156.1L133.7,160.5L135.3,164.8L137.2,169.0L139.4,173.0L141.8,176.9L144.5,180.6L147.4,184.2L150.5,187.5L153.8,190.6L157.4,193.5L161.1,196.2L165.0,198.6L169.0,200.8L173.2,202.7L177.5,204.3L181.9,205.6L186.3,206.7L190.9,207.4L195.4,207.9L200.0,208.0L204.6,207.9L209.1,207.4L213.7,206.7L218.1,205.6L222.5,204.3L226.8,202.7L231.0,200.8L235.0,198.6L238.9,196.2L242.6,193.5L246.2,190.6L249.5,187.5L252.6,184.2L255.5,180.6L258.2,176.9L260.6,173.0L262.8,169.0L264.7,164.8Z" fill="var(--muted)" opacity=".18"/>
+<path d="M100.2,144.5L100.0,138.0L100.2,131.5L100.9,124.9L101.9,118.5L103.4,112.1L105.3,105.9L107.6,99.7L110.3,93.8L113.4,88.0L116.9,82.4L120.7,77.1L124.8,72.1L129.3,67.3L134.1,62.8L139.1,58.7L144.4,54.9L150.0,51.4L155.8,48.3L161.7,45.6L167.9,43.3L174.1,41.4L181.9,70.4L177.5,71.7L173.2,73.3L169.0,75.2L165.0,77.4L161.1,79.8L157.4,82.5L153.8,85.4L150.5,88.5L147.4,91.8L144.5,95.4L141.8,99.1L139.4,103.0L137.2,107.0L135.3,111.2L133.7,115.5L132.4,119.9L131.3,124.3L130.6,128.9L130.1,133.4L130.0,138.0L130.1,142.6Z" fill="var(--r-amber)" opacity=".85"/>
+<rect x="32.7" y="276" width="10" height="10" rx="2" fill="var(--r-amber)"/>
+<text x="46.7" y="285" class="hs-label">Morning</text>
+<text x="32.7" y="302" class="hs-small">sunrise–11am</text>
+<path d="M174.1,41.4L180.5,39.9L186.9,38.9L193.5,38.2L200.0,38.0L206.5,38.2L213.1,38.9L219.5,39.9L225.9,41.4L232.1,43.3L238.3,45.6L244.2,48.3L250.0,51.4L235.0,77.4L231.0,75.2L226.8,73.3L222.5,71.7L218.1,70.4L213.7,69.3L209.1,68.6L204.6,68.1L200.0,68.0L195.4,68.1L190.9,68.6L186.3,69.3L181.9,70.4Z" fill="var(--accent)" opacity=".85"/>
+<rect x="166.0" y="276" width="10" height="10" rx="2" fill="var(--accent)"/>
+<text x="180.0" y="285" class="hs-label">Midday</text>
+<text x="166.0" y="302" class="hs-small">11am–2pm</text>
+<path d="M250.0,51.4L255.6,54.9L260.9,58.7L265.9,62.8L270.7,67.3L275.2,72.1L279.3,77.1L283.1,82.4L286.6,88.0L289.7,93.8L292.4,99.7L294.7,105.9L296.6,112.1L298.1,118.5L299.1,124.9L299.8,131.5L300.0,138.0L299.8,144.5L299.1,151.1L298.1,157.5L296.6,163.9L294.7,170.1L292.4,176.3L264.7,164.8L266.3,160.5L267.6,156.1L268.7,151.7L269.4,147.1L269.9,142.6L270.0,138.0L269.9,133.4L269.4,128.9L268.7,124.3L267.6,119.9L266.3,115.5L264.7,111.2L262.8,107.0L260.6,103.0L258.2,99.1L255.5,95.4L252.6,91.8L249.5,88.5L246.2,85.4L242.6,82.5L238.9,79.8L235.0,77.4Z" fill="var(--r-green)" opacity=".85"/>
+<rect x="299.3" y="276" width="10" height="10" rx="2" fill="var(--r-green)"/>
+<text x="313.3" y="285" class="hs-label">Evening</text>
+<text x="299.3" y="302" class="hs-small">2pm–sunset</text>
+<line x1="200.0" y1="242.0" x2="200.0" y2="248.0" stroke="var(--muted)"/>
+<text x="200.0" y="264.0" text-anchor="middle" class="hs-small">midnight</text>
+<line x1="173.1" y1="238.5" x2="172.3" y2="241.4" stroke="var(--muted)"/>
+<line x1="148.0" y1="228.1" x2="146.5" y2="230.7" stroke="var(--muted)"/>
+<line x1="126.5" y1="211.5" x2="122.2" y2="215.8" stroke="var(--muted)"/>
+<text x="113.7" y="228.3" text-anchor="middle" class="hs-small">3am</text>
+<line x1="109.9" y1="190.0" x2="107.3" y2="191.5" stroke="var(--muted)"/>
+<line x1="99.5" y1="164.9" x2="96.6" y2="165.7" stroke="var(--muted)"/>
+<line x1="96.0" y1="138.0" x2="90.0" y2="138.0" stroke="var(--muted)"/>
+<text x="78.0" y="142.0" text-anchor="middle" class="hs-small">6am</text>
+<line x1="99.5" y1="111.1" x2="96.6" y2="110.3" stroke="var(--muted)"/>
+<line x1="109.9" y1="86.0" x2="107.3" y2="84.5" stroke="var(--muted)"/>
+<line x1="126.5" y1="64.5" x2="122.2" y2="60.2" stroke="var(--muted)"/>
+<text x="113.7" y="55.7" text-anchor="middle" class="hs-small">9am</text>
+<line x1="148.0" y1="47.9" x2="146.5" y2="45.3" stroke="var(--muted)"/>
+<line x1="173.1" y1="37.5" x2="172.3" y2="34.6" stroke="var(--muted)"/>
+<line x1="200.0" y1="34.0" x2="200.0" y2="28.0" stroke="var(--muted)"/>
+<text x="200.0" y="20.0" text-anchor="middle" class="hs-small">noon</text>
+<line x1="226.9" y1="37.5" x2="227.7" y2="34.6" stroke="var(--muted)"/>
+<line x1="252.0" y1="47.9" x2="253.5" y2="45.3" stroke="var(--muted)"/>
+<line x1="273.5" y1="64.5" x2="277.8" y2="60.2" stroke="var(--muted)"/>
+<text x="286.3" y="55.7" text-anchor="middle" class="hs-small">3pm</text>
+<line x1="290.1" y1="86.0" x2="292.7" y2="84.5" stroke="var(--muted)"/>
+<line x1="300.5" y1="111.1" x2="303.4" y2="110.3" stroke="var(--muted)"/>
+<line x1="304.0" y1="138.0" x2="310.0" y2="138.0" stroke="var(--muted)"/>
+<text x="322.0" y="142.0" text-anchor="middle" class="hs-small">6pm</text>
+<line x1="300.5" y1="164.9" x2="303.4" y2="165.7" stroke="var(--muted)"/>
+<line x1="290.1" y1="190.0" x2="292.7" y2="191.5" stroke="var(--muted)"/>
+<line x1="273.5" y1="211.5" x2="277.8" y2="215.8" stroke="var(--muted)"/>
+<text x="286.3" y="228.3" text-anchor="middle" class="hs-small">9pm</text>
+<line x1="252.0" y1="228.1" x2="253.5" y2="230.7" stroke="var(--muted)"/>
+<line x1="226.9" y1="238.5" x2="227.7" y2="241.4" stroke="var(--muted)"/>
+<line x1="132.1" y1="142.4" x2="98.2" y2="144.7" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="3 2"/>
+<line x1="262.8" y1="164.0" x2="294.2" y2="177.0" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="3 2"/>
+<text x="200.0" y="143" text-anchor="middle" class="hs-label">every day</text>
+</svg>

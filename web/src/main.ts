@@ -90,8 +90,6 @@ const notesHtml = (notes: string[]) =>
 
 // Worth it: the calendar's own rule. Further out than the calendar posts, an 8/10 still counts, as an early guess
 const worth = (s: Session) => s.posted || (s.confidence === "low" && s.lead.score >= data.thresholds.post);
-const windowText = (x: SpotScore) =>
-  x.score >= data.thresholds.post && x.window ? `${x.window[0]}–${x.window[1]}` : "";
 // Ranking: score, with the favourite winning close calls like the headline does
 const rankScore = (x: SpotScore | undefined) =>
   x ? x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0) : -1;
@@ -105,7 +103,15 @@ const today = () => parse(data.generated_at.slice(0, 10)); // generated_at is Sy
 const monday = (d: Date) => new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * DAY);
 const dayName = (d: Date, style: "short" | "long" = "short") =>
   d.toLocaleDateString("en-AU", { weekday: style, timeZone: "UTC" });
-const slotName = (s: Session) => (s.key.endsWith("am") ? "Morning" : "Evening");
+// Every day has three sessions: sunrise-11am, 11am-2pm and 2pm-sunset. The key ends with the slot code
+type SlotCode = "am" | "md" | "pm";
+const SLOTS: Record<SlotCode, { short: string; name: string }> = {
+  am: { short: "AM", name: "Morning" },
+  md: { short: "MID", name: "Midday" },
+  pm: { short: "PM", name: "Evening" },
+};
+const slotOf = (s: Session) => s.key.slice(-2) as SlotCode;
+const slotName = (s: Session) => SLOTS[slotOf(s)].name;
 const weekOf = (s: Session) => Math.floor((parse(s.date).getTime() - monday(today()).getTime()) / (7 * DAY));
 
 // ---------------------------------------------------------------- loading and refreshing
@@ -304,29 +310,29 @@ function renderWeek() {
   // Always Monday to Sunday, so a day sits in the same place every time you look
   const start = new Date(monday(today()).getTime() + week * 7 * DAY);
   const selectedDate = data.sessions[current].date;
-  // Each day shows its morning and evening score side by side; tapping one opens that session
+  // Each day shows its morning, midday and evening scores stacked under its date; tapping one opens that session
   $("days").innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start.getTime() + i * DAY);
     const date = ymd(d);
     const daySessions = data.sessions.map((s, idx) => ({ s, idx })).filter(({ s }) => s.date === date);
     const low = daySessions.length > 0 && daySessions.every(({ s }) => s.confidence === "low");
-    const slot = (code: "am" | "pm", label: string) => {
-      const found = daySessions.find(({ s }) => s.key.endsWith(code));
+    const slot = (code: SlotCode) => {
+      const found = daySessions.find(({ s }) => slotOf(s) === code);
       const live = found && !isPast(found.s);
-      const name = `${dayName(d, "long")} ${code === "am" ? "morning" : "evening"}`;
-      // Finished sessions stay for the week, greyed out, with the call the bot made before they started
-      const said = found && !live ? `, was ${found.s.lead.rating} out of 10` : ", no forecast";
+      const name = `${dayName(d, "long")} ${SLOTS[code].name.toLowerCase()}`;
+      // Finished sessions stay for the week, greyed out but still tappable, with the call made before they started
+      const said = found && !live ? `, finished, was ${found.s.lead.rating} out of 10` : ", no forecast";
       const score = found
         ? `<span class="pill${live ? ` ${ratingClass(found.s.lead.rating)}` : " none"}">${found.s.lead.rating}</span>`
         : `<span class="pill none">–</span>`;
-      return `<button type="button" class="slot${found && !live ? " past" : ""}" ${live ? `data-i="${found.idx}"` : "disabled"}
+      return `<button type="button" class="slot${found && !live ? " past" : ""}" ${found ? `data-i="${found.idx}"` : "disabled"}
           aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${found.s.lead.rating} out of 10` : said}">
-        <span class="lbl">${label}</span>${score}
+        <span class="lbl">${SLOTS[code].short}</span>${score}
       </button>`;
     };
     return `<div class="day${low ? " low" : ""}${date === selectedDate ? " selected" : ""}">
       <span class="dh"><span class="dn">${date === ymd(today()) ? "Today" : dayName(d)}</span><span class="dd">${d.getUTCDate()}</span></span>
-      ${slot("am", "AM")}${slot("pm", "PM")}
+      ${slot("am")}${slot("md")}${slot("pm")}
     </div>`;
   }).join("");
   $("days")
@@ -402,13 +408,15 @@ function renderHero(s: Session) {
   const leadSpot = lead.id ? spotsById[lead.id] : undefined;
   const verdict = ok
     ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
-       ${lead.window ? `<span class="when">best ${esc(lead.window[0])}–${esc(lead.window[1])}</span>` : ""}
        ${whyWorth(s) ? `<span class="why worth">${esc(whyWorth(s))}</span>` : ""}`
     : `<span class="why">${esc(whyNotWorth(s))}</span>`;
-  // Only what matters for this session: sunrise for a morning, sunset for an evening, and that half of the day's tides
-  const morning = s.key.endsWith("am");
+  // Only what matters for this session: sunrise for a morning, sunset for an evening, and that part of the day's
+  // tides (a midday shows the ones from 9am to 4pm, and no sun times)
+  const slot = slotOf(s);
+  const morning = slot === "am";
+  const hourOf = (time: string) => (parseInt(time, 10) % 12) + (time.endsWith("pm") ? 12 : 0); // "1pm" -> 13
   const tides = (s.tides ?? [])
-    .filter((t) => t.time.endsWith(morning ? "am" : "pm"))
+    .filter((t) => (slot === "md" ? hourOf(t.time) >= 9 && hourOf(t.time) <= 16 : t.time.endsWith(morning ? "am" : "pm")))
     .map((t) => `${t.kind === "high" ? "High" : "Low"} <b>${t.time}</b>`)
     .join(" · ");
   // A chip's border is a traffic light when the stat is good or bad for a swim, using the bot's own rules;
@@ -426,6 +434,7 @@ function renderHero(s: Session) {
   const line = (label: string, chips: string) =>
     `<div class="stat-line"><span class="stat-label">${label}</span><div class="chips">${chips}</div></div>`;
   const month = d.toLocaleDateString("en-AU", { month: "short", timeZone: "UTC" });
+  $("hero").classList.toggle("finished", isPast(s));
   $("hero").innerHTML = `
     <div class="hero-top">
     <h2 class="hero-title">${dayName(d, "long")} ${d.getUTCDate()} ${month} · ${slotName(s).toLowerCase()}</h2>
@@ -434,6 +443,7 @@ function renderHero(s: Session) {
       ${verdict}
     </div>
     </div>
+    ${isPast(s) ? `<p class="done">Finished. This is the call the bot made before it started.</p>` : ""}
     ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
     <div class="stats-wrap">
     <div class="stats">
@@ -451,7 +461,7 @@ function renderHero(s: Session) {
       )}
       ${line(
         "Sun",
-        (s.sun ? chip(ICONS.sun, morning ? "Sunrise" : "Sunset", morning ? `Sunrise <b>${s.sun.rise}</b>` : `Sunset <b>${s.sun.set}</b>`) : "") +
+        (s.sun && slot !== "md" ? chip(ICONS.sun, morning ? "Sunrise" : "Sunset", morning ? `Sunrise <b>${s.sun.rise}</b>` : `Sunset <b>${s.sun.set}</b>`) : "") +
           chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`),
       )}
     </div>
@@ -486,13 +496,12 @@ function renderPins(s: Session) {
 function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
   const open = spot.id === openSpot;
   const notes = notesHtml(sc ? sc.notes : [whyNot(s, spot)]);
-  const win = sc ? windowText(sc) : "";
   const rep = s.reports?.[spot.id];
   return `<li class="spot${open ? " open" : ""}" data-id="${spot.id}">
     <button type="button" class="spot-head" aria-expanded="${open}">
       ${sc ? badge(spot.kind, sc.rating) : badge(spot.kind, 0, "ruled out, 0 out of 10")}
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
-      <span class="side">${tags(spot)}${win ? `<span class="win">${esc(win)}</span>` : ""}</span>
+      <span class="side">${tags(spot)}</span>
     </button>
     ${open && rep ? `<div class="details"><h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div></div>` : ""}
   </li>`;

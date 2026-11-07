@@ -1,4 +1,4 @@
-"""Morning/evening sessions: best windows, picks and the out-of-10 report."""
+"""Morning, midday and evening sessions: best windows, picks and the out-of-10 report."""
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -9,10 +9,9 @@ from .config import (
     DAYS_AHEAD,
     EVENT_THRESHOLD,
     FAVOURITE_TOLERANCE,
+    SESSIONS,
     SURF_THRESHOLD,
     TZ,
-    WEEKDAY_SESSIONS,
-    WEEKEND_SESSIONS,
     WINDOW_HOURS,
 )
 from .geo import compass, wind_kind, wind_words
@@ -66,8 +65,7 @@ def build_sessions(hours, sun, now, days=None, region=EASTERN):
     days = days or [now.date() + timedelta(days=o) for o in range(DAYS_AHEAD + 1)]
     for d in days:
         rise, sset = sun[d.isoformat()]
-        slots = WEEKEND_SESSIONS if d.weekday() >= 5 else WEEKDAY_SESSIONS
-        for slot, (h_from, h_to) in slots.items():
+        for slot, (h_from, h_to) in SESSIONS.items():
             start = rise if h_from is None else datetime.combine(d, datetime.min.time()).replace(hour=h_from)
             end = sset if h_to is None else datetime.combine(d, datetime.min.time()).replace(hour=h_to)
             # An hour counts if most of it is inside the session (no 5am "window" before a 5:54 sunrise)

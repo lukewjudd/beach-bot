@@ -6,9 +6,9 @@ import os
 import re
 from datetime import datetime
 
-from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, TZ
+from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, SLOT_NAMES, TZ
 from .geo import wind_kind
-from .sessions import conditions, headline, hour_label, lead_kind, out_of_10, report, top_spots, window_hours
+from .sessions import conditions, headline, lead_kind, out_of_10, report, top_spots, window_hours
 
 
 def event_body(sess, hours, ctx, beachwatch, today):
@@ -22,14 +22,13 @@ def event_body(sess, hours, ctx, beachwatch, today):
     # Just the call: the score, where and when. The detail is in the description.
     # Surf spots share names with beaches, so they say "surf"; pool names already say Pool or Baths
     where = (lead + (" surf" if kind == "surf" else "")) if lead else "the coast"
-    title = f"{fire}{out_of_10(best)}/10 {where} · {sess.day:%a} {'morning' if sess.slot == 'am' else 'evening'}"
+    title = f"{fire}{out_of_10(best)}/10 {where} · {sess.day:%a} {SLOT_NAMES[sess.slot][1]}"
     b = swim[1] if swim and kind == "swim" else None  # wind direction only means something at a beach
     rel = {"cross": "cross-shore"}.get(k := wind_kind(c["wind_deg"], b.facing), k) if b else ""
 
     lines = [
         f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}"
         + (f" ({rel} at {b.name})" if b else ""),
-        f"Best window: {hour_label(keys[0], 0)}–{hour_label(keys[-1], 1)} at {lead}",
         f"Overall: {out_of_10(best)}/10",
         "",
     ]

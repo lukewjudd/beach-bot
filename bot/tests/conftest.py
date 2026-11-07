@@ -47,7 +47,7 @@ def make_forecast(day: date, tweak=lambda t, h: h, lookback_days=4):
 
 
 def score(hours, sun, day, beachwatch=None, now=None):
-    """Runs the real pipeline for one day and returns its sessions keyed by slot ('am' / 'pm')."""
+    """Runs the real pipeline for one day and returns its sessions keyed by slot ('am', 'md', 'pm')."""
     now = now or datetime.combine(day, datetime.min.time()).replace(hour=3, tzinfo=TZ)
     ctx = Context(hours)
     sessions = build_sessions(hours, sun, now, days=[day])

@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 from .beaches import EASTERN, Pool, SurfSpot
-from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD
+from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD, SLOT_NAMES
 from .sessions import coast_report, conditions, headline, hour_label, lead_kind, out_of_10, report, window_hours
 
 
@@ -91,7 +91,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
             {
                 "key": sess.key,
                 "date": sess.day.isoformat(),
-                "label": f"{sess.start:%a} {'AM' if sess.slot == 'am' else 'PM'}",
+                "label": f"{sess.start:%a} {SLOT_NAMES[sess.slot][0]}",
                 "start": sess.start.isoformat(),
                 "end": sess.end.isoformat(),
                 "started": sess.start <= now,

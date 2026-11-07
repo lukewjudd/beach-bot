@@ -1,4 +1,4 @@
-"""Beach bot: picks the best Sydney eastern suburbs beach for each morning/evening
+"""Beach bot: picks the best Sydney eastern suburbs beach for each morning/midday/evening
 session over the next couple of days and keeps a shared Google Calendar in sync.
 
 Rules come from beach-knowledge.md (rule ids like R-W1 refer to that file).

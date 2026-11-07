@@ -127,7 +127,7 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: v
 }
 button:disabled { opacity: .45; cursor: default; }
 .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-/* A day: its date, then its AM and PM scores as two buttons */
+/* A day: its date, then its AM, midday and PM scores stacked as buttons */
 .day {
   display: flex; flex-direction: column; align-items: stretch; gap: 3px; padding: 5px 4px 6px;
   border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
@@ -144,6 +144,8 @@ button:disabled { opacity: .45; cursor: default; }
 .slot .lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .slot[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .slot:disabled { cursor: default; opacity: .5; }
+.slot.past { opacity: .5; } /* finished: greyed, but still opens its call */
+.slot.past[aria-pressed="true"] { opacity: .8; }
 @media (max-width: 480px) {
   .day { padding: 4px 2px 5px; }
   .slot { flex-direction: column; gap: 1px; padding: 2px; }
@@ -168,12 +170,14 @@ button:disabled { opacity: .45; cursor: default; }
 .hero-title { margin: 0 0 10px; font-size: 18px; letter-spacing: -.01em; }
 .hero .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero .where { font-size: 18px; font-weight: 600; }
-.hero .when, .hero .why { color: var(--muted); }
+.hero .why { color: var(--muted); }
 .hero .why.worth { flex-basis: 100%; } /* its own line under the spot and time */
 .flag { font-size: 20px; font-weight: 800; letter-spacing: -.01em; padding: 2px 10px; border-radius: 8px; }
 .flag.yes { background: var(--r-green); color: var(--on-pill); }
 .flag.no { background: var(--r-red-soft); color: var(--r-red); }
 .early { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.done { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+.hero.finished .headline, .hero.finished .stats-wrap { opacity: .6; } /* a finished session reads as history */
 /* Summary stats: one line each for weather, ocean, sun and the coast's ratings */
 .stats { margin-top: 12px; }
 .stat-line {
@@ -218,14 +222,14 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (min-width: 860px) {
   /* Desktop: keep the top compact so the map and spots get the height.
-     Week toggle beside the days, and each day's AM and PM side by side under its date */
+     Week toggle beside the days, and each day's AM, midday and PM stacked under its date */
   .week { flex-direction: row; align-items: stretch; gap: 8px; padding-bottom: 8px; }
   .week-pick { flex-direction: column; justify-content: center; }
   .week-pick button { min-height: 28px; padding: 2px 10px; font-size: 13px; }
   .days { flex: 1; }
-  .day { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 4px; padding: 4px 6px 6px; }
-  .day .dh { grid-column: 1 / -1; margin: 0; }
-  .slot { min-height: 28px; padding: 2px; justify-content: center; gap: 5px; } /* each half centred, never wider than it */
+  .day { gap: 2px; padding: 4px 6px 6px; }
+  .day .dh { margin: 0; }
+  .slot { min-height: 26px; padding: 1px 4px 1px 6px; }
   /* Summary: the coast's ratings in a column to the right of the stat lines */
   .stats-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 34%); column-gap: 28px; }
   .coast-line { grid-template-columns: 1fr; align-content: start; gap: 6px; }
@@ -241,10 +245,6 @@ button:disabled { opacity: .45; cursor: default; }
   .layout { flex: 1; min-height: 0; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr; }
   .panel { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-right: 4px; }
   .controls { position: sticky; top: 0; z-index: 2; background: var(--bg); }
-}
-@media (min-width: 860px) and (max-width: 1150px) {
-  /* Narrower desktops: not enough width for "AM 5 PM 4" in a row, so each label sits over its score */
-  .slot { flex-direction: column; gap: 1px; padding: 2px 0; }
 }
 
 #map { height: 100%; min-height: 0; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
@@ -295,7 +295,6 @@ button:disabled { opacity: .45; cursor: default; }
 .spot .name { font-weight: 600; }
 .spot .meta { color: var(--muted); font-size: 13px; }
 .spot .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.spot .win { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .spot .details { padding: 2px 12px 12px; border-top: 1px solid var(--line); margin-top: 2px; padding-top: 10px; }
 .empty { color: var(--muted); padding: 12px 0; }
 .tag {
