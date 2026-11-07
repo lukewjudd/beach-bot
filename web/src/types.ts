@@ -29,8 +29,10 @@ export interface Session {
   start: string;
   end: string;
   started: boolean;
-  /** Worth it: the same rule the calendar uses, so the site and calendar always agree */
+  /** Worth it on the site: 8/10 or better */
   posted: boolean;
+  /** In the shared calendar's event for the day: 9/10 or better (or still above 8 once in) */
+  in_event?: boolean;
   fire: boolean;
   /** "low" past a couple of days out: a guide, not something the calendar posts */
   confidence?: "high" | "low";

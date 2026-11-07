@@ -88,7 +88,7 @@ const notesHtml = (notes: string[]) =>
     .map((n) => (WARN.test(n) ? `<span class="warn"><span aria-hidden="true">⚠</span> ${esc(n)}</span>` : esc(n)))
     .join(" · ");
 
-// Worth it: the calendar's own rule. Further out than the calendar posts, an 8/10 still counts, as an early guess
+// Worth it: 8/10 or better (the calendar holds out for 9). Further out than the calendar posts, it's an early guess
 const worth = (s: Session) => s.posted || (s.confidence === "low" && s.lead.score >= data.thresholds.post);
 // Ranking: score, with the favourite winning close calls like the headline does
 const rankScore = (x: SpotScore | undefined) =>

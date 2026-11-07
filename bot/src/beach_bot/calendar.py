@@ -65,7 +65,7 @@ def day_body(sessions, hours, ctx, beachwatch, today):
     for s in sessions:
         lines += [*session_lines(s, hours, ctx, beachwatch, today), ""]
     lines += [
-        f"Last changed {datetime.now(TZ):%a %-d %b %-I:%M%p}. A session comes off if it drops below 7/10, "
+        f"Last changed {datetime.now(TZ):%a %-d %b %-I:%M%p}. A session comes off if it drops below 8/10, "
         "and the event once none are left.",
         f"Map and every spot's score: {SITE_URL}?s={top.key}",  # opens the site on the day's best session
     ]
@@ -101,8 +101,8 @@ def calendar_service():
 
 
 def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
-    """One event per day, covering that day's sessions at 8/10+ (weekday middays never go in). A session already
-    in the event stays until it drops below 7/10 (KEEP_THRESHOLD), so one hovering around 8 doesn't come and go
+    """One event per day, covering that day's sessions at 9/10+ (weekday middays never go in). A session already
+    in the event stays until it drops below 8/10 (KEEP_THRESHOLD), so one hovering around 9 doesn't come and go
     every hour; the event goes once no sessions are left. Once the event has started it's left alone.
     Returns the keys of the sessions that are in a live event."""
     from googleapiclient.errors import HttpError
@@ -134,7 +134,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         if not token:
             break
     is_live = lambda e: bool(e) and e.get("status") != "cancelled"  # noqa: E731
-    print(f"calendar ok, {sum(s.is_good and s.in_calendar for s in sessions)} good session(s)")
+    print(f"calendar ok, {sum(s.for_calendar for s in sessions)} session(s) at 9/10+")
 
     posted = set()
     for day in days:
@@ -159,7 +159,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         keep = [
             s
             for s in todays
-            if s.in_calendar and s.start > now and (s.is_good or (s.slot in had and s.best >= KEEP_THRESHOLD))
+            if s.in_calendar and s.start > now and (s.for_calendar or (s.slot in had and s.best >= KEEP_THRESHOLD))
         ]
         if not keep:
             if live:

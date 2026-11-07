@@ -6,6 +6,7 @@ from statistics import mean
 
 from .beaches import EASTERN, Beach, Pool, Region, SurfSpot
 from .config import (
+    CALENDAR_THRESHOLD,
     DAYS_AHEAD,
     EVENT_THRESHOLD,
     FAVOURITE_TOLERANCE,
@@ -16,6 +17,8 @@ from .config import (
 )
 from .geo import compass, wind_words
 from .scoring import (
+    POOL_TOPS,
+    SWIM_TOPS,
     pool_parts,
     score_pool_hour,
     score_surf_hour,
@@ -65,6 +68,11 @@ class Session:
     @property
     def is_good(self):
         return self.best >= EVENT_THRESHOLD
+
+    @property
+    def for_calendar(self):
+        """Good enough for its own event (9/10): a higher bar than worth it on the site."""
+        return self.in_calendar and self.best >= CALENDAR_THRESHOLD
 
     @property
     def in_calendar(self):
@@ -220,9 +228,9 @@ def out_of_10(score):
 # Water quality can only take points away, so it's 10 until it does. Surf quality points are scaled by the wave
 # size (no waves, no surf), so there a bar shows the part's own points before that.
 BAR_STEP = 5
-BAR_TOPS = {
-    Beach: {"Wind": 15, "Calm water": 15, "Weather": 20, "Water quality": 0},
-    Pool: {"Wind": 10, "Calm in the pool": 15, "Tide": 10, "Weather": 20, "Water quality": 0},
+BAR_TOPS = {  # the score's own tops (scoring.SWIM_TOPS, POOL_TOPS), in the order the bars show
+    Beach: {k: SWIM_TOPS[k] for k in ("Wind", "Calm water", "Weather", "Water quality")},
+    Pool: {k: POOL_TOPS[k] for k in ("Wind", "Calm in the pool", "Tide", "Weather", "Water quality")},
     SurfSpot: {"Wind": 30, "Wave size": 35, "Wave quality": 30, "Weather": 5, "Water quality": 0},
 }
 

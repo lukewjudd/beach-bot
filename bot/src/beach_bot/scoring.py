@@ -50,7 +50,17 @@ def storm(h: dict):
     return (h.get("cape") or 0) >= STORM_CAPE and (h.get("precipitation_probability") or 0) >= STORM_RAIN_PROB
 
 
-SWIM_BASE = 45  # where every swim hour starts; the parts' best add up to 100 (15 + 15 + 20 + 5 extras)
+SWIM_BASE = 45  # where every swim hour starts; the parts' best add up to 100
+# The most each part can add. A part never goes past its top, so one strong part can't cover for a weak one
+# (Bondi's north-easterly bonus used to lift its wind to 25 and make a 19° water day a 10/10), and a 10/10 needs
+# every part at full marks. The site's bars are these parts out of 10.
+SWIM_TOPS = {"Calm water": 15, "Wind": 15, "Weather": 20, "Water quality": 0, "Extras": 5}
+POOL_TOPS = {"Calm in the pool": 15, "Tide": 10, "Wind": 10, "Weather": 20, "Water quality": 0, "Extras": 0}
+
+
+def capped(parts, tops):
+    return {k: v if v is None else min(v, tops[k]) for k, v in parts.items()}
+
 
 # Wind points at a swimming beach, by strength then direction (§4.1): (under km/h, offshore, cross, onshore).
 # Under 8 km/h it's glassy whichever way it blows. Past that, offshore keeps the water smooth while cross-shore
@@ -142,7 +152,7 @@ def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today:
                 notes.append("bluebottles possible")
 
     parts = {"Calm water": calm, "Wind": w, "Weather": wx, "Water quality": q, "Extras": extras}
-    return parts, notes, nogo
+    return capped(parts, SWIM_TOPS), notes, nogo
 
 
 def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):
@@ -300,7 +310,7 @@ def pool_parts(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: 
     notes += q_notes
     wx = None if storm(h) else weather(h, t, ctx, notes)
     parts = {"Calm in the pool": calm, "Tide": tide_pts, "Wind": w, "Weather": wx, "Water quality": q, "Extras": extras}
-    return parts, notes, nogo
+    return capped(parts, POOL_TOPS), notes, nogo
 
 
 def score_pool_hour(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):

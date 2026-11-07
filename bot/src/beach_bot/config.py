@@ -7,9 +7,10 @@ TZ = ZoneInfo("Australia/Sydney")
 # ---------------------------------------------------------------- tunables
 DAYS_AHEAD = 2  # calendar events: today + this many days
 FORECAST_DAYS = 12  # the site shows this week and next (as far as the swell forecast reaches, ~9 days)
-EVENT_THRESHOLD = 80  # session score needed to post an event (8/10)
-FIRE_THRESHOLD = 90  # adds a 🔥 to the title (9/10+)
-KEEP_THRESHOLD = 70  # a posted event stays until the session drops below this (7/10), so it doesn't flip-flop
+EVENT_THRESHOLD = 80  # "worth it" on the site (8/10)
+CALENDAR_THRESHOLD = 90  # a session goes in the calendar at 9/10: an event should mean drop everything and go
+KEEP_THRESHOLD = 80  # a session in an event stays until it drops below this (8/10), so it doesn't flip-flop
+FIRE_THRESHOLD = 100  # a 🔥 in the title: 10/10, every part of the score at full marks
 SURF_THRESHOLD = EVENT_THRESHOLD
 FAVOURITE_TOLERANCE = 5  # R-TB1: a region's favourite (Clovelly in the east) wins if within this many points
 WINDOW_HOURS = 2  # sessions are judged on their best stretch this long, not the whole slot

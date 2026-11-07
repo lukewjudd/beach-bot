@@ -8,8 +8,8 @@ Checks the weather and ocean forecast and tells me when it's worth going to the 
 - Takes rain that's already fallen from BOM's rain gauges (Observatory Hill and Sydney Airport), since the models under-read storms
 - Checks Beachwatch for water quality (only today's forecast; otherwise it goes off recent rain)
 - Scores every beach for three sessions a day, every day: morning (sunrise to 11am), midday (11am to 2pm) and evening (2pm to sunset)
-- Anything 8/10 or better is "worth it" and goes in a shared Google Calendar, and 9+ gets a 🔥
-- If the forecast turns, the event gets removed once it drops below 7/10, so it doesn't flip-flop
+- Anything 8/10 or better is "worth it" on the site; 9/10 or better goes in a shared Google Calendar, one event a day, and a 10/10 (every part at full marks) gets a 🔥
+- If the forecast turns, a session comes off its event once it drops below 8/10, so it doesn't flip-flop
 - Thunderstorms rule everything out
 - Writes all the scores to a JSON file, which the map site reads
 

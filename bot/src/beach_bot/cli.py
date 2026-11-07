@@ -48,7 +48,7 @@ def run_region(region, now, args):
     soon = [s for s in sessions if s.day <= now.date() + timedelta(days=DAYS_AHEAD)]
 
     for sess in soon:
-        flag = "✅" if sess.is_good else "  "
+        flag = "📅" if sess.for_calendar else "✅" if sess.is_good else "  "  # calendar-worthy, worth it
         swim = sess.best_swim
         surf = sess.surf[0] if sess.surf else None
         print(
@@ -56,7 +56,7 @@ def run_region(region, now, args):
             f"swim: {swim[1].name if swim else '-'} {swim[0] if swim else ''}  "
             f"surf: {surf[1].name + ' ' + str(surf[0]) if surf else '-'}"
         )
-        if sess.is_good or args.all:
+        if sess.for_calendar or args.all:
             title, desc = event_body(sess, hours, ctx, beachwatch, now.date())
             print(f"     → {title}")
             print("       " + desc.replace("\n", "\n       "))

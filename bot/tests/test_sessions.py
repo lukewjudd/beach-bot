@@ -310,3 +310,17 @@ def test_the_bars_add_up_to_the_score():
         bars = report(sessions["am"], hours, ctx, {}, WED, b)
         expected = 95 - 5 * sum(10 - v for v in bars.values())
         assert abs(sc - expected) <= 12, (b.name, sc, bars)
+
+
+def test_no_part_goes_past_its_top():
+    # 27 Nov 2024 at Bondi (north end): a glassy north-easter, but 19° water. Its NE bonus used to lift wind to
+    # 25 of 15 and make it a 10/10; capped, the cool water costs it the 10
+    def glassy_ne(t, h):
+        h.update(wind_speed_10m=6.0, wind_direction_10m=30, wind_gusts_10m=14.0, sea_surface_temperature=19.0)
+        return h
+
+    hours, sun = make_forecast(WED, glassy_ne)
+    sessions, ctx = score(hours, sun, WED)
+    sc, bondi, _ = next(x for x in sessions["am"].swim if x[1].name == "Bondi (north end)")
+    assert sc < 100
+    assert report(sessions["am"], hours, ctx, {}, WED, bondi)["Wind"] == 10

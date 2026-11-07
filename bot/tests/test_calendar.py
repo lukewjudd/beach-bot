@@ -131,3 +131,15 @@ def test_an_event_under_way_is_left_alone():
     _, posted = run(SAT, datetime(2026, 11, 7, 8, tzinfo=TZ), svc, washout)  # the morning has started
     assert svc.log == []
     assert len(posted) == 3  # the site still shows what the event said
+
+
+def test_an_8_is_worth_it_on_the_site_but_not_an_event():
+    def warm_not_hot(t, h):  # 22° air: weather short of full marks, so an 8 rather than a 9
+        h.update(temperature_2m=22.0, sea_surface_temperature=21.0)
+        return h
+
+    svc = FakeCalendar()
+    sessions, posted = run(WED, datetime(2026, 11, 4, 4, tzinfo=TZ), svc, warm_not_hot)
+    assert any(s.is_good for s in sessions.values())
+    assert not any(s.for_calendar for s in sessions.values())
+    assert svc.log == [] and posted == set()
