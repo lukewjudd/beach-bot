@@ -4,7 +4,15 @@ import json
 from datetime import timedelta
 
 from .beaches import EASTERN, Pool, SurfSpot
-from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD, LIFEGUARD_LOG_DAYS, SLOT_NAMES
+from .config import (
+    DAYS_AHEAD,
+    EVENT_THRESHOLD,
+    FAVOURITE_TOLERANCE,
+    FIRE_THRESHOLD,
+    LIFEGUARD_LOG_DAYS,
+    SLOT_NAMES,
+    SURF_THRESHOLD,
+)
 from .scoring import at_beach
 from .sessions import (
     coast_report,
@@ -119,6 +127,9 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 ),
                 "tides": [{"kind": kind, "time": hour_label(t, 0)} for kind, t in ctx.tide_times(sess.day.isoformat())],
                 "fire": best >= FIRE_THRESHOLD,
+                # Surf's own call, for the site's surf mode: the best break on the surf scale, and whether it's in
+                # the day's surf event (pumping, 8/10+ on that scale)
+                "surf": surf_call(sess, posted, window),
                 "lead": {
                     "id": slug(lead, kind) if lead else None,
                     "kind": kind,
@@ -163,12 +174,29 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
             "bounds": [list(region.bounds[0]), list(region.bounds[1])],
         },
         "generated_at": now.isoformat(timespec="minutes"),
-        "thresholds": {"post": EVENT_THRESHOLD, "fire": FIRE_THRESHOLD},
+        "thresholds": {"post": EVENT_THRESHOLD, "fire": FIRE_THRESHOLD, "surf": SURF_THRESHOLD},
         # The favourite wins close calls (R-TB1); the site ranks its list the same way as the headline
         "favourite": {"id": spot_id(fav), "tolerance": FAVOURITE_TOLERANCE},
         "spots": spots,
         "sessions": out_sessions,
         "lifeguards": lifeguards(region, hours, beachwatch),
+    }
+
+
+def surf_call(sess, posted, window):
+    """The session's best surf break, or None where no break was scored."""
+    if not sess.surf:
+        return None
+    sc, sp, _ = sess.surf[0]
+    in_event = sess.key in getattr(posted, "surf", set()) if posted is not None else sess.surf_for_calendar
+    return {
+        "id": spot_id(sp),
+        "name": sp.name,
+        "score": sc,
+        "rating": out_of_10(sc),
+        "window": window(sp.name),
+        "posted": sc >= SURF_THRESHOLD,
+        "in_event": bool(in_event),
     }
 
 

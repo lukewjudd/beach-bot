@@ -4,6 +4,15 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-09
 
+- **Settings behind a cog**, top right next to the info button. It has swim or surf, the coast (Eastern suburbs or Northern beaches, moved out of the header) and units: wind in km/h, knots or mph, waves in metres or feet (whole feet, as surfers say it), and °C or °F. Units change only what's shown, including numbers in the bot's notes and the lifeguard reports ("~1.4m at the beach" becomes "~5ft at the beach"); scoring stays in km/h, metres and °C. Settings are saved in the browser, ready to become account preferences later. The line under the title says which coast and mode you're on ("Eastern suburbs · Swim").
+- **Swim or surf.** A setting picks which model the whole site follows. Swim is the default and is the site as it was, minus the surf breaks (Surf is gone from the Activity filter). Surf mode changes the whole page:
+  - the week grid shows each session's best surf break on the surf scale;
+  - the call says "Worth it" when the surf's pumping (8/10 or better);
+  - the headline shows that break's bars and hour strip;
+  - the list and map show only the surf breaks, with filled badges, since nothing else is on screen to tell them apart from.
+
+  The site remembers your choice, and `?mode=surf` in the link opens surf mode. scores.json now has each session's surf call (break, score, and whether it's in the day's surf event) and the surf threshold, so the site shows what the calendar posted. The About dialog explains the two models.
+
 - **The lifeguards' morning reports count on the day.** Randwick Council's lifeguards post a report each morning for Clovelly, Coogee, Maroubra and Little Bay (RSS feed, usually by 8:30am). The bot reads it on every run and only takes today's reports: an older one, like Clovelly's Sunday report still in the feed on Monday, is ignored. A beach they've closed is out for the rest of the day, with the reason "closed by lifeguards"; its ocean pools aren't. On 9 Nov this closed Coogee and Maroubra in a 2m south swell. Bluebottles sighted cost the beach its usual bluebottle points whatever the wind has done, and "none sighted" drops the wind-based guess. If the feed is down, scoring goes on as before.
 - **The site shows the report under a beach's conditions** for today's sessions: status, waves, rips, bluebottles, water temperature and the lifeguards' own words. About has a step for it (11. What the lifeguards say) and credits the feed.
 - **Reported vs modelled wave height is logged** in scores.json (`lifeguard_log`, kept 120 days): one row per beach per morning, to tune each beach's swell exposure against. The first morning already shows the model under-reading a big south swell: the lifeguards had 2m at Coogee and Maroubra, and the model had 0.9 m and 1.2 m.

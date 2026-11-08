@@ -46,6 +46,8 @@ export interface Session {
   confidence?: "high" | "low";
   tides?: { kind: "high" | "low"; time: string }[];
   sun?: { rise: string; set: string } | null;
+  /** Surf's own call: the best break on the surf scale, and whether it's in the day's surf event */
+  surf?: SurfCall | null;
   lead: { id: string | null; kind: SpotKind; name: string | null; score: number; rating: number; window: [string, string] | null };
   conditions: {
     wind_kmh: number;
@@ -71,6 +73,17 @@ export interface Session {
   scores: SpotScore[];
 }
 
+export interface SurfCall {
+  id: string;
+  name: string;
+  score: number;
+  rating: number;
+  window: [string, string] | null;
+  /** Pumping: 8/10 or better on the surf scale */
+  posted: boolean;
+  in_event: boolean;
+}
+
 /** A lifeguard's morning report for a beach (Randwick's patrolled beaches), as the feed has it */
 export interface LifeguardReport {
   time: string;
@@ -87,7 +100,7 @@ export interface LifeguardReport {
 export interface Scores {
   region?: { id: string; name: string; key: string };
   generated_at: string;
-  thresholds: { post: number; fire: number };
+  thresholds: { post: number; fire: number; surf?: number };
   favourite?: { id: string; tolerance: number };
   spots: Spot[];
   sessions: Session[];

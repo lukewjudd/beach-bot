@@ -23,12 +23,53 @@
 <body>
   <header class="top">
     <h1>Beach calls</h1>
-    <div class="region-pick" id="region-pick" role="group" aria-label="Region"></div>
     <p class="sub" id="updated"></p>
-    <button type="button" class="info-btn" id="about-open" aria-haspopup="dialog">
-      <span aria-hidden="true">i</span><span class="sr-only">About the data</span>
-    </button>
+    <div class="top-btns">
+      <button type="button" class="info-btn cog-btn" id="settings-open" aria-haspopup="dialog">
+        <span id="cog-icon"></span><span class="sr-only">Settings</span>
+      </button>
+      <button type="button" class="info-btn" id="about-open" aria-haspopup="dialog">
+        <span aria-hidden="true">i</span><span class="sr-only">About the data</span>
+      </button>
+    </div>
   </header>
+
+  <dialog class="about settings" id="settings" aria-labelledby="settings-title">
+    <div class="about-head">
+      <h2 id="settings-title">Settings</h2>
+      <button type="button" class="link" id="settings-close">Done</button>
+    </div>
+    <div class="setting">
+      <h3 id="mode-label">Swim or surf</h3>
+      <div class="mode-pick seg" id="mode-pick" role="group" aria-labelledby="mode-label">
+        <button type="button" data-mode="swim" aria-pressed="true">Swim</button>
+        <button type="button" data-mode="surf" aria-pressed="false">Surf</button>
+      </div>
+    </div>
+    <div class="setting">
+      <h3 id="region-label">Coast</h3>
+      <div class="region-pick seg" id="region-pick" role="group" aria-labelledby="region-label"></div>
+    </div>
+    <div class="setting">
+      <h3 id="wind-label">Wind</h3>
+      <div class="seg" data-unit="wind" role="group" aria-labelledby="wind-label">
+        <button type="button" data-v="kmh">km/h</button><button type="button" data-v="kn">knots</button><button type="button" data-v="mph">mph</button>
+      </div>
+    </div>
+    <div class="setting">
+      <h3 id="height-label">Waves</h3>
+      <div class="seg" data-unit="height" role="group" aria-labelledby="height-label">
+        <button type="button" data-v="m">metres</button><button type="button" data-v="ft">feet</button>
+      </div>
+    </div>
+    <div class="setting">
+      <h3 id="temp-label">Temperature</h3>
+      <div class="seg" data-unit="temp" role="group" aria-labelledby="temp-label">
+        <button type="button" data-v="c">°C</button><button type="button" data-v="f">°F</button>
+      </div>
+    </div>
+    <p class="fine">Saved in this browser.</p>
+  </dialog>
 
   <dialog class="about" id="about" aria-labelledby="about-title">
     <div class="about-head">
@@ -51,6 +92,13 @@
       <figcaption>Each day's three sessions on a 24-hour clock, noon at the top. Sunrise and sunset move through
         the year.</figcaption>
     </figure>
+    <h3>Swim or surf</h3>
+    <p>Swimming and surfing are scored by two different models. A swim score wants calm, clean, warm water, and a
+      surf score wants waves with some size and shape, so a great surf day can be a terrible swim. Settings (the cog,
+      top right) picks which one the whole page follows: the week, the call, the bars, the list and the map. Swim is the
+      default. A surf session is worth it at 8/10 on the surf scale, and pumping surf gets its own calendar event,
+      never mixed in with the swim one. Settings also has the coast and units (wind in km/h, knots or mph, waves in
+      metres or feet, °C or °F), and the page remembers them in your browser.</p>
     <h3>How swell and wind are worked out</h3>
     <p>The forecast describes the sea well offshore: a main swell, sometimes a second one, and chop from the local
       wind, each with a height, a direction and a period (the seconds between waves). What matters for a swim is
@@ -245,7 +293,6 @@
               <label><input type="checkbox" value="harbour"> Harbour</label>
               <label><input type="checkbox" value="snorkel"> Snorkel</label>
               <label><input type="checkbox" value="pool"> Pool</label>
-              <label><input type="checkbox" value="surf"> Surf</label>
             </fieldset>
           </details>
           <label>Sort

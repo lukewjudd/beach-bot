@@ -169,3 +169,27 @@ def test_pumping_surf_gets_its_own_clearly_labelled_event():
     assert "not a swim" in surf["description"]
     swim = svc.store.get("beach20261107")
     assert swim is None or not swim["summary"].startswith("🏄")  # the two scales never share an event
+
+
+def test_the_site_gets_each_sessions_surf_call_and_whether_its_in_the_surf_event():
+    from beach_bot.export import export_scores
+    from beach_bot.forecast import Context
+
+    def pumping(t, h):
+        h.update(wave_height=1.6, swell_wave_direction=100, swell_wave_period=12.0)
+        h.update(wind_speed_10m=6.0, wind_direction_10m=270, wind_gusts_10m=10.0)
+        return h
+
+    svc = FakeCalendar()
+    now = datetime(2026, 11, 7, 4, tzinfo=TZ)
+    sessions, posted = run(SAT, now, svc, pumping)
+    in_surf_event = set(svc.store["beach20261107su"]["extendedProperties"]["private"]["sessions"].split())
+    assert {s.key for s in sessions.values() if s.slot in in_surf_event} == posted.surf
+
+    hours, _ = make_forecast(SAT, pumping)
+    data = export_scores(list(sessions.values()), hours, Context(hours), {}, now, posted)
+    for out in data["sessions"]:
+        sess = next(s for s in sessions.values() if s.key == out["key"])
+        assert out["surf"]["name"] == sess.surf[0][1].name and out["surf"]["score"] == sess.surf[0][0]
+        assert out["surf"]["in_event"] == (sess.slot in in_surf_event)
+    assert data["thresholds"]["surf"] == 80

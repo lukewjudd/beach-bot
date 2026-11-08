@@ -134,6 +134,14 @@ def calendar_service():
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
 
 
+class Posted(set):
+    """Keys of the sessions in a live swim event (the set itself), and in a live surf event (.surf)."""
+
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.surf = set()
+
+
 def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
     """One swim event per day, covering that day's sessions at 9/10+ (weekday middays never go in), and a separate
     surf event on days the surf is pumping. A session already in an event stays until it drops a step below the
@@ -217,7 +225,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
             print(f"restored {key}  {title}")
         return keys
 
-    posted = set()
+    posted = Posted()
     for day in days:
         todays = sorted((s for s in sessions if s.day == day), key=lambda s: s.start)
         # Events from before days were bundled (one per session): cleared once, unless already under way
@@ -234,7 +242,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         posted |= put(
             day_key(todays[0]), todays, lambda s: s.for_calendar, lambda s: s.best >= KEEP_THRESHOLD, day_body
         )
-        put(
+        posted.surf |= put(
             day_key(todays[0]) + "su",
             todays,
             lambda s: s.surf_for_calendar,
