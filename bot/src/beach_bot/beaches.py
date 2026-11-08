@@ -13,6 +13,7 @@ class Beach:
     rain_often: float  # mm in 24h: "often" fails
     hazard: int  # Beachsafe 1-10
     beachwatch: str  # site name in the Beachwatch feed
+    lifeguard: str | None = None  # title in the Randwick lifeguard reports feed (Randwick's patrolled beaches)
     swim_limit: float = 1.2  # Hb above this = no swim
     poor_grade: bool = False  # R-R3: 3-day rain rule
     snorkel: bool = False
@@ -32,6 +33,7 @@ BEACHES = [
         20,
         2,
         "Clovelly Beach",
+        lifeguard="Clovelly Beach",
         snorkel=True,
     ),
     Beach(
@@ -45,10 +47,39 @@ BEACHES = [
         swim_limit=0.6,
         snorkel=True,
     ),
-    Beach("Coogee", 100, {"NE": 0.6, "E": 0.6, "SE": 0.35, "S": 0.25}, 1, 10, 4, "Coogee Beach", poor_grade=True),
-    Beach("Maroubra", 90, {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.6}, 5, 20, 6, "Maroubra Beach"),
+    Beach(
+        "Coogee",
+        100,
+        {"NE": 0.6, "E": 0.6, "SE": 0.35, "S": 0.25},
+        1,
+        10,
+        4,
+        "Coogee Beach",
+        poor_grade=True,
+        lifeguard="Coogee Beach",
+    ),
+    Beach(
+        "Maroubra",
+        90,
+        {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.6},
+        5,
+        20,
+        6,
+        "Maroubra Beach",
+        lifeguard="Maroubra Beach",
+    ),
     Beach("Malabar", 110, {"NE": 0.25, "E": 0.45, "SE": 0.5, "S": 0.3}, 1, 5, 3, "Malabar Beach"),
-    Beach("Little Bay", 45, {"NE": 0.35, "E": 0.4, "SE": 0.35, "S": 0.2}, 1, 10, 2, "Little Bay Beach", snorkel=True),
+    Beach(
+        "Little Bay",
+        45,
+        {"NE": 0.35, "E": 0.4, "SE": 0.35, "S": 0.2},
+        1,
+        10,
+        2,
+        "Little Bay Beach",
+        lifeguard="Little Bay Beach",
+        snorkel=True,
+    ),
     # Harbour beaches (research/eastern-additions.md §1): next to no ocean swell (k near 0), wind chop only.
     # Rain is the risk: Beachwatch and Woollahra say stay out 3 days after rain (R-H1, via poor_grade).
     # Hazard: Beachsafe doesn't rate them; 1-2 is a guess.

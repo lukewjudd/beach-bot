@@ -2,6 +2,12 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-09
+
+- **The lifeguards' morning reports count on the day.** Randwick Council's lifeguards post a report each morning for Clovelly, Coogee, Maroubra and Little Bay (RSS feed, usually by 8:30am). The bot reads it on every run and only takes today's reports: an older one, like Clovelly's Sunday report still in the feed on Monday, is ignored. A beach they've closed is out for the rest of the day, with the reason "closed by lifeguards"; its ocean pools aren't. On 9 Nov this closed Coogee and Maroubra in a 2m south swell. Bluebottles sighted cost the beach its usual bluebottle points whatever the wind has done, and "none sighted" drops the wind-based guess. If the feed is down, scoring goes on as before.
+- **The site shows the report under a beach's conditions** for today's sessions: status, waves, rips, bluebottles, water temperature and the lifeguards' own words. About has a step for it (11. What the lifeguards say) and credits the feed.
+- **Reported vs modelled wave height is logged** in scores.json (`lifeguard_log`, kept 120 days): one row per beach per morning, to tune each beach's swell exposure against. The first morning already shows the model under-reading a big south swell: the lifeguards had 2m at Coogee and Maroubra, and the model had 0.9 m and 1.2 m.
+
 ## 2026-11-07
 
 - **Surf bars shrink with the waves.** A surf score starts from 5 and the wave size scales the quality, wind and weather points (tiny waves keep a third of them), but the surf bars showed those points before the scaling: Bondi (south end) this evening read Wind 6, Wave size 6, Wave quality 6 and Weather 10 for a 2/10. Now each bar is what the part actually adds, as a share of the most it could: Wind 1, Wave size 4, Wave quality 2 and Weather 5.

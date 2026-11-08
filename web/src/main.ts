@@ -548,8 +548,28 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div></div>` : ""}
+    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
   </li>`;
+}
+
+// This morning's lifeguard report, on today's sessions only: it's what they saw first thing, not a forecast
+function lifeguards(s: Session, spot: Spot) {
+  const r = data.lifeguards?.[spot.id];
+  if (!r || s.date !== data.generated_at.slice(0, 10)) return "";
+  const when = new Date(r.time)
+    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", timeZone: "Australia/Sydney" })
+    .replace(/\s/g, "")
+    .toLowerCase();
+  const rows = [
+    ["Beach", r.status],
+    ["Waves", r.waves],
+    ["Rips", r.rips],
+    ["Bluebottles", r.bluebottles],
+    ["Water", r.water_c != null ? `${r.water_c}°` : null],
+  ].filter(([, v]) => v);
+  return `<h3>Lifeguards, ${esc(when)}${r.summary ? `: ${esc(r.summary.toLowerCase())}` : ""}</h3>
+    <dl class="lifeguards${r.closed ? " closed" : ""}">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    ${r.description ? `<p class="lifeguard-says">“${esc(r.description)}”</p>` : ""}`;
 }
 
 function renderSpots(s: Session) {

@@ -402,3 +402,11 @@ button:disabled { opacity: .45; cursor: default; }
 .warn { color: var(--r-amber); }
 .spot-head:focus-visible, .slot:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* This morning's lifeguard report, under a beach's conditions */
+.details .report + h3 { margin-top: 16px; }
+.details dl.lifeguards { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 0; font-size: 14px; }
+.details dl.lifeguards dt { color: var(--muted); }
+.details dl.lifeguards dd { margin: 0; }
+.details dl.lifeguards.closed dd:first-of-type { color: var(--r-red); font-weight: 700; }
+.details .lifeguard-says { margin: 8px 0 0; font-size: 14px; color: var(--muted); font-style: italic; }

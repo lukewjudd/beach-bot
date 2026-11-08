@@ -52,7 +52,7 @@ def score(hours, sun, day, beachwatch=None, now=None):
     ctx = Context(hours)
     sessions = build_sessions(hours, sun, now, days=[day])
     for s in sessions:
-        score_session(s, hours, ctx, beachwatch or {}, now.date())
+        score_session(s, hours, ctx, {} if beachwatch is None else beachwatch, now.date())
     return {s.slot: s for s in sessions}, ctx
 
 

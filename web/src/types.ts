@@ -71,6 +71,19 @@ export interface Session {
   scores: SpotScore[];
 }
 
+/** A lifeguard's morning report for a beach (Randwick's patrolled beaches), as the feed has it */
+export interface LifeguardReport {
+  time: string;
+  summary: string | null;
+  status: string | null;
+  closed: boolean;
+  water_c: number | null;
+  waves: string | null;
+  rips: string | null;
+  bluebottles: string | null;
+  description: string | null;
+}
+
 export interface Scores {
   region?: { id: string; name: string; key: string };
   generated_at: string;
@@ -78,4 +91,6 @@ export interface Scores {
   favourite?: { id: string; tolerance: number };
   spots: Spot[];
   sessions: Session[];
+  /** This morning's lifeguard reports, by spot id */
+  lifeguards?: Record<string, LifeguardReport>;
 }

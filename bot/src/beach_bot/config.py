@@ -44,3 +44,7 @@ RAIN_MODELS = ("best_match", "ecmwf_ifs025", "icon_seamless", "gem_seamless", "j
 STORM_CODE = 95
 STORM_CAPE = 1000  # J/kg
 STORM_RAIN_PROB = 60
+
+# Randwick Council's lifeguard reports: each patrolled beach, once a morning (about 6:45-8:30am)
+LIFEGUARD_FEED = "https://www.randwick.nsw.gov.au/integration/feeds/lifeguard-reports"
+LIFEGUARD_LOG_DAYS = 120  # how long scores.json keeps reported vs modelled wave heights for calibration

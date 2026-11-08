@@ -1,5 +1,6 @@
-"""Fetching forecasts (Open-Meteo, Beachwatch) and look-backs over the hourly series."""
+"""Fetching forecasts (Open-Meteo, Beachwatch, Randwick lifeguards) and look-backs over the hourly series."""
 
+import html
 import io
 import json
 import math
@@ -7,7 +8,9 @@ import re
 import sys
 import tarfile
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
 from statistics import mean, quantiles
 
 import requests
@@ -17,6 +20,7 @@ from .config import (
     BOM_OBS_URL,
     COOL_CHANGE,
     FORECAST_DAYS,
+    LIFEGUARD_FEED,
     RAIN_MODELS,
     TZ,
     WARMTH_AHEAD_TO,
@@ -102,6 +106,7 @@ def load_data(region=EASTERN):
     except Exception as e:  # undocumented API: fall back to rain rules
         print(f"Beachwatch unavailable ({e}); using rain thresholds", file=sys.stderr)
         beachwatch = {}
+    beachwatch = Reports(beachwatch, lifeguard_reports(datetime.now(TZ).date()))
 
     hours = {}
     for i, t in enumerate(wx["hourly"]["time"]):
@@ -116,6 +121,83 @@ def load_data(region=EASTERN):
         for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
     }
     return hours, sun, beachwatch
+
+
+class Reports(dict):
+    """Today's reports from the people on the beach. The dict itself is Beachwatch's pollution forecasts by site
+    name (as it always was, so a plain dict still works); .lifeguards is the lifeguards' morning reports by
+    their feed title (Beach.lifeguard)."""
+
+    def __init__(self, beachwatch=None, lifeguards=None):
+        super().__init__(beachwatch or {})
+        self.lifeguards = lifeguards or {}
+
+
+def lifeguard_reports(today):
+    """Randwick Council's lifeguard reports (Clovelly, Coogee, Maroubra, Little Bay), or {} if the feed's down.
+    It's the council's RSS feed for exactly this; the reports page itself sits behind a bot check, so only the
+    feed is read."""
+    try:
+        r = requests.get(LIFEGUARD_FEED, timeout=30)
+        r.raise_for_status()
+        return parse_lifeguards(r.text, today)
+    except Exception as e:
+        print(f"lifeguard reports unavailable ({e})", file=sys.stderr)
+        return {}
+
+
+def parse_lifeguards(xml_text, today):
+    """Today's report per beach, by feed title. A beach's item stays in the feed until its next report, so one
+    from an earlier day is dropped rather than read as today's. Each report's description is labelled fields
+    (<p><strong>Rips:</strong> Dangerous</p>); the free-text Description is kept as it's written."""
+    out = {}
+    for item in ET.fromstring(xml_text).iter("item"):
+        title = (item.findtext("title") or "").strip()
+        try:
+            when = parsedate_to_datetime(item.findtext("pubDate") or "").astimezone(TZ)
+        except (TypeError, ValueError):
+            continue
+        if not title or when.date() != today:
+            continue
+        fields = {
+            k.strip().lower(): html.unescape(re.sub(r"<[^>]+>", "", v)).strip()
+            for k, v in re.findall(
+                r"<strong>\s*([^<:]+):\s*</strong>(.*?)</p>", item.findtext("description") or "", re.S
+            )
+        }
+        out[title] = {
+            "time": when.isoformat(timespec="minutes"),
+            "summary": fields.get("summary"),
+            "status": fields.get("beach status"),
+            "closed": (fields.get("beach status") or "").lower().startswith("closed"),
+            "water_c": _number(fields.get("water temp")),
+            "waves": fields.get("wave height"),
+            "waves_m": _number(fields.get("wave height"), largest=True),
+            "rips": fields.get("rips"),
+            "bluebottles": fields.get("bluebottles"),
+            "stingers": _stingers(fields.get("bluebottles")),
+            "description": fields.get("description"),
+        }
+    return out
+
+
+def _number(text, largest=False):
+    """18 from "18 C"; 2 from "+2m"; with largest, 1 from "0.5-1m"."""
+    nums = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", text or "")]
+    return (max(nums) if largest else nums[0]) if nums else None
+
+
+def _stingers(text):
+    """ "none" when the lifeguards say there aren't any, "seen" when they've seen some, None when it's not said
+    or it's worded in a way that isn't clear either way."""
+    t = (text or "").lower()
+    if not t:
+        return None
+    if re.search(r"\b(none|nil|no)\b", t):
+        return "none"
+    if re.search(r"sighted|present|some|few|many|lots|numerous|heavy|light|moderate|scattered|\d", t):
+        return "seen"
+    return None
 
 
 def fresh_forecasts(features, today):

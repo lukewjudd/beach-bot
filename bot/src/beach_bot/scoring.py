@@ -125,6 +125,12 @@ def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today:
         nogo = nogo or q_notes[-1]
     notes += q_notes
 
+    # The lifeguards closed it this morning (R-LG1): out for the rest of today. Their word is the reason given
+    # over the model's (swell, pollution), though storms still say storms.
+    lg = lifeguards_say(b, t, beachwatch, today)
+    if lg and lg["closed"] and not storm(h):
+        nogo = "closed by lifeguards"
+
     # Snorkelling (R-S4, R-R4): small swell, and clear water. Rain and runoff cloud it for a couple of days.
     extras = 0
     if b.snorkel:
@@ -138,15 +144,18 @@ def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today:
             notes.append("good snorkelling")
     wx = None if storm(h) else weather(h, t, ctx, notes)
 
-    # Bluebottles (R-B1)
-    if month in (11, 12, 1, 2, 3) and not b.harbour:  # they don't make it into the harbour
+    # Bluebottles (R-B1). Today, the lifeguards' word beats the wind (R-LG1): none sighted clears the guess, and
+    # some sighted takes the beach's full penalty whatever the wind's done.
+    stingers = lg["stingers"] if lg else None
+    if stingers == "seen":
+        extras -= BLUEBOTTLE_PENALTY.get(b.name, 5)
+        notes.append("bluebottles reported")
+    elif stingers is None and month in (11, 12, 1, 2, 3) and not b.harbour:  # they don't make it into the harbour
         w24, dirs = ctx.mean_wind(t, 24)
         ne = sum(20 <= d <= 70 for d in dirs) > len(dirs) / 2 if dirs else False
         south = sum(135 <= d <= 200 for d in dirs) > len(dirs) / 2 if dirs else False
         if (ne or south) and w24 >= 20:
-            pen = {"Maroubra": 20, "Coogee": 10, "Bronte": 10, "Tamarama": 10, "Clovelly": 3 if ne else 8}.get(
-                b.name, 5
-            )
+            pen = 3 if ne and b.name == "Clovelly" else BLUEBOTTLE_PENALTY.get(b.name, 5)
             extras -= pen * (2 if w24 >= 30 else 1)
             if pen >= 8:
                 notes.append("bluebottles possible")
@@ -161,6 +170,18 @@ def score_swim_hour(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, t
     if nogo:
         return None, [nogo]  # just the reason it's a no-go
     return max(0, min(100, SWIM_BASE + sum(parts.values()))), notes
+
+
+# Bluebottle penalty by beach (R-B1): Maroubra catches the most; Clovelly's inlet only on a southerly
+BLUEBOTTLE_PENALTY = {"Maroubra": 20, "Coogee": 10, "Bronte": 10, "Tamarama": 10, "Clovelly": 8}
+
+
+def lifeguards_say(b: Beach, t: str, beachwatch: dict, today: date):
+    """The lifeguards' report for this beach this morning (R-LG1), which only covers today. Only Randwick's
+    patrolled beaches have one; `beachwatch` is forecast.Reports, or a plain dict with no lifeguard reports."""
+    if not b.lifeguard or t[:10] != today.isoformat():
+        return None
+    return getattr(beachwatch, "lifeguards", {}).get(b.lifeguard)
 
 
 def beachwatch_says(b: Beach, t: str, beachwatch: dict, today: date):

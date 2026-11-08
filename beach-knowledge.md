@@ -251,6 +251,13 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 - R-PT3 Summer weekday evening (Oct–Mar): assume a 28–37 km/h NE sea breeze from mid-afternoon to sunset or later [S26]. Apply R-W6 automatically even if the model under-forecasts. This favours Bondi North, Clovelly and pools over Gordons, Little Bay and Bronte. [DERIVED]
 - R-PT4 Weekend daytime: patrol bonus +5 at patrolled beaches. SLSC volunteers are on duty on weekends and holidays, late Sept–April [S34].
 
+- R-LG1 Lifeguard reports (added 2026-11-09). Randwick Council's lifeguards post a report for each beach they patrol each morning, about 6:45–8:30am: beach status, summary, wave height, rips, bluebottles, water temperature and a free-text description. It is published as an RSS feed [S-LG]. The feed currently covers Clovelly, Coogee and Maroubra, and the reports page also lists Little Bay. A beach's item stays in the feed until its next report, so a report from an earlier day is ignored. The rules apply to today only:
+  - Beach status "Closed" → NO for that beach for the rest of the day, with the reason "closed by lifeguards". Its ocean pools are scored as usual.
+  - Bluebottles sighted → the beach's R-B1 penalty applies whatever the wind, with the note "bluebottles reported".
+  - "None sighted" → R-B1's wind-based penalty is dropped.
+  - Wave height is logged next to the swell model's height at that beach and hour, for calibrating exposure (§4.2). On 9 Nov 2026, with a 2m south swell, the lifeguards had 2m at Coogee and "+2m" at Maroubra; the model had 0.9 m and 1.2 m.
+  - Water temperature, rips and the description are shown only.
+
 ### 4.8 Tie-break
 - R-TB1 After all rules, IF Clovelly's score ≥ (best score − 5) AND Clovelly is not "NO" → pick Clovelly. (User preference. A 5-point tolerance acts as a soft tie.)
 
@@ -279,6 +286,7 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 ---
 
 ## Sources
+- [S-LG] Randwick City Council lifeguard reports, RSS feed: https://www.randwick.nsw.gov.au/integration/feeds/lifeguard-reports (the reports page links to it; read 2026-11-09).
 
 - **S1** Beachsafe (SLSA), Bondi Beach: https://beachsafe.org.au/beach/nsw/waverley/bondi-beach/bondi-beach (data read via undocumented JSON https://beachsafe.org.au/api/v4/beach/bondi-beach)
 - **S2** Beachsafe, Tamarama: https://beachsafe.org.au/beach/nsw/waverley/tamarama/tamarama (JSON /api/v4/beach/tamarama)

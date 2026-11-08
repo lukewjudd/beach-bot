@@ -4,7 +4,8 @@ import json
 from datetime import timedelta
 
 from .beaches import EASTERN, Pool, SurfSpot
-from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD, SLOT_NAMES
+from .config import DAYS_AHEAD, EVENT_THRESHOLD, FAVOURITE_TOLERANCE, FIRE_THRESHOLD, LIFEGUARD_LOG_DAYS, SLOT_NAMES
+from .scoring import at_beach
 from .sessions import (
     coast_report,
     conditions,
@@ -167,13 +168,28 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
         "favourite": {"id": spot_id(fav), "tolerance": FAVOURITE_TOLERANCE},
         "spots": spots,
         "sessions": out_sessions,
+        "lifeguards": lifeguards(region, hours, beachwatch),
     }
+
+
+def lifeguards(region, hours, beachwatch):
+    """This morning's lifeguard reports by spot id (R-LG1), each with what the swell model had for that beach at
+    that hour, so the two can be compared over time (see LIFEGUARD_LOG_DAYS)."""
+    out = {}
+    for b in region.beaches:
+        rep = getattr(beachwatch, "lifeguards", {}).get(b.lifeguard) if b.lifeguard else None
+        if not rep:
+            continue
+        h = hours.get(rep["time"][:13] + ":00")
+        out[spot_id(b)] = {**rep, "modelled_m": round(at_beach(h, b), 1) if h else None}
+    return out
 
 
 def keep_this_week(data, previous, now):
     """Sessions that have started keep the last call made before they started, until the week (Mon-Sun) is out,
     so the site can show how each one was called. The bot keeps no history of its own: `previous` is the last
     scores.json, which already holds those frozen calls."""
+    data["lifeguard_log"] = lifeguard_log(data, previous, now)
     if not previous:
         return data
     monday = (now.date() - timedelta(days=now.weekday())).isoformat()
@@ -185,6 +201,27 @@ def keep_this_week(data, previous, now):
         fresh[old["key"]] = {**old, "started": True, "frozen": True}
     data["sessions"] = sorted(fresh.values(), key=lambda s: s["start"])
     return data
+
+
+def lifeguard_log(data, previous, now):
+    """Wave height the lifeguards reported next to the swell model's, one row per beach per morning, kept for
+    LIFEGUARD_LOG_DAYS: the observations to tune each beach's exposure against. Carried in scores.json like the
+    week's frozen calls, since the bot keeps no history of its own."""
+    since = (now.date() - timedelta(days=LIFEGUARD_LOG_DAYS)).isoformat()
+    rows = {(r["date"], r["id"]): r for r in (previous or {}).get("lifeguard_log", []) if r["date"] >= since}
+    for sid, rep in data.get("lifeguards", {}).items():
+        if rep.get("waves_m") is None and rep.get("modelled_m") is None:
+            continue
+        day = rep["time"][:10]
+        rows[day, sid] = {
+            "date": day,
+            "id": sid,
+            "time": rep["time"][11:16],
+            "reported": rep.get("waves"),
+            "reported_m": rep.get("waves_m"),
+            "modelled_m": rep.get("modelled_m"),
+        }
+    return sorted(rows.values(), key=lambda r: (r["date"], r["id"]))
 
 
 def load_previous(bucket, name):
