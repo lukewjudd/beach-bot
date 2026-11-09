@@ -14,7 +14,7 @@ Checks the weather and ocean forecast and tells me when it's worth going to the 
 - Thunderstorms rule everything out
 - Writes all the scores to a JSON file, which the map site reads
 
-Runs on Cloud Run every hour from 4:15am to 9:15pm. The 6:15 run catches Beachwatch's daily update.
+Runs on Cloud Run every hour, at a quarter past, around the clock. The 6:15 run catches Beachwatch's daily update.
 
 Map: https://lukewjudd.github.io/beach-bot/
 

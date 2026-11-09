@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-09
 
+- **Runs every hour around the clock instead of 4:15am to 9:15pm.** The site no longer says "updated 7h ago" overnight, and the overnight model updates reach the morning calls before the 4:15 run. It still fits Cloud Run's free tier, at about 40% of the free compute.
 - **A Swell switch on the map, next to Wind, off by default.** It draws faint swell lines drifting the way the swell is travelling, in the spirit of Windy's and Surfline's swell maps.
   - **Shape:** each crest is a short arc bowing forward in the middle, staggered so it reads as sea rather than a grid.
   - **Period:** long-period groundswell gets wider-spaced, quicker lines; short wind swell gets tight ones.
