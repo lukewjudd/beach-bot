@@ -239,6 +239,7 @@ def conditions(sess, hours, keys=None):
         "hs": mean(h.get("wave_height") or 0 for h in hs),
         "period": mean(h.get("swell_wave_period") or 0 for h in hs),
         "swell_dir": compass(hs[len(hs) // 2].get("swell_wave_direction") or 0),
+        "swell_deg": round(hs[len(hs) // 2].get("swell_wave_direction") or 0),
         "rain_prob": max(h.get("precipitation_probability") or 0 for h in hs),
         "uv": max(h.get("uv_index") or 0 for h in hs),
     }

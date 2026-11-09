@@ -93,7 +93,7 @@ def load_data(region=EASTERN):
             "cell_selection": "sea",
             "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
             "secondary_swell_wave_height,secondary_swell_wave_direction,secondary_swell_wave_period,"
-            "wind_wave_height,wind_wave_direction,wind_wave_period,"
+            "wind_wave_height,wind_wave_direction,wind_wave_period,wave_period,"
             "sea_surface_temperature,sea_level_height_msl",
             "timezone": "Australia/Sydney",
             "past_days": 4,

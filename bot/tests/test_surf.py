@@ -82,3 +82,40 @@ def test_surf_bars_shrink_with_the_waves_like_the_score():
     sc, spot, _ = surf(sessions["am"], "Bondi (south end)")
     bars = report(sessions["am"], hours, Context(hours), {}, WED, spot)
     assert out_of_10(sc) >= 8 and min(bars.values()) >= 7, bars
+
+
+def maroubra_12_apr(t, h):
+    """Maroubra, Sun 12 Apr 2026: 4-6 ft and clean (a drone clip at 8am), the forecast as the archive has it. A
+    1.4m east swell whose swell period reads 8 s while the whole sea's is 11 s, and a 21 km/h westerly gusting 49."""
+    h.update(wave_height=1.4, swell_wave_direction=90, swell_wave_period=8.0, wave_period=11.0)
+    h.update(wind_speed_10m=21.0, wind_direction_10m=270, wind_gusts_10m=49.0)
+    return h
+
+
+def test_a_classic_maroubra_morning_scores_like_one():
+    sessions, _ = score(*make_forecast(WED, maroubra_12_apr), WED)
+
+    assert out_of_10(surf(sessions["am"], "Maroubra")[0]) >= 8
+
+
+def test_surf_reads_the_longer_of_the_swell_and_whole_sea_periods():
+    short, _ = score(*make_forecast(WED, swell(1.4, 90, 8, wind=6)), WED)
+
+    def longer(t, h):
+        h = swell(1.4, 90, 8, wind=6)(t, h)
+        h["wave_period"] = 11.0
+        return h
+
+    long_, _ = score(*make_forecast(WED, longer), WED)
+    assert surf(long_["am"], "Maroubra")[0] > surf(short["am"], "Maroubra")[0]
+
+
+def test_a_strong_offshore_suits_solid_swell_better_than_small():
+    from beach_bot.beaches import EASTERN
+    from beach_bot.scoring import offshore_points
+
+    maroubra = next(sp for sp in EASTERN.surf if sp.name == "Maroubra")
+    h = {"wind_speed_10m": 25.0, "wind_direction_10m": 270, "wind_gusts_10m": 40.0}
+    assert offshore_points(h, maroubra, 1.6) > offshore_points(h, maroubra, 0.6)
+    assert offshore_points({**h, "wind_speed_10m": 12.0, "wind_gusts_10m": 18.0}, maroubra, 1.5) == 30
+    assert offshore_points({**h, "wind_speed_10m": 50.0, "wind_gusts_10m": 75.0}, maroubra, 2.0) <= 2

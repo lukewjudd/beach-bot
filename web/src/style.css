@@ -13,6 +13,7 @@
   --on-pill: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .05);
   --wind: rgba(255, 255, 255, .75);
+  --swell: rgba(14, 110, 140, .6);
   color-scheme: light;
 }
 
@@ -31,6 +32,7 @@
     --on-pill: #0d1417;
     --shadow: none;
     --wind: rgba(255, 255, 255, .5);
+    --swell: rgba(160, 225, 245, .7);
     color-scheme: dark;
   }
 }
@@ -49,6 +51,7 @@
   --on-pill: #0d1417;
   --shadow: none;
   --wind: rgba(255, 255, 255, .5);
+  --swell: rgba(160, 225, 245, .7);
   color-scheme: dark;
 }
 
@@ -377,21 +380,20 @@ button:disabled { opacity: .45; cursor: default; }
 @media (min-width: 860px) { .popup .link { display: none; } }
 
 /* Wind trails switch, with the zoom buttons bottom-left */
-.wind-layer { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
-#map .wind-switch {
-  display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; min-height: 36px;
-  background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
-  font: 600 13px system-ui, sans-serif; box-shadow: var(--shadow); cursor: pointer;
+/* Wind and swell canvases live in their own map panes, under the score pins */
+.wind-layer, .swell-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
+.swell-layer[hidden], .wind-layer[hidden] { display: none; }
+/* Map layer switches: one small pill of icon chips */
+#map .layer-switches {
+  display: flex; gap: 2px; padding: 3px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; box-shadow: var(--shadow);
 }
-#map .wind-switch .track {
-  position: relative; width: 30px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s;
+#map .layer-chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 9px 0 7px; border: 0;
+  border-radius: 999px; background: none; color: var(--muted); font: 600 12px system-ui, sans-serif; cursor: pointer;
 }
-#map .wind-switch .knob {
-  position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: transform .15s;
-}
-#map .wind-switch[aria-checked="true"] .track { background: var(--accent); }
-#map .wind-switch[aria-checked="true"] .knob { transform: translateX(12px); }
+#map .layer-chip .icon { width: 14px; height: 14px; }
+#map .layer-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-pill); }
 
 .error { color: var(--muted); padding: 24px 0; }
 

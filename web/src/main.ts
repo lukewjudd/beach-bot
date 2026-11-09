@@ -51,6 +51,7 @@ const mapModule = import("./map");
 let mapApi: typeof import("./map") | undefined;
 let map: LeafletMap | undefined;
 let wind: import("./wind").Wind | undefined;
+let swell: import("./swell").Swell | undefined;
 let markers: Record<string, Marker> = {};
 
 let current = 0; // index into data.sessions
@@ -69,6 +70,7 @@ try {
 }
 let sort = load("sort") ?? "best";
 let windOn = load("wind") === "on";
+let swellOn = load("swell") === "on"; // off unless this browser turned it on
 // Swim or surf: two models with their own scores and calendar events, so the whole page follows one. Swim unless
 // the link says surf or this browser last picked it
 type Mode = "swim" | "surf";
@@ -209,7 +211,12 @@ async function start() {
     mapApi = m;
     wind = m.windLayer(map);
     wind.show(windOn);
-    m.windButton(map, windOn, toggleWind);
+    swell = m.swellLayer(map, region.id);
+    swell.show(swellOn);
+    m.layerSwitches(map, [
+      { label: "Wind", icon: "wind", on: windOn, toggle: toggleWind },
+      { label: "Swell", icon: "swell", on: swellOn, toggle: toggleSwell },
+    ]);
     // Phones, map view: "Details" in a popup goes to that spot's card in the list. Bound on the popup itself,
     // since Leaflet stops clicks inside popups from reaching the page
     map.on("popupopen", (e) => {
@@ -284,6 +291,13 @@ function renderUpdated() {
 }
 
 // ---------------------------------------------------------------- controls
+function toggleSwell() {
+  swellOn = !swellOn;
+  save("swell", swellOn ? "on" : "off");
+  swell?.show(swellOn);
+  return swellOn;
+}
+
 function toggleWind() {
   windOn = !windOn;
   save("wind", windOn ? "on" : "off");
@@ -728,6 +742,8 @@ function whyNot(s: Session, spot: Spot) {
   return why ?? "not scored"; // lower case, like the notes on spots that are scored
 }
 
+const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+
 function render() {
   const s = data.sessions[current];
   week = weekOf(s);
@@ -735,6 +751,8 @@ function render() {
   renderHero(s);
   const c = s.conditions;
   if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
+  const swellDeg = c.swell_deg ?? COMPASS.indexOf(c.swell_dir) * 22.5; // older scores only have the compass point
+  if (swellDeg >= 0) swell?.set(c.swell_m, swellDeg, c.period_s);
   renderPins(s);
   renderSpots(s);
 }

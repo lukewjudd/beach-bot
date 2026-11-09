@@ -4,6 +4,7 @@
 // has one wind for the whole coast, so every particle shares a direction, with a little wobble.
 
 import type L from "leaflet";
+import { viewportCanvas } from "./pane";
 
 interface Particle {
   x: number;
@@ -20,9 +21,7 @@ export interface Wind {
 
 export function windLayer(map: L.Map): Wind {
   const container = map.getContainer();
-  const canvas = document.createElement("canvas");
-  canvas.className = "wind-layer";
-  container.appendChild(canvas);
+  const canvas = viewportCanvas(map, "wind", 460); // under the score pins
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 

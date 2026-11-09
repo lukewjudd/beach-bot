@@ -146,6 +146,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                     "wind_desc": c["wind_desc"],
                     "swell_m": round(c["hs"], 1),
                     "swell_dir": c["swell_dir"],
+                    "swell_deg": c["swell_deg"],  # where it comes FROM, for the map's swell layer
                     "period_s": round(c["period"]),
                     "air_c": round(c["air"]),
                     "water_c": round(c["sea"]) if c["sea"] else None,

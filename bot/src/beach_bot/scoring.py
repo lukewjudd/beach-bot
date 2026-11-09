@@ -1,5 +1,6 @@
 """Hour-by-hour scores for swimming and surfing. Rule ids (R-W1 etc.) refer to beach-knowledge.md."""
 
+import math
 from datetime import date
 
 from . import swell
@@ -34,11 +35,20 @@ def at_beach(h: dict, spot):
     return sum(swell.breaker(ht * swell.exposure(spot, key, d, per), per) ** 2 for ht, d, per in wave_trains(h)) ** 0.5
 
 
+def surf_period(h: dict):
+    """The period a surfer would quote. The forecast's swell period (MeteoFrance's swell partition) reads about 3 s
+    short of the peak period on groundswell days: 6.8 s on 11 Apr 2024, when the whole sea was 9.3 s and the
+    reanalysis peak 9.65 s, with 6-8 ft barrels at Bronte. So take the longer of the swell's and the whole sea's.
+    Backtested against 39 dated days since 2023 (research/surf-history.md): good days went from a median 5/10 to 7,
+    and the blown-out days stayed low."""
+    return max(h.get("swell_wave_period") or 0, h.get("wave_period") or 0)
+
+
 def at_break(h: dict, spot):
     """Wave size at a surf break: the whole sea on the main swell's direction and period. Unlike the beaches it
     isn't split into trains: the size bands were set against the combined height, and splitting them out
     dropped classic days (1.8m SSE at 11s, offshore wind) out of the sweet spot."""
-    per = h.get("swell_wave_period") or 0
+    per = surf_period(h)
     k = swell.exposure(spot, swell.key(spot), h.get("swell_wave_direction") or 0, per)
     return swell.breaker((h.get("wave_height") or 0) * k, per, exponent=0.7, ref=10)
 
@@ -354,7 +364,7 @@ def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, to
         nogo = nogo or q_notes[-1]
     notes += q_notes
     sdir = h.get("swell_wave_direction") or 0
-    period = h.get("swell_wave_period") or 0
+    period = surf_period(h)
     wind = h["wind_speed_10m"]
     size = at_break(h, sp)
 
@@ -391,14 +401,14 @@ def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, to
     if wind < 8:
         w = 28
     elif kind == "offshore":
-        w = 30 if wind <= 12 else 22 if wind <= 20 else 12
+        w = offshore_points(h, sp, size)
     elif kind == "cross":
         w = 15 if wind < 12 else 8 if wind < 20 else 3
         notes.append("cross-shore wind")
     else:
         w = 6 if wind < 12 else 1 if wind < 20 else 0
         notes.append("onshore wind")
-    if (h.get("wind_gusts_10m") or 0) >= 40:
+    if (h.get("wind_gusts_10m") or 0) >= 40 and kind != "offshore":  # offshore gusts are in offshore_points
         w -= 5
     temp = ctx.warmth(t)
     wx = 5 if temp >= 24 else 0 if temp >= 16 else -5
@@ -406,6 +416,40 @@ def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, to
         wx -= 5
     parts = {"Wave size": size_pts, "Wave quality": per, "Wind": w, "Weather": wx, "Water quality": q_water}
     return parts, factor, notes, nogo
+
+
+def offshore_points(h: dict, sp: SurfSpot, size: float):
+    """Wind points (of 30) for an offshore of 8 km/h or more, judged against how fast the waves are breaking
+    (research/offshore-wind-surf.md). Offshore wind holds a wave up and makes it plunge, and lab and field studies
+    find the shape keeps improving or holds up to well past the wave's own speed; what a strong offshore spoils is
+    catching the wave (paddling in, spray, late drops), and bigger, faster waves shrug that off. So the same 21 km/h
+    westerly that's too much for a 0.6m wave is ideal on 1.5m of groundswell: Maroubra on 12 Apr 2026, 4-6 ft and
+    clean in a 21 km/h westerly gusting 49, scored 7/10 under a flat "over 20 km/h is bad" rule."""
+    wind, gust = h["wind_speed_10m"], h.get("wind_gusts_10m") or 0
+    if wind >= 45 or gust >= 70:
+        return 2  # wild, whatever the swell
+    off_dir = (sp.facing + 180) % 360  # wind blowing from here is straight offshore
+    across = math.cos(math.radians(abs((h["wind_direction_10m"] - off_dir + 180) % 360 - 180)))
+    c = math.sqrt(9.81 * max(size, 0.3) / 0.78) * 3.6  # breaking-wave speed, km/h (solitary wave, depth = H/0.78)
+    r = wind * across / c
+    f = (
+        1.0
+        if r <= 0.8
+        else _lerp(r, 0.8, 1.3, 1.0, 0.85)
+        if r <= 1.3
+        else _lerp(r, 1.3, 2.0, 0.85, 0.6)
+        if r <= 2.0
+        else _lerp(r, 2.0, 3.0, 0.6, 0.35)
+        if r <= 3.0
+        else _lerp(r, 3.0, 3.5, 0.35, 0.25)
+    )
+    rg = gust * across / c
+    f *= 1.0 if rg < 3 else 0.85 if rg < 4 else 0.7
+    return round(30 * f)
+
+
+def _lerp(x, x0, x1, y0, y1):
+    return y0 + (y1 - y0) * min(1, max(0, (x - x0) / (x1 - x0)))
 
 
 def score_surf_hour(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, today: date):

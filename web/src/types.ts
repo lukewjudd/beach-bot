@@ -57,6 +57,8 @@ export interface Session {
     wind_desc: string;
     swell_m: number;
     swell_dir: string;
+    /** Where the swell comes from, in degrees, for the map's swell layer */
+    swell_deg?: number;
     period_s: number;
     air_c: number;
     water_c: number | null;

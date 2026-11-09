@@ -4,6 +4,26 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-09
 
+- **A Swell switch on the map, next to Wind, off by default.** It draws faint swell lines drifting the way the swell is travelling, in the spirit of Windy's and Surfline's swell maps.
+  - **Shape:** each crest is a short arc bowing forward in the middle, staggered so it reads as sea rather than a grid.
+  - **Period:** long-period groundswell gets wider-spaced, quicker lines; short wind swell gets tight ones.
+  - **Size:** bigger swell draws brighter.
+  - **Open ocean only:** the lines are clipped to the open ocean using an outline built from the OpenStreetMap coastline (`scripts/build_sea_mask.py` writes `web/src/sea.json`), cut across the heads so they stay off land, the harbour, Botany Bay and Broken Bay/Pittwater.
+  - **Switches:** Wind and Swell are now one small pill of icon chips that fill in when on, replacing the full-size toggle. The browser remembers each.
+  - **Layering:** both the wind trails and the swell lines now draw under the score pins rather than over them. Each has its own map pane below Leaflet's markers, held in place on screen as the map pans.
+  - **Reduced motion:** with reduced motion on, the lines are drawn still.
+  - **Data:** scores.json now has the swell direction in degrees (`swell_deg`); older files fall back to the compass point.
+
+- **The surf score is checked against real days, and two fixes make good days score like good days.** I collected 38 dated days since 2023 from Tracks, Weatherzone, ABC, Aquabumps and dated surf checks (in research/surf-history.md), plus a 12 Apr 2026 drone clip of Maroubra at 4–6 ft. Bad and flat days already scored low, but good days had a median of 5/10, and Maroubra on 12 April was a 7.
+  - **Period:** surf now reads the longer of the swell period and the whole sea's period. The forecast's swell period runs about 3 s short on groundswell days: 6.8 s against a 9.65 s peak on the morning of Bronte's 6–8 ft barrels, 11 Apr 2024. So nearly every groundswell missed its quality points.
+  - **Offshore wind** is now judged against how fast the waves are breaking. Under the old rule anything over 20 km/h was poor and gusts of 40+ cost more; now a 21 km/h westerly is ideal on 1.5 m of groundswell but too much on a 0.6 m wave. The physics behind it is in research/offshore-wind-surf.md.
+  - **Unchanged:** cross-shore and onshore wind, and swimming.
+  - **Result:**
+    - Good days: median 7, with 5 of 18 at 8+ (was 2).
+    - Maroubra on 12 April: 9/10.
+    - High-confidence storm, East Coast Low and closure days: still 1–4.
+    - Days with a break at 8+: about 28 a year, up from 9, so expect more surf calendar events.
+
 - **About explains swell types and refraction, with two new figures.** Before step 1, "First, two kinds of swell" covers wind swell and groundswell and why period matters. Its figure is drawn to scale: a 6 s wind swell (56 m between crests, about 17 km/h) and a 14 s groundswell (306 m, about 39 km/h) over the same 600 m of sea, plus a side-on seabed showing where each starts to feel the bottom (half its wavelength: 28 m deep about 2 km out, against 153 m about 30 km out). Step 2 now opens with a headland: an 8 s and a 14 s swell from the ESE meeting a made-up point. The crests come from solving each period's arrival time over the seabed (wave speed from depth, Dijkstra over 16 directions), and the rays are traced square to them, so the drawing is computed rather than sketched. It shows both swells wrapping, the groundswell turning much further out and lining up with the bay's beach, and the rays bunching on the point and fanning out across the bay. Rick Salmon's *Introduction to Ocean Waves* (Scripps) is cited in the sources for the physics.
 
 - **Settings behind a cog**, top right next to the info button. It has swim or surf, the coast (Eastern suburbs or Northern beaches, moved out of the header) and units: wind in km/h, knots or mph, waves in metres or feet (whole feet, as surfers say it), and °C or °F. Units change only what's shown, including numbers in the bot's notes and the lifeguard reports ("~1.4m at the beach" becomes "~5ft at the beach"); scoring stays in km/h, metres and °C. Settings are saved in the browser, ready to become account preferences later. The line under the title says which coast and mode you're on ("Eastern suburbs · Swim").

@@ -9,6 +9,7 @@ import { ICONS } from "./icons";
 import type { Region } from "./regions";
 import type { Spot } from "./types";
 
+export { swellLayer } from "./swell";
 export { windLayer } from "./wind";
 
 // In the public bucket next to the scores (see deploy.sh for why not GitHub Pages), one extract per region
@@ -26,7 +27,7 @@ export function createMap(container: HTMLElement, region: Region): L.Map {
     maxZoom: 17,
     zoomSnap: 0.25, // fit the coastline snugly rather than rounding down a whole zoom level
   });
-  L.control.zoom({ position: "bottomleft" }).addTo(map);
+  L.control.zoom({ position: "bottomright" }).addTo(map);
   const flavor = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const tiles = leafletLayer({
     url: `${TILES_BASE}${region.tiles}.pmtiles`,
@@ -72,17 +73,25 @@ export function addPin(map: L.Map, spot: Spot, pinClass: string, label: string, 
 }
 
 // The wind trails' on/off switch, with the zoom buttons in the bottom-left corner
-export function windButton(map: L.Map, on: boolean, toggle: () => boolean) {
+// The map's layer switches: a small pill of icon chips (Wind, Swell) that fill in when on
+export function layerSwitches(
+  map: L.Map,
+  switches: { label: string; icon: keyof typeof ICONS; on: boolean; toggle: () => boolean }[],
+) {
   const Control = L.Control.extend({
     onAdd() {
-      const b = L.DomUtil.create("button", "wind-switch");
-      b.type = "button";
-      b.setAttribute("role", "switch");
-      b.setAttribute("aria-checked", String(on));
-      b.innerHTML = `<span class="track" aria-hidden="true"><span class="knob"></span></span> Wind`;
-      L.DomEvent.disableClickPropagation(b); // a tap on the switch isn't a tap on the map
-      L.DomEvent.on(b, "click", () => b.setAttribute("aria-checked", String(toggle())));
-      return b;
+      const row = L.DomUtil.create("div", "layer-switches");
+      row.setAttribute("role", "group");
+      row.setAttribute("aria-label", "Map layers");
+      for (const sw of switches) {
+        const b = L.DomUtil.create("button", "layer-chip", row);
+        b.type = "button";
+        b.setAttribute("aria-pressed", String(sw.on));
+        b.innerHTML = `${ICONS[sw.icon]}<span>${sw.label}</span>`;
+        L.DomEvent.on(b, "click", () => b.setAttribute("aria-pressed", String(sw.toggle())));
+      }
+      L.DomEvent.disableClickPropagation(row); // a tap on a chip isn't a tap on the map
+      return row;
     },
   });
   new Control({ position: "bottomleft" }).addTo(map);

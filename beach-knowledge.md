@@ -203,6 +203,13 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 - R-SU3 Bronte works IF dir is E–SE AND 0.8 ≤ Hs ≤ 2.5 AND wind is W/WNW. A S wind is tolerable at the reef. Rising tide +5. [S21]
 - R-SU4 Coogee works only IF dir is E AND Hs ≥ 1.5. [HEURISTIC, S6, S23] Malabar left only IF SE AND Hs ≥ 2. [HEURISTIC, S8]
 - R-SU5 Tamarama: never during patrol hours (boards banned) [S2].
+- R-SU6 Surf period (added 2026-11-09): read the longer of the swell period and the whole sea's period. The forecast's swell partition (MeteoFrance) reads about 3 s short of the peak period on groundswell days. On 11 Apr 2024 (6–8 ft barrels at Bronte) it read 6.8 s, against 9.3 s for the whole sea and a 9.65 s ERA5 peak. [research/surf-history.md]
+- R-SU7 Offshore wind for surf (added 2026-11-09): judge an offshore of 8 km/h or more against the breaking-wave speed c = √(g·Hb/0.78), with r = offshore component ÷ c. Full points up to r 0.8, then 0.85 at r 1.3, 0.6 at 2, 0.35 at 3 and 0.25 from 3.5. Gusts are judged the same way: ×0.85 from 3c and ×0.7 from 4c. Anything ≥45 km/h, or gusting ≥70, gets 2 points. The physics says offshore wind holds waves up and makes them plunge, and that strong offshores don't spoil the wave's shape. What they spoil is catching the wave, and bigger, faster waves tolerate more. The breakpoints are judgement, tuned on the backtest. Cross-shore and onshore scoring is unchanged. [research/offshore-wind-surf.md]
+  - Backtest against 39 dated days since 2023, with R-SU6 and R-SU7 together:
+    - Good days: median 5/10 → 7, and 2 → 5 reaching 8+.
+    - Maroubra on 12 Apr 2026 (4–6 ft, W 21 gusting 49): 7 → 9.
+    - High-confidence blown-out days: still 1–4.
+    - Days with a break at 8+: about 9 a year → 28.
 
 ### 4.4 Rain / water-quality rules
 - R-R1 IF the Beachwatch API `pollutionForecast` for the site = "Likely" → NO. = "Possible" → −30. [S12, S60]
