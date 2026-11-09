@@ -4,6 +4,19 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-09
 
+- **Seven more surf breaks in the eastern suburbs, tagged by level.** Ben Buckler and Wedding Cake Island (expert), Clovelly Bombie, Lurline Bay and Malabar (advanced), and Mackenzies and Maroubra (north end) (intermediate).
+  - **New per-break fields:** a level, a minimum size at the break, the swell directions it breaks on, and a best tide where known. Reefs want groundswell: short-period swell scores lower on them. Rule R-SU8.
+  - **Swell windows:** the bombies and Malabar's point are measured at the pin rather than walked back to the shore (`at_pin`).
+  - **Water:** Ben Buckler and Wedding Cake are out past the drains, so rain there is a warning rather than a closure.
+  - **Kept out of the call:** advanced and expert breaks are scored and shown on the site with an amber tag, but never make the session's surf call, the event's top 3 or the calendar.
+  - **Checked against about 150 dated sessions** (research/eastern-reefs-dated.md, mostly a local's daily filmed surf check):
+    - Clovelly Bombie scores 8 on all three of its good days.
+    - Malabar was retuned to need a big swell from E to S.
+    - Mackenzies was retuned to take S swell and prefer low tide.
+    - Maroubra's north point is left out: two rounds of searching found no dated session that names it (research/maroubra-north.md).
+    - Maroubra (north end), the Dunny Bowl corner, is scored instead. It's out of the N–NE wind (new `wind_shelter`, which scores that wind at half strength), so in a nor'easter it beats the open beach by 1–3 points.
+  - **Backtested 2023 to 2026:** the bombies and Malabar are good 1–3 days a year, Mackenzies about 13 and Maroubra's north corner about 15. The original four breaks are unchanged.
+
 - **Smoother swell animation.**
   - **No more jump once per crest:** each crest now keeps its own pattern the whole way across. Before, the loop wrapped every crest spacing and each crest took on its neighbour's gaps, so the whole field jolted.
   - **Arcs fade in and out:** each arc fades in, travels, fades out and comes round again, out of step with its neighbours, so nothing pops in or out.

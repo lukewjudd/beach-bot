@@ -169,7 +169,7 @@ def score_session(sess, hours, ctx, beachwatch, today):
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
         sess.surf.append((round(sc), sp, notes))
         sess.windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
-    sess.surf.sort(key=lambda x: -x[0])
+    sess.surf.sort(key=lambda x: (x[1].advanced, -x[0]))  # the surf call is always a break for everyone
 
 
 def window_hours(sess, name):
@@ -325,7 +325,7 @@ def top_spots(sess, n=3):
         if not b.harbour  # the event is about the ocean; harbour beaches are on the site
     ]
     picks += [(sc, p.name, "pool", notes) for sc, p, notes in sess.pools]
-    picks += [(sc, sp.name, "surf", notes) for sc, sp, notes in sess.surf]
+    picks += [(sc, sp.name, "surf", notes) for sc, sp, notes in sess.surf if not sp.advanced]
     fav = sess.region.favourite
     picks.sort(key=lambda x: -(x[0] + (FAVOURITE_TOLERANCE + 0.5 if x[1] == fav else 0)))  # R-TB1
     seen, out = set(), []

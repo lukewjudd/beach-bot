@@ -2,6 +2,7 @@ from datetime import date
 
 from conftest import make_forecast, score
 
+from beach_bot.beaches import EASTERN
 from beach_bot.sessions import out_of_10
 
 WED = date(2026, 11, 4)
@@ -23,7 +24,7 @@ def swell(height, direction, period, wind=5.0, wind_dir=270):
 def test_every_surf_spot_always_gets_a_score():
     sessions, _ = score(*make_forecast(WED, swell(0.2, 90, 5)), WED)
 
-    assert len(sessions["am"].surf) == 4
+    assert len(sessions["am"].surf) == len(EASTERN.surf)
     assert all(out_of_10(sc) == 1 for sc, _, _ in sessions["am"].surf)  # flat everywhere
 
 
@@ -119,3 +120,30 @@ def test_a_strong_offshore_suits_solid_swell_better_than_small():
     assert offshore_points(h, maroubra, 1.6) > offshore_points(h, maroubra, 0.6)
     assert offshore_points({**h, "wind_speed_10m": 12.0, "wind_gusts_10m": 18.0}, maroubra, 1.5) == 30
     assert offshore_points({**h, "wind_speed_10m": 50.0, "wind_gusts_10m": 75.0}, maroubra, 2.0) <= 2
+
+
+def test_reefs_need_their_own_swell_and_never_make_the_call():
+    # 2.2m ENE groundswell, light westerly: Clovelly Bombie fires, but the session's surf call is a break for everyone
+    sessions, _ = score(*make_forecast(WED, swell(2.2, 70, 12, wind=6, wind_dir=260)), WED)
+    am = sessions["am"]
+    assert out_of_10(surf(am, "Clovelly Bombie")[0]) >= 7
+    assert not am.surf[0][1].advanced
+
+    # The same size from the south: the bombie isn't breaking on it, while Malabar likes it
+    sessions, _ = score(*make_forecast(WED, swell(2.2, 170, 12, wind=6, wind_dir=320)), WED)
+    assert "wrong swell direction" in surf(sessions["am"], "Clovelly Bombie")[2]
+    assert out_of_10(surf(sessions["am"], "Clovelly Bombie")[0]) <= 2
+
+
+def test_a_reef_on_a_small_day_isnt_breaking():
+    sessions, _ = score(*make_forecast(WED, swell(0.8, 90, 11, wind=6, wind_dir=260)), WED)
+    sc, _, notes = surf(sessions["am"], "Clovelly Bombie")
+    assert out_of_10(sc) <= 2 and "not breaking" in notes
+
+
+def test_maroubras_north_corner_is_the_pick_in_a_nor_easter():
+    # 1.4m SE at 10s with a 20 km/h north-easter: the open beach is chopped up, the corner under Mistral Point less so
+    sessions, _ = score(*make_forecast(WED, swell(1.4, 140, 10, wind=20, wind_dir=30)), WED)
+    corner = surf(sessions["am"], "Maroubra (north end)")
+    assert corner[0] > surf(sessions["am"], "Maroubra")[0]
+    assert "sheltered from the wind" in corner[2]

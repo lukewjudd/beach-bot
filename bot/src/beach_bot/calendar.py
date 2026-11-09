@@ -96,7 +96,7 @@ def surf_day_body(sessions, hours, ctx, beachwatch, today):
             f"Wind: {c['wind_desc']} {c['wind_dir']} {c['wind']:.0f} km/h, gusts {c['gust']:.0f}",
             "Top 3 breaks:",
         ]
-        for i, (bsc, b, notes) in enumerate(s.surf[:3], 1):
+        for i, (bsc, b, notes) in enumerate([x for x in s.surf if not x[1].advanced][:3], 1):
             lines.append(f"  {i}. {b.name}: {out_of_10(bsc)}/10 surf" + (f" ({', '.join(notes)})" if notes else ""))
         lines.append("")
     lines += [

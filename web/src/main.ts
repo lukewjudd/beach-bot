@@ -80,7 +80,12 @@ const TAG: Record<SpotKind, string> = { swim: "Beach", harbour: "Harbour", pool:
 const tags = (spot: Spot) =>
   `<span class="tag">${TAG[spot.kind]}</span>` +
   (spot.snorkel ? `<span class="tag">Snorkel</span>` : "") +
-  (spot.women_only ? `<span class="tag">Women only</span>` : "");
+  (spot.women_only ? `<span class="tag">Women only</span>` : "") +
+  (spot.level === "advanced" || spot.level === "expert"
+    ? `<span class="tag tag-level" title="Heavy reef or bombie: experienced surfers only">${spot.level === "expert" ? "Expert" : "Advanced"}</span>`
+    : spot.level === "intermediate"
+      ? `<span class="tag">Intermediate</span>`
+      : "");
 // Surf mode shows the surf breaks. Swim mode shows a spot if it suits any ticked activity (Clovelly is a swim and a
 // snorkel spot)
 const shows = (spot: Spot) =>

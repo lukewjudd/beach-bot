@@ -360,16 +360,41 @@ def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, to
     nogo = "storms ⚡" if storm(h) else None
     q_notes = []
     q_water = water_quality(sp.beach, t, ctx, beachwatch, today, q_notes)
-    if q_water is None:
+    if q_water is None and sp.out_to_sea:  # out past the drains: say so, but it's not a closure out there
+        q_water = 0
+    elif q_water is None:
         nogo = nogo or q_notes[-1]
     notes += q_notes
     sdir = h.get("swell_wave_direction") or 0
     period = surf_period(h)
     wind = h["wind_speed_10m"]
+    if sp.wind_shelter and in_range(h["wind_direction_10m"], *sp.wind_shelter):
+        # the headland takes the edge off it: score the wind (and its gusts) at half strength
+        h = {**h, "wind_speed_10m": wind * 0.5, "wind_gusts_10m": (h.get("wind_gusts_10m") or 0) * 0.5}
+        wind = h["wind_speed_10m"]
+        notes.append("sheltered from the wind")
     size = at_break(h, sp)
 
-    # Size at the break (§1a): ~1-1.8m is the sweet spot for these beachies and reefs
-    if size < 0.3:
+    # Size at the break (§1a): ~1-1.8m is the sweet spot for the beachies. Reefs and bombies (R-SU8) need a
+    # minimum before they break properly, and from there they hold right up to their maximum
+    if sp.works_from and not in_range(sdir, *sp.works_from):
+        size_pts, factor = 0, 0.15
+        notes.append("wrong swell direction")
+    elif sp.min_hs and size < sp.min_hs * 0.7:
+        size_pts, factor = 0, 0.1
+        notes.append("not breaking")
+    elif sp.min_hs and size < sp.min_hs:
+        size_pts, factor = 12, 0.5
+        notes.append("only just breaking")
+    elif sp.min_hs and size <= sp.max_hs:
+        # Reefs want groundswell: short-period swell breaks on them lumpy and inconsistent
+        size_pts, factor = (35, 1.0) if period >= 11 else (28, 0.9) if period >= 9 else (15, 0.6)
+        if period < 9:
+            notes.append("too short a period for the reef")
+    elif sp.min_hs:
+        size_pts, factor = 8, 0.4
+        notes.append("maxing out")
+    elif size < 0.3:
         size_pts, factor = 0, 0.1
         notes.append("flat")
     elif size < 0.5:
@@ -395,6 +420,13 @@ def surf_parts(sp: SurfSpot, t: str, h: dict, ctx: Context, beachwatch: dict, to
     per += 3 if period >= 14 else 0
     if sp.bonus_dirs and in_range(sdir, *sp.bonus_dirs):
         per += 5
+    tide = ctx.tide(t) if sp.best_tide else None  # (hours to nearest high, hours to nearest low)
+    if tide is not None:
+        to_high, to_low = abs(tide[0]), abs(tide[1])
+        right = {"low": to_low <= 2, "high": to_high <= 2, "mid": min(to_high, to_low) >= 1.5}[sp.best_tide]
+        per += 3 if right else -3
+        if right:
+            notes.append(f"{sp.best_tide} tide")
     if period < 6:
         notes.append("short, choppy swell")
     kind = wind_kind(h["wind_direction_10m"], sp.facing)

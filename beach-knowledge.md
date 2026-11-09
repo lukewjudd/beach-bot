@@ -211,6 +211,15 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
     - High-confidence blown-out days: still 1–4.
     - Days with a break at 8+: about 9 a year → 28.
 
+- R-SU8 Reefs and bombies (added 2026-11-09): Ben Buckler (expert), Clovelly Bombie (advanced), Wedding Cake Island (expert), Lurline Bay (advanced), Malabar (advanced) and Mackenzies (intermediate). Each has a `level`, a `min_hs` at the break (none for Mackenzies), the swell range it breaks on (`works_from`), and where known a best tide. Below 0.7× min it's not breaking; up to min it's only just breaking; from min to max it gets full size points with groundswell (11 s+), less at 9–11 s, and little under 9 s. Swell from outside its range scores as nothing. A best tide is ±3 points of quality. The bombies and the Malabar point have their swell window measured at the pin, not walked back to the shore. Ben Buckler and Wedding Cake are out past the drains, so rain there is a warning, not a closure. Advanced and expert breaks never make the session's surf call, the event's top 3 or the calendar. Pros-only slabs (Cape Solander, Voodoo, Honeycomb) and unnamed spots are left out. Maroubra's north point is left out: two rounds of searching found no dated session that names the point itself. Maroubra (north end) is scored instead. It's the "Dunny Bowl" corner: intermediate, a touch smaller than the open beach, and sheltered from N–NE wind (`wind_shelter`, which scores that wind at half strength). Its sand is stripped by big winter S swells, which the model can't see. [Wannasurf Sydney South, Surf-forecast, research/surf-history.md, research/eastern-reefs-dated.md, research/maroubra-north.md]
+  - Checked against dated sessions (mostly a local's daily filmed surf check, 2023–2026):
+    - Clovelly Bombie: 8, 8, 8 on its three good days. The forecast had E swell each time, as Wannasurf says.
+    - Wedding Cake: 5–8 on good days. The outer bank needs far more swell than the inside "Southie".
+    - Malabar needs a big swell, E round to S. Dated good days had 2.6–4.6m at the pin. Two of them score 1 because rain closes it on water quality, which is deliberate.
+    - Mackenzies is best at low tide in a solid S swell. Its good days have a median of 7 and its so-so days 5.
+    - Maroubra (north end): on ten dated north-corner days, good days have a median of 6 and the flat day 2. Two of the three poor days score 6–7: one fell when ABC reported the corner's sand stripped (Aug 2024), and the other we can't explain. In a N–NE wind of 12 km/h or more it scores 1–3 points above the open beach.
+  - Backtest 2023-01 to 2026-11, days a year at 8+: Ben Buckler 1.3, Wedding Cake 1.6, Clovelly Bombie 2.9, Lurline 2.9, Malabar 2.6, Mackenzies 13, Maroubra (north end) 15. The original four breaks are unchanged.
+
 ### 4.4 Rain / water-quality rules
 - R-R1 IF the Beachwatch API `pollutionForecast` for the site = "Likely" → NO. = "Possible" → −30. [S12, S60]
 - R-R2 Fallback when the API fails, using the per-site thresholds in §3.1 [S10]:

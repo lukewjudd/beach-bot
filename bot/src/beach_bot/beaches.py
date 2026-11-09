@@ -160,6 +160,18 @@ class SurfSpot:
     max_hs: float = 2.5  # above this (at the break) it closes out
     bonus_dirs: tuple = None  # swell direction range that gets a small bonus
     beach: Beach | None = None  # the beach it breaks off: shares its water (and Beachwatch site)
+    level: str = "all"  # who it's for: "all", "intermediate", "advanced" or "expert" (R-SU8)
+    min_hs: float = 0  # reefs and bombies: barely breaks below this at the break (m)
+    best_tide: str | None = None  # "low", "mid" or "high"
+    at_pin: bool = False  # a bombie or point reef: its swell window is measured at the pin, not walked back to shore
+    works_from: tuple = None  # reefs: the swell directions it actually breaks on (from, to); others it ignores
+    out_to_sea: bool = False  # well offshore, clear of the stormwater drains: rain is a warning, not a closure
+    wind_shelter: tuple = None  # (from, to): wind from here is blocked by a headland and blows at about half strength
+
+    @property
+    def advanced(self):
+        """Advanced and expert breaks are scored and shown, but never make the surf call or the calendar."""
+        return self.level in ("advanced", "expert")
 
 
 SURF_SPOTS = [
@@ -171,6 +183,88 @@ SURF_SPOTS = [
     SurfSpot("Bronte", 90, {"NE": 0.8, "E": 1.0, "SE": 0.9, "S": 0.6}),
     # R-SU4: Wedding Cake Island blocks SE/S; needs a solid E swell
     SurfSpot("Coogee", 100, {"NE": 0.5, "E": 0.7, "SE": 0.3, "S": 0.2}, max_hs=3.0),
+    # R-SU8: the reefs and bombies that only turn on a few times a year. Advanced and expert only
+    # (research/surf-history.md, Wannasurf, Surf-forecast). Ben Buckler: the bombie off North Bondi's headland,
+    # ridden in XL south swell (22 ft on 1 Apr 2025, "super fun and pretty solid" on 16 Jun 2024)
+    SurfSpot(
+        "Ben Buckler",
+        150,
+        {"NE": 0.2, "E": 0.7, "SE": 1.0, "S": 1.0},
+        max_hs=7.0,
+        level="expert",
+        min_hs=2.0,
+        at_pin=True,
+        works_from=(130, 200),
+        out_to_sea=True,
+    ),
+    # Maroubra (north end): the "Dunny Bowl" rip bowl in the north corner, sharper rights into the rocks and longer
+    # lefts. The sheltered option in a solid E-SE swell when the south end is too big; out of the northerlies, ruined
+    # by southerlies. Its sand is stripped by big winter S swells and takes weeks to months to come back
+    # (research/maroubra-north.md). The point off the boulders past it has no dated sessions, so it isn't scored
+    SurfSpot(
+        "Maroubra (north end)",
+        110,
+        {"NE": 0.4, "E": 0.8, "SE": 0.85, "S": 0.6},  # a corner: a touch smaller than the open beach
+        max_hs=3.0,
+        bonus_dirs=(90, 157),
+        level="intermediate",
+        wind_shelter=(345, 50),  # tucked in under Mistral Point, out of the N to NE
+    ),
+    # Mackenzies: a sand-bottom left tucked in the bay north of Tama; bodyboarders' spot, comes and goes with the sand.
+    # Best at low tide in a solid S swell (research/eastern-reefs-dated.md)
+    SurfSpot(
+        "Mackenzies", 110, {"NE": 0.5, "E": 0.8, "SE": 1.0, "S": 1.0}, max_hs=2.0, level="intermediate", best_tide="low"
+    ),
+    # Clovelly Bombie: outside the mouth of Clovelly. ENE-E swell, 1.5m+ (holds 5m), W wind, mid-high tide.
+    # Fickle: works a few times a year
+    SurfSpot(
+        "Clovelly Bombie",
+        80,
+        {"NE": 0.9, "E": 1.0, "SE": 0.6, "S": 0.3},
+        max_hs=5.0,
+        level="advanced",
+        min_hs=1.5,
+        best_tide="high",
+        at_pin=True,
+        works_from=(45, 115),
+    ),
+    # Wedding Cake Island: big-wave reef off Coogee, ridden at 15-20 ft on 8 May 2023 and in the XL swell of
+    # 28 Mar 2026; "not working well" in a hefty south swell on 16 Jun 2024
+    SurfSpot(
+        "Wedding Cake Island",
+        130,
+        {"NE": 0.6, "E": 1.0, "SE": 1.0, "S": 0.9},
+        max_hs=8.0,
+        level="expert",
+        min_hs=2.5,
+        at_pin=True,
+        works_from=(80, 200),
+        out_to_sea=True,
+    ),
+    # Lurline Bay: heavy reef between Coogee and Maroubra, ridden in the XL SSE swell of 1 Apr 2025
+    SurfSpot(
+        "Lurline Bay",
+        100,
+        {"NE": 0.7, "E": 1.0, "SE": 0.9, "S": 0.7},
+        max_hs=5.0,
+        level="advanced",
+        min_hs=2.0,
+        works_from=(90, 190),
+    ),
+    # Malabar: a left reef off Boora Point that only works in big swell (about 3 ft there when Maroubra is 6-10 ft),
+    # E round to S; dated good days had 2.6-4.6m at the pin (research/eastern-reefs-dated.md). N-W wind, better at
+    # low tide when big. Urchins. The old ocean outfall is just south, so it follows Malabar's water quality
+    SurfSpot(
+        "Malabar",
+        80,
+        {"NE": 0.3, "E": 0.7, "SE": 1.0, "S": 0.9},
+        max_hs=5.0,
+        level="advanced",
+        min_hs=2.0,
+        best_tide="low",
+        at_pin=True,
+        works_from=(80, 195),
+    ),
 ]
 
 # Map positions for the website (swim areas from beach-knowledge.md §1; surf markers sit just offshore)
@@ -196,6 +290,13 @@ SURF_COORDS = {  # pushed further out to sea than the swim markers so the two do
     "Maroubra": (-33.9480, 151.2665),
     "Bronte": (-33.9045, 151.2770),
     "Coogee": (-33.9215, 151.2670),
+    "Ben Buckler": (-33.8942, 151.2868),  # off the end of the headland (OSM: Ben Buckler -33.8915, 151.2842)
+    "Mackenzies": (-33.8999, 151.2745),  # in the bay (OSM: Mackenzies Bay -33.8998, 151.2728)
+    "Maroubra (north end)": (-33.9455, 151.2640),  # off the north corner (the point's guide pin: -33.9460, 151.2601)
+    "Clovelly Bombie": (-33.9128, 151.2714),  # just outside the mouth of Clovelly
+    "Wedding Cake Island": (-33.9264, 151.2672),  # off the seaward side of the islet (OSM -33.9259, 151.2654)
+    "Lurline Bay": (-33.9378, 151.2638),  # OSM: Lurline Bay -33.9375, 151.2618
+    "Malabar": (-33.9672, 151.2680),  # just off Boora Point (OSM -33.9681, 151.2652)
 }
 
 
@@ -229,6 +330,13 @@ BEACH_FOR_SURF = {
     "Maroubra": _BEACH["Maroubra"],
     "Bronte": _BEACH["Bronte"],
     "Coogee": _BEACH["Coogee"],
+    "Ben Buckler": _BEACH["Bondi (north end)"],
+    "Mackenzies": _BEACH["Tamarama"],
+    "Maroubra (north end)": _BEACH["Maroubra"],
+    "Clovelly Bombie": _BEACH["Clovelly"],
+    "Wedding Cake Island": _BEACH["Coogee"],
+    "Lurline Bay": _BEACH["Maroubra"],
+    "Malabar": _BEACH["Malabar"],
 }
 for _sp in SURF_SPOTS:
     _sp.beach = BEACH_FOR_SURF[_sp.name]

@@ -91,6 +91,10 @@ def origin(tree, lines, region, spot):
     break near the sand: walk back in toward the shore and measure from BREAK_M off it."""
     lat, lon = region.pin(spot)
     x0, y0 = xy(lat, lon)
+    if isinstance(spot, SurfSpot) and spot.at_pin:  # a bombie or point reef: the swell meets it right where the pin is
+        if not in_water(tree, lines, x0, y0):
+            raise ValueError(f"{spot.name}'s pin is on land")
+        return lat, lon
     if isinstance(spot, SurfSpot):
         dx, dy = -math.sin(math.radians(spot.facing)), -math.cos(math.radians(spot.facing))
         d = 0

@@ -8,6 +8,7 @@ export interface Spot {
   kind: SpotKind;
   snorkel?: boolean;
   women_only?: boolean;
+  level?: "all" | "intermediate" | "advanced" | "expert" | null; // surf breaks: who it's for
   /** The place it belongs to, e.g. Coogee for the beach, its surf break and its pools */
   area?: string;
   lat: number;
