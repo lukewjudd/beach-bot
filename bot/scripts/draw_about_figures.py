@@ -11,6 +11,8 @@ Writes web/src/about/*.svg:
   wrap.svg    Collaroy: how far round Long Reef an 8 s and a 14 s swell reach
   share.svg   North Bondi: how much of a NE, E, SE and S swell gets in
   period.svg  Breaking height of a 1.5 m swell by period, at a beach and at a surf break
+  swell-types.svg  side-on: wind swell vs groundswell, true to scale, and the depth each starts to feel the seabed
+  refraction.svg  plan view: 8 s and 14 s crests bending round a made-up headland (eikonal solve over its seabed)
   wind.svg    Coogee: which winds are offshore, cross-shore and onshore
   wind-water.svg  side-on: the same swell under an offshore and an onshore wind
   water.svg   how much rain in a day each eastern beach can take
@@ -23,12 +25,15 @@ Coastline © OpenStreetMap contributors.
 """
 
 import functools
+import heapq
 import json
 import math
 import sys
 from pathlib import Path
 
-from shapely import LineString, MultiLineString, box, polygonize, unary_union
+import numpy as np
+import shapely
+from shapely import LineString, MultiLineString, Polygon, box, line_merge, polygonize, unary_union
 
 from beach_bot import swell
 from beach_bot.beaches import EASTERN, NORTHERN
@@ -426,6 +431,331 @@ def period_fig():
         "Line chart of how big a 1.5 metre swell breaks, by its period from 6 to 16 seconds. At a swimming beach it "
         f"grows gently, from {swell.breaker(1.5, 6):.1f}m at 6 seconds to {swell.breaker(1.5, 16):.1f}m at 16. "
         "At a surf break it grows faster, and short swell is weaker there.",
+        body,
+    )
+
+
+G = 9.81
+
+
+def deep_length(t):
+    """Deep-water wavelength (m) of a wave with period t (s): g t^2 / 2 pi, about 1.56 t^2."""
+    return G * t * t / (2 * math.pi)
+
+
+def group_kmh(t):
+    """How fast a swell's energy crosses deep water (km/h): half the crest speed, g t / 4 pi."""
+    return G * t / (4 * math.pi) * 3.6
+
+
+def swell_types_fig():
+    """Side-on, to scale: a 6 s wind swell and a 14 s groundswell over the same 600 m of sea, and below, how deep
+    each one starts to feel the seabed (half its wavelength) on a Sydney-like shelf."""
+    w = WIDTH
+    left, right = 10, 10
+    span = 600  # metres of sea shown in each wave row
+    sx = (w - left - right) / span
+    body = []
+
+    def row(y0, t, label, words, rough):
+        lam = deep_length(t)
+        amp = 9 if rough else 11
+        pts = []
+        for i in range(int(w - left - right) + 1):
+            x = i / sx
+            if rough:  # wind swell: short and steep, from more than one direction at once
+                z = (
+                    math.sin(2 * math.pi * x / lam)
+                    + 0.45 * math.sin(2 * math.pi * x / (lam * 0.62) + 1.3)
+                    + 0.3 * math.sin(2 * math.pi * x / (lam * 1.7) + 0.4)
+                )
+                z /= 1.6
+            else:  # groundswell: long, even lines
+                z = math.sin(2 * math.pi * x / lam + 1.0)
+            # a touch of the trochoid: sharper crests, flatter troughs
+            pts.append((left + i, y0 - amp * z - (2.5 if rough else 1.5) * z * abs(z)))
+        sea = pts + [(w - right, y0 + 26), (left, y0 + 26)]
+        out = [f'<path d="{path(sea)}" fill="var(--hs-sea)" stroke="var(--accent)" stroke-width="1.6"/>']
+        # wavelength bracket between two crests
+        # between two crests: sin peaks at x = lam (1/4 - phase/2pi)
+        x0 = left + lam * ((2.25 if rough else 0.25 - 1.0 / (2 * math.pi)) % 1 + (2 if rough else 0)) * sx
+        x1 = x0 + lam * sx
+        yb = y0 - amp - 12
+        out += [
+            f'<path d="M{x0:.1f},{yb + 4}V{yb}H{x1:.1f}V{yb + 4}" fill="none" stroke="var(--text)" stroke-width="1"/>',
+            f'<text x="{(x0 + x1) / 2:.1f}" y="{yb - 4}" text-anchor="middle" class="hs-small">'
+            f"{lam:.0f} m between crests</text>",
+            f'<text x="{left}" y="{y0 - 38}" class="hs-label">{label}</text>',
+            f'<text x="{left}" y="{y0 + 42}" class="hs-small">{words}</text>',
+        ]
+        return out
+
+    body += row(
+        56, 6, "Wind swell · 6 s", f"Made nearby. Short, steep and messy. Travels about {group_kmh(6):.0f} km/h.", True
+    )
+    body += row(
+        168,
+        14,
+        "Groundswell · 14 s",
+        f"Made by a storm far away. Long, clean lines. Travels about {group_kmh(14):.0f} km/h.",
+        False,
+    )
+
+    # The seabed, side-on: Sydney's shelf drops to about 150 m some 30 km out
+    top, base, km = 262, 370, 36
+    gx = (w - left - right) / km
+
+    def depth(xkm):  # metres, coast at 0 km: steep near shore, then the long gentle shelf
+        return min(170, 30 * (1 - math.exp(-xkm / 1.2)) + 4.1 * xkm)
+
+    dmax = 170
+    dy = (base - top) / dmax
+    floor = [(left + i * gx / 4, top + depth(i / 4) * dy) for i in range(km * 4 + 1)]
+    body += [
+        f'<text x="{left}" y="{top - 22}" class="hs-label">Where each starts to feel the seabed</text>',
+        f'<line x1="{left}" y1="{top}" x2="{w - right}" y2="{top}" stroke="var(--accent)" stroke-width="1.6"/>',
+        f'<path d="{path([(left, top), *floor, (w - right, base + 4), (left, base + 4)])}" fill="var(--hs-land)"/>',
+        f'<text x="{left + 2}" y="{top - 6}" class="hs-small">beach</text>',
+        f'<text x="{w - right}" y="{top - 6}" text-anchor="end" class="hs-small">{km} km out</text>',
+    ]
+    for t, c, dash in ((6, "r-amber", ' stroke-dasharray="5 3"'), (14, "accent", "")):
+        d = deep_length(t) / 2
+        xkm = next(i / 20 for i in range(km * 20 + 1) if depth(i / 20) >= d)
+        x, y = left + xkm * gx, top + d * dy
+        body += [
+            f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{y:.1f}" stroke="var(--{c})" stroke-width="2"{dash}/>',
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="var(--{c})"/>',
+            f'<text x="{x + (8 if t == 6 else -8):.1f}" y="{y + (14 if t == 6 else -8):.1f}" '
+            f'text-anchor="{"start" if t == 6 else "end"}" class="hs-small">{t} s: {d:.0f} m deep, ~{xkm:.0f} km out'
+            "</text>",
+        ]
+    svg(
+        "swell-types",
+        w,
+        base + 6,
+        "Wind swell and groundswell",
+        f"Two side-on wave trains over the same 600 metres of sea, to scale. A 6-second wind swell has crests "
+        f"{deep_length(6):.0f} metres apart and is short and messy; a 14-second groundswell has crests "
+        f"{deep_length(14):.0f} metres apart in long, even lines, and travels more than twice as fast. Below, a "
+        "side-on seabed out to 36 km: a wave starts to feel the bottom at half its wavelength, so the groundswell "
+        "starts "
+        "slowing and bending about 30 km out and the wind swell only a couple of kilometres from the beach.",
+        body,
+    )
+
+
+def phase_speed(t, d):
+    """Crest speed (m/s) of period t in depth d, from linear wave theory (Eckart's approximation)."""
+    k0h = 4 * math.pi**2 * d / (G * t * t)
+    kh = k0h / math.sqrt(math.tanh(k0h))
+    return G * t / (2 * math.pi) * math.tanh(kh)
+
+
+def crest_lines(tt, level, ox, oy, scale):
+    """Marching squares over the arrival-time grid tt (NaN on land): the crest at time `level`, as SVG paths."""
+    ny, nx = tt.shape
+    segs = []
+    for i in range(ny - 1):
+        for j in range(nx - 1):
+            a, b, c, d = tt[i, j], tt[i, j + 1], tt[i + 1, j + 1], tt[i + 1, j]
+            if np.isnan(a) or np.isnan(b) or np.isnan(c) or np.isnan(d):
+                continue
+            corners = [(a, j, i), (b, j + 1, i), (c, j + 1, i + 1), (d, j, i + 1)]
+            pts = []
+            for k in range(4):
+                v0, x0, y0 = corners[k]
+                v1, x1, y1 = corners[(k + 1) % 4]
+                if (v0 < level) != (v1 < level):
+                    f = (level - v0) / (v1 - v0)
+                    pts.append((x0 + f * (x1 - x0), y0 + f * (y1 - y0)))
+            if len(pts) == 2:
+                segs.append(tuple(pts))
+            elif len(pts) == 4:
+                segs += [(pts[0], pts[1]), (pts[2], pts[3])]
+    lines = MultiLineString([[(ox + x * scale, oy + y * scale) for x, y in sg] for sg in segs])
+    merged = line_merge(lines).simplify(0.5)
+    geoms = getattr(merged, "geoms", [merged])
+    return [path(list(g.coords), close=False) for g in geoms if g.length > 6]
+
+
+def rays(tt, wet, dx, ux, uy, W, H, scale, oy, spacing=120.0, step=6.0):
+    """Wave rays traced up the arrival-time gradient from evenly spaced starts along the deep edges. The energy
+    between two rays stays the same (Salmon, Introduction to Ocean Waves, ch. 6), so where they close up the waves
+    grow and where they spread apart the waves shrink."""
+    gy, gx = np.gradient(tt, dx)
+    ny, nx = tt.shape
+
+    def grad(x, y):
+        j, i = x / dx, y / dx
+        j0, i0 = int(j), int(i)
+        if not (0 <= j0 < nx - 1 and 0 <= i0 < ny - 1):
+            return None
+        fj, fi = j - j0, i - i0
+        out = []
+        for g in (gx, gy):
+            v = (
+                g[i0, j0] * (1 - fj) * (1 - fi)
+                + g[i0, j0 + 1] * fj * (1 - fi)
+                + g[i0 + 1, j0] * (1 - fj) * fi
+                + g[i0 + 1, j0 + 1] * fj * fi
+            )
+            out.append(v)
+        if any(np.isnan(out)) or not wet[round(i), round(j)]:
+            return None
+        n = math.hypot(*out)
+        return (out[0] / n, out[1] / n) if n else None
+
+    starts = [(W - dx, y) for y in np.arange(spacing / abs(ux) / 2, H, spacing / abs(ux))]
+    starts += [(x, H - dx) for x in np.arange(W - spacing / abs(uy) / 2, 0, -spacing / abs(uy))]
+    out = []
+    for x, y in starts:
+        pts = [(x, y)]
+        for _ in range(3000):
+            g = grad(x, y)
+            if g is None:
+                break
+            x, y = x + step * g[0], y + step * g[1]
+            pts.append((x, y))
+        if len(pts) > 5:
+            line = LineString([(px_ * scale, oy + py * scale) for px_, py in pts]).simplify(0.4)
+            out.append(path(list(line.coords), close=False))
+    return out
+
+
+def refraction_fig():
+    """Plan view of a made-up headland: where 8 s and 14 s crests are, swell coming from the south-east. The seabed
+    deepens away from the coast, each period's crest speed comes from the depth (linear wave theory), and the
+    arrival time over the whole bay is solved on a grid (Dijkstra, 16 directions); each crest is a line of equal
+    arrival time, one period apart."""
+    w = WIDTH
+    W, H, dx = 3000.0, 1800.0, 15.0  # metres; north is up, the coast runs along the top
+    nx, ny = int(W / dx) + 1, int(H / dx) + 1
+    # A broad point sticking out south, a curved bay to its west, and straighter coast to the east
+    bay = [(0, 330), (250, 420), (550, 470), (850, 470), (1150, 430), (1400, 380)]
+    point = [
+        (1500, 480),
+        (1560, 760),
+        (1640, 1000),
+        (1760, 1180),
+        (1900, 1250),
+        (2040, 1200),
+        (2120, 1040),
+        (2180, 800),
+        (2260, 560),
+        (2400, 420),
+    ]
+    east = [(2700, 360), (3000, 340)]
+    land = Polygon([(0, 0), *bay, *point, *east, (3000, 0)]).buffer(80).buffer(-80)  # rounded off
+    xs, ys = np.meshgrid(np.arange(nx) * dx, np.arange(ny) * dx)
+    pts = shapely.points(xs.ravel(), ys.ravel())
+    dist = shapely.distance(pts, land).reshape(ny, nx)
+    wet = dist > 0
+    depth = np.clip(1.0 + 0.04 * dist, 0, 55)
+
+    heading = math.radians(290)  # travelling west-north-west: from the east-south-east
+    ux, uy = math.sin(heading), -math.cos(heading)  # y down
+    steps = [
+        (1, 0),
+        (0, 1),
+        (-1, 0),
+        (0, -1),
+        (1, 1),
+        (1, -1),
+        (-1, 1),
+        (-1, -1),
+        (1, 2),
+        (2, 1),
+        (-1, 2),
+        (-2, 1),
+        (1, -2),
+        (2, -1),
+        (-1, -2),
+        (-2, -1),
+    ]
+
+    def arrival(t):
+        speed = np.vectorize(lambda d: phase_speed(t, d) if d > 0 else np.nan)(depth)
+        c0 = G * t / (2 * math.pi)
+        tt = np.full((ny, nx), np.inf)
+        heap = []
+        for i in range(ny):
+            for j in range(nx):
+                if wet[i, j] and (i == ny - 1 or j == nx - 1):  # the deep open edges: a straight swell front
+                    tt[i, j] = (j * dx * ux + i * dx * uy) / c0
+                    heapq.heappush(heap, (tt[i, j], i, j))
+        done = np.zeros((ny, nx), bool)
+        while heap:
+            t0, i, j = heapq.heappop(heap)
+            if done[i, j]:
+                continue
+            done[i, j] = True
+            for di, dj in steps:
+                i2, j2 = i + di, j + dj
+                if not (0 <= i2 < ny and 0 <= j2 < nx) or not wet[i2, j2] or done[i2, j2]:
+                    continue
+                if abs(di) == 2 or abs(dj) == 2:  # a knight's move mustn't cut across land
+                    if not wet[i + di // 2 if abs(di) == 2 else i, j + dj // 2 if abs(dj) == 2 else j]:
+                        continue
+                cost = dx * math.hypot(di, dj) * (1 / speed[i, j] + 1 / speed[i2, j2]) / 2
+                if t0 + cost < tt[i2, j2]:
+                    tt[i2, j2] = t0 + cost
+                    heapq.heappush(heap, (tt[i2, j2], i2, j2))
+        tt[~wet] = np.nan
+        tt[np.isinf(tt)] = np.nan
+        return tt
+
+    pw, gap = w, 14
+    scale = pw / W  # px per metre
+    ph = H * scale
+    body = [arrow_defs("hs-rf", ("text",))]
+    for row, (t, label, c) in enumerate(((8, "8 s wind swell", "r-amber"), (14, "14 s groundswell", "accent"))):
+        oy = row * (ph + gap)
+        tt = arrival(t)
+        lo = np.nanmin(tt)
+        body.append(f'<rect x="0" y="{oy:.1f}" width="{pw}" height="{ph:.1f}" fill="var(--hs-sea)"/>')
+        for dd in (10, 25, 45):  # depth contours, faint
+            for d_ in crest_lines(np.where(wet, depth, np.nan), dd, 0, oy, dx * scale):
+                body.append(
+                    f'<path d="{d_}" fill="none" stroke="var(--muted)" stroke-width=".8" '
+                    'stroke-dasharray="2 3" opacity=".6"/>'
+                )
+        # crests, one period apart
+        k = 1
+        while lo + k * t < np.nanmax(tt):
+            for d_ in crest_lines(tt, lo + k * t, 0, oy, dx * scale):
+                body.append(f'<path d="{d_}" fill="none" stroke="var(--{c})" stroke-width="1.4"/>')
+            k += 1
+        # rays: the paths the energy takes, square to the crests. Bunched up means bigger waves, spread out smaller
+        for d_ in rays(tt, wet, dx, ux, uy, W, H, scale, oy):
+            body.append(f'<path d="{d_}" fill="none" stroke="var(--text)" stroke-width=".9" opacity=".45"/>')
+        body.append(
+            f'<path d="{path([(x * scale, oy + y * scale) for x, y in land.exterior.coords])}" '
+            'fill="var(--hs-land)" stroke="var(--muted)" stroke-width="1"/>'
+        )
+        body.append(f'<text x="8" y="{oy + ph - 10:.1f}" class="hs-label">{label}</text>')
+        body.append(
+            f'<text x="{1900 * scale:.1f}" y="{oy + 1350 * scale:.1f}" text-anchor="middle" '
+            'class="hs-place">the point</text>'
+        )
+        body.append(
+            f'<text x="{700 * scale:.1f}" y="{oy + 340 * scale:.1f}" text-anchor="middle" '
+            'class="hs-place">the bay</text>'
+        )
+        ax, ay = (W - 60) * scale, oy + 1500 * scale
+        body.append(
+            f'<line x1="{ax:.1f}" y1="{ay:.1f}" x2="{ax - 50:.1f}" y2="{ay - 18:.1f}" stroke="var(--text)" '
+            'stroke-width="2" marker-end="url(#hs-rf-text)"/>'
+        )
+        body.append(f'<text x="{ax:.1f}" y="{ay + 16:.1f}" text-anchor="end" class="hs-small">swell from ESE</text>')
+    svg(
+        "refraction",
+        w,
+        2 * ph + gap,
+        "Swell bending round a headland",
+        "Plan view of a made-up headland with swell coming from the east-south-east, drawn twice. Each line is a wave "
+        "crest. Over deep water the crests are straight; as the seabed shallows they slow and turn to face the shore. "
+        "Both wrap round the point, but the 14-second groundswell feels the bottom further out and bends more, so "
+        "in the bay its crests run almost along the beach while the 8-second wind swell's still come in at an angle.",
         body,
     )
 
