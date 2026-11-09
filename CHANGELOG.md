@@ -4,6 +4,11 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-09
 
+- **Smoother swell animation.**
+  - **No more jump once per crest:** each crest now keeps its own pattern the whole way across. Before, the loop wrapped every crest spacing and each crest took on its neighbour's gaps, so the whole field jolted.
+  - **Arcs fade in and out:** each arc fades in, travels, fades out and comes round again, out of step with its neighbours, so nothing pops in or out.
+  - **A slight trail:** three fainter copies just behind each arc.
+  - **Eased changes:** the layer fades in and out when switched, and cross-fades to a new swell when the direction or period changes between sessions. A change in height just brightens or dims the lines in place, so scrubbing hours doesn't flicker.
 - **Runs every hour around the clock instead of 4:15am to 9:15pm.** The site no longer says "updated 7h ago" overnight, and the overnight model updates reach the morning calls before the 4:15 run. It still fits Cloud Run's free tier, at about 40% of the free compute.
 - **A Swell switch on the map, next to Wind, off by default.** It draws faint swell lines drifting the way the swell is travelling, in the spirit of Windy's and Surfline's swell maps.
   - **Shape:** each crest is a short arc bowing forward in the middle, staggered so it reads as sea rather than a grid.
