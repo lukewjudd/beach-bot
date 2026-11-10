@@ -537,6 +537,59 @@ NORTHERN_SURF = [
     SurfSpot("Newport", 95, {"NE": 0.8, "E": 0.8, "SE": 0.6, "S": 0.4}, max_hs=2.0),  # The Peak, small-moderate
     SurfSpot("Avalon", 115, {"NE": 0.8, "E": 1.0, "SE": 1.0, "S": 0.9}, max_hs=3.0),  # offshore W
     SurfSpot("Palm Beach", 90, {"NE": 0.8, "E": 1.0, "SE": 1.0, "S": 0.8}, bonus_dirs=(112, 157)),  # offshore W
+    # R-NSU6: more breaks from research/northern-reefs-dated.md, each with dated sessions (realsurf's Dee Why reports,
+    # Sprout Daily's Manly blog, Tracks). Queenscliff: Manly's north end, a size bigger than South Steyne on S/SE
+    SurfSpot("Queenscliff", 105, {"NE": 0.7, "E": 0.9, "SE": 0.9, "S": 0.8}, best_tide="mid"),
+    # The Bower (Fairy Bower, with Winki Pop folded in): the right point off the Shelly Beach headland. Faces the open
+    # ESE, unlike Shelly Beach inside the bay. 1.2m+ at the break, holds 4m; big S/SSE runs past it
+    SurfSpot(
+        "The Bower",
+        115,
+        {"NE": 0.7, "E": 1.0, "SE": 0.9, "S": 0.4},
+        max_hs=4.5,
+        level="advanced",
+        min_hs=1.0,
+        best_tide="mid",
+        at_pin=True,
+        works_from=(60, 150),
+    ),
+    # Collaroy's south corner: tucked behind Long Reef, the hideout in a southerly ("Everybody's at Collaroy",
+    # 18 Apr 2025). Needs a big swell outside to get 0.6-1m in the corner
+    SurfSpot(
+        "Collaroy",
+        80,
+        {"NE": 0.4, "E": 0.4, "SE": 0.35, "S": 0.15},  # a corner: a 2.5m+ swell outside is about 1m here
+        max_hs=3.0,
+        best_tide="mid",
+        wind_shelter=(160, 225),
+    ),
+    # South Narrabeen ("Southy"): A-frames, E-SE best, overwhelmed above about 3m; advanced when it's over 2m
+    SurfSpot(
+        "South Narrabeen",
+        95,
+        {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.5},
+        max_hs=2.6,
+        level="intermediate",
+        best_tide="mid",
+    ),
+    # Mona Vale: a fast right off the Rip Bowl. NE best; a 1.5m SSE gave knee-high
+    SurfSpot(
+        "Mona Vale",
+        100,
+        {"NE": 1.0, "E": 0.9, "SE": 0.6, "S": 0.3},
+        bonus_dirs=(22, 67),
+        level="intermediate",
+        best_tide="mid",
+    ),
+    # North Avalon: a heavy left by the north headland. ENE best, but it worked in the big SSE of 2 Apr 2025
+    SurfSpot(
+        "North Avalon",
+        110,
+        {"NE": 0.9, "E": 1.0, "SE": 0.9, "S": 0.7},
+        max_hs=3.0,
+        level="intermediate",
+        best_tide="low",
+    ),
 ]
 
 NORTHERN_BEACH_FOR_SURF = {
@@ -550,6 +603,12 @@ NORTHERN_BEACH_FOR_SURF = {
     "Newport": _NB["Newport"],
     "Avalon": _NB["Avalon"],
     "Palm Beach": _NB["Palm Beach"],
+    "Queenscliff": _NB["Queenscliff"],
+    "The Bower": _NB["Shelly Beach"],
+    "Collaroy": _NB["Collaroy"],
+    "South Narrabeen": _NB["Collaroy"],  # the same stretch of sand; South Narrabeen has no Beachwatch site of its own
+    "Mona Vale": _NB["Mona Vale"],
+    "North Avalon": _NB["Avalon"],
 }
 for _sp in NORTHERN_SURF:
     _sp.beach = NORTHERN_BEACH_FOR_SURF[_sp.name]
@@ -626,6 +685,12 @@ NORTHERN_SURF_COORDS = {  # just seaward of each break, checked to be on the wat
     "Newport": (-33.6500, 151.3265),
     "Avalon": (-33.6366, 151.3350),
     "Palm Beach": (-33.5905, 151.3285),
+    "Queenscliff": (-33.7842, 151.2925),  # off the north end (Wannasurf pin -33.7836, 151.2907)
+    "The Bower": (-33.7993, 151.2986),  # Wannasurf pin, off the headland
+    "Collaroy": (-33.7318, 151.3052),  # off the south corner, by the rockpool
+    "South Narrabeen": (-33.7180, 151.3062),
+    "Mona Vale": (-33.6830, 151.3160),  # Wannasurf pin -33.682, 151.314
+    "North Avalon": (-33.6342, 151.3360),  # Mondo pin -33.6342, 151.3352
 }
 
 NORTHERN = Region(

@@ -147,3 +147,14 @@ def test_maroubras_north_corner_is_the_pick_in_a_nor_easter():
     corner = surf(sessions["am"], "Maroubra (north end)")
     assert corner[0] > surf(sessions["am"], "Maroubra")[0]
     assert "sheltered from the wind" in corner[2]
+
+
+def test_collaroys_corner_is_the_northern_hideout_in_a_southerly():
+    # 2.8m E groundswell with a 25 km/h southerly: the open beaches are blown out, Collaroy's corner is sheltered
+    from beach_bot.beaches import NORTHERN
+
+    sessions, _ = score(*make_forecast(WED, swell(2.8, 100, 12, wind=25, wind_dir=190)), WED, region=NORTHERN)
+    corner = surf(sessions["am"], "Collaroy")
+    assert "sheltered from the wind" in corner[2]
+    assert corner[0] > surf(sessions["am"], "Long Reef")[0]
+    assert corner[0] > surf(sessions["am"], "South Narrabeen")[0]

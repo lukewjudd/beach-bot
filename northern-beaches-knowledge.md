@@ -219,9 +219,23 @@ Wind drives them; NE and southerly winds both bring them in [S25]. Locally, Manl
 ### 7.7 Surf
 - R-NSU1 North Narrabeen works IF dir is NE–SE (30–150°) AND 0.6 ≤ Hs ≤ 3.0 AND wind is NW–W or < 10 km/h. NE gets the bonus (long lefts) [N1, N13]. Rising tide +5 [N13].
 - R-NSU2 Dee Why Point works only IF Hs ≥ 1.5 AND dir is SE–S; it holds to 4 m. Wind S–WSW is offshore here [N1, N12]. Below 1.5 m, score it as flat. **The `SurfSpot` dataclass has no minimum size**, so this needs a `min_hs` field or a name check.
-- R-NSU3 In a southerly (wind 160–220°, ≥ 15 km/h): Warriewood and Dee Why Point are the only sheltered breaks [N1, N12]. Curl Curl and Long Reef are blown out [N1].
+- R-NSU3 In a southerly (wind 160–220°, ≥ 15 km/h): Warriewood, Dee Why Point and Collaroy's south corner (added 2026-11-10, R-NSU6) are the sheltered breaks [N1, N12]. Curl Curl and Long Reef are blown out [N1].
 - R-NSU4 Curl Curl is the "when there's nothing else" spot. Its k stays high in S/SE so it lights up on small south swells [N1].
 - R-NSU5 Avalon and Palm Beach: rising tide +5 (Avalon [N13]). Palm Beach in big winter S swell: the south end is better [N1]. The one pin can't express this.
+- R-NSU6 More breaks (added 2026-11-10, research/northern-reefs-dated.md). Each has dated sessions from realsurf's Dee Why reports, Sprout Daily's Manly blog and Tracks:
+  - Queenscliff (all; Manly's north end, a size bigger than South Steyne on S/SE swell; mid tide).
+  - The Bower (Fairy Bower with Winki Pop; advanced; the right point off the Shelly Beach headland, facing the open ESE; 1m+ at the break, holds 4.5m; works on swell from 60–150°; mid tide; swell window measured at the pin).
+  - Collaroy's south corner (all; behind Long Reef, so low exposure, about 1m when it's 2.5m+ outside; holds 3m; S–SW wind (160–225°) scored at half strength).
+  - South Narrabeen (intermediate; A-frames; closes out above 2.6m at the break).
+  - Mona Vale (intermediate; NE best).
+  - North Avalon (intermediate; heavy left by the headland; low tide).
+  - Backtest 2022-01 to 2026-11 against the dated sessions:
+    - South Narrabeen: good days 6, 8, 8; poor and flat days mostly 1–3, with one 9 on a 2x-overhead closeout day (the sandbanks).
+    - Queenscliff: good days 6 and 8; so-so days 3–6.
+    - Collaroy: its best day (18 Apr 2025, "Everybody's at Collaroy") 6; poor days 5. Rain counts against it, since Collaroy is rain-sensitive.
+    - The Bower: the surfed day 7; poor and flat days 1–2.
+  - Days a year at 8+: Queenscliff 6.8, The Bower 2.9, Collaroy 1.9, South Narrabeen 6.2, Mona Vale 5.2, North Avalon 10.3.
+  - Left out: Queenscliff Bombie, Long Reef Bombie and Deadmans (pros only); Narrabeen Alley, Mona Vale Basin, Bilgola Bank and Bowles (locals' or bodyboard spots); the Newport ledges and Lighthouse Rights (expert or tow); Bungan, Little Avalon, Turimetta and the Wedge (too few dated sessions).
 
 ### 7.8 Tie-break
 - R-NTB1 After all rules, IF Shelly Beach's score ≥ (best − `FAVOURITE_TOLERANCE`) AND Shelly is not "NO" → pick Shelly (`favourite="Shelly Beach"`).

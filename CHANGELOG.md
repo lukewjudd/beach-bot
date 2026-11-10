@@ -4,6 +4,19 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-10
 
+- **Six more surf breaks on the northern beaches,** from research/northern-reefs-dated.md. The dated sessions come from realsurf's Dee Why reports, Sprout Daily's Manly blog and Tracks. Rule R-NSU6.
+  - **The breaks:**
+    - Queenscliff (Manly's north end, a size bigger than South Steyne on south swell).
+    - The Bower (Fairy Bower with Winki Pop; advanced; faces the open ESE rather than borrowing Shelly Beach's).
+    - Collaroy's south corner (the hideout in a southerly: S–SW wind at half strength, low exposure behind Long Reef).
+    - South Narrabeen, Mona Vale and North Avalon (intermediate).
+  - **Fixed:** R-NSU3 now counts Collaroy as a southerly hideout.
+  - **Backtested 2022 to 2026:**
+    - South Narrabeen's good days score 6, 8 and 8, and its poor days mostly 1–3.
+    - Collaroy's "Everybody's at Collaroy" day scores 6.
+    - The new breaks score 8+ on about 2–10 days a year.
+    - Two tunes came from the dates: South Narrabeen now closes out above 2.6m, and Collaroy gets less of the swell.
+  - **Left out:** the pros-only bombies, the locals' and bodyboard spots, and four breaks with too few dated sessions (Bungan, Little Avalon, Turimetta, the Wedge).
 - **Surf mode shows the swell.** Feedback from a surfer: they want to see the swell. Ideas from open-swells (ideas only: it has no licence).
   - **Every train, in the top card:** the Ocean line has a chip per wave train at the middle of the session's best hours: the main swell, a second swell and the wind chop. For example "3ft ENE @ 6s · 1ft SSE @ 9s · Chop 1ft NNE @ 2s". A groundswell hiding under wind swell now shows. Exported as `conditions.trains`.
   - **At each break, on its card:** each train's height once it gets there (that break's exposure to its direction and period, then breaking height), biggest first. For example "Under 1ft ENE @ 6s, under 1ft SSE @ 9s at the break". Several breaks can share the top score, so this sits on every card rather than only the top one. Exported as `here.trains`.
