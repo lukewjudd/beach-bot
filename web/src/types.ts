@@ -8,7 +8,11 @@ export interface Spot {
   kind: SpotKind;
   snorkel?: boolean;
   women_only?: boolean;
-  level?: "all" | "intermediate" | "advanced" | "expert" | null; // surf breaks: who it's for
+  level?: "all" | "intermediate" | "advanced" | "expert" | "pro" | null; // surf breaks: who it's for
+  /** Big-wave spots: a public place to watch from */
+  watch_from?: string | null;
+  /** False: set up from the surf guides, not yet checked against real days */
+  checked?: boolean;
   /** The place it belongs to, e.g. Coogee for the beach, its surf break and its pools */
   area?: string;
   lat: number;

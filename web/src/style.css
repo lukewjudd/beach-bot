@@ -442,6 +442,7 @@ button:disabled { opacity: .45; cursor: default; }
 .details .report + h3 { margin-top: 16px; }
 .details .here { margin: 0 0 12px; font-size: 14px; }
 .details .here .muted { color: var(--muted); }
+.details .watch { margin: -6px 0 12px; font-size: 13px; color: var(--muted); }
 .details dl.lifeguards { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 0; font-size: 14px; }
 .details dl.lifeguards dt { color: var(--muted); }
 .details dl.lifeguards dd { margin: 0; }

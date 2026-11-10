@@ -4,6 +4,20 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-10
 
+- **Nine more breaks, tagged "Not checked yet".** These were left out for want of dated sessions, but they're well-known breaks and worth showing. Their numbers come from the surf guides, and they stay out of the surf call and the calendar until real days back them up (`checked=False`, rule R-SU10).
+  - **Northern:** the Wedge (the north end of Whale Beach, measured at the pin so NE swell gets in), Little Avalon, Turimetta, Bungan, Bilgola, Whale Beach, and Diggers Rights (pros only).
+  - **Eastern:** Diamonds (pros only, Diamond Bay) and Voodoo (pros only, Bate Bay, facing south).
+  - **How often they're good:** each scores 8+ on about 0–9 days a year over the archive. Diamonds and Diggers Rights had their minimum sizes nudged so the slabs come out rarer and Diggers Rights a touch more often.
+- **Pros-only spots, scored so you know when to go and watch.** Cape Solander, Queenscliff Bombie, Deadmans and Long Reef Bombie, from research/pro-spots-dated.md. Rule R-SU9.
+  - **New level, "pro":** tagged "Pros only". Like advanced and expert breaks, they never make the surf call or the calendar.
+  - **Watch from:** each card has a line saying where to watch from, such as "Watch from the whale-watching platform at Cape Solander". Ben Buckler and Wedding Cake Island get one too.
+  - **Backtested on dated big days:**
+    - Solander's good days score 6–8.
+    - Queenscliff Bombie scores 1 on the big south swells that only "tickled" it and 7 on an east swell it was ridden on.
+    - Long Reef Bombie's good day scores 8.
+  - **Deadmans** needed facing ENE (sheltered by North Head) and a 2m minimum to score its ridden days 5–7.
+  - **Still left out:** Voodoo, Honeycomb (part of Lurline Bay), Diamonds, Diggers Rights, Kelso Beach and Lighthouse Rights. Each has no dated sessions or no location.
+  - **Research fix:** a Deadmans date in northern-reefs-dated.md was a misread (2 Apr 2022, not 2 Jan) and is dropped.
 - **Six more surf breaks on the northern beaches,** from research/northern-reefs-dated.md. The dated sessions come from realsurf's Dee Why reports, Sprout Daily's Manly blog and Tracks. Rule R-NSU6.
   - **The breaks:**
     - Queenscliff (Manly's north end, a size bigger than South Steyne on south swell).

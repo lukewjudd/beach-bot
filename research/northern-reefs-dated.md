@@ -189,7 +189,6 @@ Winki toward Bluefish Point.
 | 2025-04-01 | GOOD (heavy) | "Deadmans wipeouts, RAW surf footage, 1st April 2025"; buoy Hs over 5.5 m | https://www.youtube.com/watch?v=TAVEyxSllGw |
 | 2024-07-31 / 08-01 | GOOD (big) | Swell Diary "Big Solid Deadmans"; Sprout: "4 and 5 metres with outlier sets over 10metres" | https://swelldiary.com/break/deadmans/ ; https://www.sproutdaily.com/the-daily/31-jul-24 |
 | 2024-06-17 | surfed | Swell Diary "Raw Footage Deadmans" | https://swelldiary.com/break/deadmans/ |
-| 2022-01-02 | surfed | Swell Diary "Raw Footage Deadmans" | https://swelldiary.com/break/deadmans/ |
 
 ---
 

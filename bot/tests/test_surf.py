@@ -158,3 +158,25 @@ def test_collaroys_corner_is_the_northern_hideout_in_a_southerly():
     assert "sheltered from the wind" in corner[2]
     assert corner[0] > surf(sessions["am"], "Long Reef")[0]
     assert corner[0] > surf(sessions["am"], "South Narrabeen")[0]
+
+
+def test_pro_spots_show_when_its_pumping_but_never_make_the_call():
+    # A solid 3.5m E groundswell, light westerly: Cape Solander fires, and the surf call is still a break for everyone
+    sessions, _ = score(*make_forecast(WED, swell(3.5, 100, 13, wind=8, wind_dir=270)), WED)
+    am = sessions["am"]
+    solander = surf(am, "Cape Solander")
+    assert solander[1].level == "pro" and solander[1].watch_from
+    assert out_of_10(solander[0]) >= 7
+    assert not am.surf[0][1].advanced
+
+
+def test_a_break_not_checked_yet_is_scored_but_never_the_call():
+    from beach_bot.beaches import NORTHERN
+
+    # 1.4m NE groundswell, light westerly: Whale Beach and the Wedge like it, but neither is checked against real days
+    sessions, _ = score(*make_forecast(WED, swell(1.4, 50, 11, wind=6, wind_dir=270)), WED, region=NORTHERN)
+    am = sessions["am"]
+    whale = surf(am, "Whale Beach")
+    assert not whale[1].checked and whale[1].advanced  # kept out of the call like the advanced breaks
+    assert out_of_10(whale[0]) >= 6
+    assert am.surf[0][1].checked

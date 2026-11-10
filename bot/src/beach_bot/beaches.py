@@ -160,18 +160,21 @@ class SurfSpot:
     max_hs: float = 2.5  # above this (at the break) it closes out
     bonus_dirs: tuple = None  # swell direction range that gets a small bonus
     beach: Beach | None = None  # the beach it breaks off: shares its water (and Beachwatch site)
-    level: str = "all"  # who it's for: "all", "intermediate", "advanced" or "expert" (R-SU8)
+    level: str = "all"  # who it's for: "all", "intermediate", "advanced", "expert" or "pro" (R-SU8, R-SU9)
     min_hs: float = 0  # reefs and bombies: barely breaks below this at the break (m)
     best_tide: str | None = None  # "low", "mid" or "high"
     at_pin: bool = False  # a bombie or point reef: its swell window is measured at the pin, not walked back to shore
     works_from: tuple = None  # reefs: the swell directions it actually breaks on (from, to); others it ignores
     out_to_sea: bool = False  # well offshore, clear of the stormwater drains: rain is a warning, not a closure
     wind_shelter: tuple = None  # (from, to): wind from here is blocked by a headland and blows at about half strength
+    watch_from: str | None = None  # big-wave spots: a public place to watch from (R-SU9)
+    checked: bool = True  # False: set up from surf guides only, with no dated sessions to check it against (R-SU10)
 
     @property
     def advanced(self):
-        """Advanced and expert breaks are scored and shown, but never make the surf call or the calendar."""
-        return self.level in ("advanced", "expert")
+        """Breaks kept out of the surf call and the calendar, though scored and shown: advanced, expert and pros-only
+        breaks, and any not yet checked against real days."""
+        return self.level in ("advanced", "expert", "pro") or not self.checked
 
 
 SURF_SPOTS = [
@@ -196,6 +199,7 @@ SURF_SPOTS = [
         at_pin=True,
         works_from=(130, 200),
         out_to_sea=True,
+        watch_from="the Ben Buckler headland, at the north end of Bondi",
     ),
     # Maroubra (north end): the "Dunny Bowl" rip bowl in the north corner, sharper rights into the rocks and longer
     # lefts. The sheltered option in a solid E-SE swell when the south end is too big; out of the northerlies, ruined
@@ -240,6 +244,7 @@ SURF_SPOTS = [
         at_pin=True,
         works_from=(80, 200),
         out_to_sea=True,
+        watch_from="Grant Reserve, on Coogee's south headland",
     ),
     # Lurline Bay: heavy reef between Coogee and Maroubra, ridden in the XL SSE swell of 1 Apr 2025
     SurfSpot(
@@ -250,6 +255,49 @@ SURF_SPOTS = [
         level="advanced",
         min_hs=2.0,
         works_from=(90, 190),
+    ),
+    # R-SU9: pros only, scored so people know when to go and watch (research/pro-spots-dated.md). Cape Solander
+    # ("Ours"): the slab under the Kurnell cliffs. E swell 2m+ at the break, long period; S is offshore in an E swell
+    SurfSpot(
+        "Cape Solander",
+        80,
+        {"NE": 0.8, "E": 1.0, "SE": 0.9, "S": 0.5},
+        max_hs=7.0,
+        level="pro",
+        min_hs=2.0,
+        best_tide="high",
+        at_pin=True,
+        works_from=(45, 160),
+        out_to_sea=True,
+        watch_from="the whale-watching platform at Cape Solander (Kamay National Park: $8 a car, gates 7am to 7:30pm)",
+    ),
+    # R-SU10: not yet checked against real days, set up from the surf guides (research/pro-spots-dated.md §8).
+    # Diamonds: a right reef in Diamond Bay, Dover Heights. Ladder off the cliff walk
+    SurfSpot(
+        "Diamonds",
+        100,
+        {"NE": 0.6, "E": 1.0, "SE": 0.9, "S": 0.6},
+        max_hs=3.5,
+        level="pro",
+        min_hs=1.6,
+        best_tide="high",
+        at_pin=True,
+        works_from=(80, 190),
+        watch_from="Diamond Bay Reserve, on the cliff walk",
+        checked=False,
+    ),
+    # Voodoo: a heavy left 300-500m out in Bate Bay, on the south side of Kurnell. Faces S, unlike everything else
+    SurfSpot(
+        "Voodoo",
+        190,
+        {"NE": 0.05, "E": 0.3, "SE": 0.8, "S": 1.0},
+        max_hs=4.0,
+        level="pro",
+        min_hs=1.5,
+        at_pin=True,
+        works_from=(150, 215),
+        out_to_sea=True,
+        checked=False,
     ),
     # Malabar: a left reef off Boora Point that only works in big swell (about 3 ft there when Maroubra is 6-10 ft),
     # E round to S; dated good days had 2.6-4.6m at the pin (research/eastern-reefs-dated.md). N-W wind, better at
@@ -297,6 +345,9 @@ SURF_COORDS = {  # pushed further out to sea than the swim markers so the two do
     "Wedding Cake Island": (-33.9264, 151.2672),  # off the seaward side of the islet (OSM -33.9259, 151.2654)
     "Lurline Bay": (-33.9378, 151.2638),  # OSM: Lurline Bay -33.9375, 151.2618
     "Malabar": (-33.9672, 151.2680),  # just off Boora Point (OSM -33.9681, 151.2652)
+    "Cape Solander": (-34.0166, 151.2332),  # 100m seaward of the cape (OSM -34.0166, 151.2318): the slab
+    "Diamonds": (-33.8625, 151.2832),  # Wannasurf pin
+    "Voodoo": (-34.0435, 151.2085),  # Wannasurf pin, about 500m from Suck Rock
 }
 
 
@@ -337,6 +388,9 @@ BEACH_FOR_SURF = {
     "Wedding Cake Island": _BEACH["Coogee"],
     "Lurline Bay": _BEACH["Maroubra"],
     "Malabar": _BEACH["Malabar"],
+    "Cape Solander": _BEACH["Little Bay"],
+    "Diamonds": _BEACH["Bondi (north end)"],  # no Beachwatch site at Diamond Bay
+    "Voodoo": _BEACH["Little Bay"],  # no Beachwatch site in Bate Bay; out to sea, so rain is only a warning
 }
 for _sp in SURF_SPOTS:
     _sp.beach = BEACH_FOR_SURF[_sp.name]
@@ -553,6 +607,121 @@ NORTHERN_SURF = [
         at_pin=True,
         works_from=(60, 150),
     ),
+    # R-SU9: pros only. Queenscliff Bombie: only on a big E swell; big S swells just "tickle" it (2022-04-01)
+    SurfSpot(
+        "Queenscliff Bombie",
+        90,
+        {"NE": 0.7, "E": 1.0, "SE": 0.8, "S": 0.4},
+        max_hs=8.0,
+        level="pro",
+        min_hs=3.0,
+        at_pin=True,
+        works_from=(60, 130),
+        out_to_sea=True,
+        watch_from="the Queenscliff headland, by the rock pool",
+    ),
+    # Deadmans: the slab under the North Head cliffs off Shelly. S and E both work; out of the SW-SE wind
+    SurfSpot(
+        "Deadmans",
+        70,  # breaks along the cliffs facing ENE, with North Head between it and the S-SW wind
+        {"NE": 0.6, "E": 1.0, "SE": 1.0, "S": 0.9},
+        max_hs=6.0,
+        level="pro",
+        min_hs=2.0,
+        best_tide="high",
+        at_pin=True,
+        works_from=(60, 195),
+        out_to_sea=True,
+        wind_shelter=(135, 225),
+        watch_from="the Shelly Beach headland car park and cliffs",
+    ),
+    # Long Reef Bombie: out off the point, S-SE swell 2.5m+, a long paddle
+    SurfSpot(
+        "Long Reef Bombie",
+        150,
+        {"NE": 0.3, "E": 0.7, "SE": 1.0, "S": 1.0},
+        max_hs=7.0,
+        level="pro",
+        min_hs=2.5,
+        at_pin=True,
+        works_from=(120, 200),
+        out_to_sea=True,
+        watch_from="the Long Reef headland track",
+    ),
+    # R-SU10: not yet checked against real days, set up from the surf guides (research/northern-reefs-dated.md).
+    # Diggers Rights: a right slab below the Harbord Diggers, Freshwater. Over 3.5m, about 5 days a year
+    SurfSpot(
+        "Diggers Rights",
+        110,
+        {"NE": 0.6, "E": 1.0, "SE": 0.8, "S": 0.5},
+        max_hs=6.0,
+        level="pro",
+        min_hs=2.5,
+        at_pin=True,
+        works_from=(60, 140),
+        watch_from="the clifftop above the ledge, below the Harbord Diggers",
+        checked=False,
+    ),
+    # Turimetta: a beach and a left over rocks between Narrabeen and Warriewood; ESE best
+    SurfSpot(
+        "Turimetta",
+        100,
+        {"NE": 0.8, "E": 1.0, "SE": 0.9, "S": 0.6},
+        level="advanced",
+        min_hs=0.8,
+        best_tide="mid",
+        checked=False,
+    ),
+    # Bungan: sand over rock, steep at the south end. NE-E; a 1.5m SSE was tiny
+    SurfSpot(
+        "Bungan",
+        115,
+        {"NE": 0.9, "E": 1.0, "SE": 0.6, "S": 0.4},
+        level="intermediate",
+        best_tide="low",
+        checked=False,
+    ),
+    # Bilgola: sand over rock at the north end; NE best, fickle
+    SurfSpot(
+        "Bilgola",
+        120,
+        {"NE": 0.9, "E": 1.0, "SE": 0.7, "S": 0.5},
+        level="intermediate",
+        checked=False,
+    ),
+    # Little Avalon: a right reef ledge about 400m off the Avalon pool; fun at 2-4 ft, mid to high tide
+    SurfSpot(
+        "Little Avalon",
+        110,
+        {"NE": 0.8, "E": 1.0, "SE": 0.9, "S": 0.7},
+        max_hs=2.5,
+        level="advanced",
+        min_hs=0.8,
+        best_tide="high",
+        at_pin=True,
+        checked=False,
+    ),
+    # Whale Beach: the beach; NE-E best, low to mid tide
+    SurfSpot(
+        "Whale Beach",
+        95,
+        {"NE": 0.9, "E": 1.0, "SE": 0.7, "S": 0.5},
+        level="intermediate",
+        best_tide="low",
+        checked=False,
+    ),
+    # The Wedge: a left over reef and sand at the NORTH end of Whale Beach; NE favoured, low to mid tide
+    SurfSpot(
+        "The Wedge",
+        95,
+        {"NE": 1.0, "E": 0.9, "SE": 0.5, "S": 0.3},
+        level="advanced",
+        min_hs=1.0,
+        best_tide="low",
+        works_from=(20, 120),
+        checked=False,
+        at_pin=True,  # the wedge forms right off the north headland; walking back to shore puts it behind it
+    ),
     # Collaroy's south corner: tucked behind Long Reef, the hideout in a southerly ("Everybody's at Collaroy",
     # 18 Apr 2025). Needs a big swell outside to get 0.6-1m in the corner
     SurfSpot(
@@ -609,6 +778,16 @@ NORTHERN_BEACH_FOR_SURF = {
     "South Narrabeen": _NB["Collaroy"],  # the same stretch of sand; South Narrabeen has no Beachwatch site of its own
     "Mona Vale": _NB["Mona Vale"],
     "North Avalon": _NB["Avalon"],
+    "Queenscliff Bombie": _NB["Queenscliff"],
+    "Deadmans": _NB["Shelly Beach"],
+    "Long Reef Bombie": _NB["Long Reef"],
+    "Diggers Rights": _NB["Freshwater"],
+    "Turimetta": _NB["North Narrabeen"],  # no Beachwatch site at Turimetta
+    "Bungan": _NB["Bungan"],
+    "Bilgola": _NB["Bilgola"],
+    "Little Avalon": _NB["Avalon"],
+    "Whale Beach": _NB["Whale Beach"],
+    "The Wedge": _NB["Whale Beach"],
 }
 for _sp in NORTHERN_SURF:
     _sp.beach = NORTHERN_BEACH_FOR_SURF[_sp.name]
@@ -691,6 +870,16 @@ NORTHERN_SURF_COORDS = {  # just seaward of each break, checked to be on the wat
     "South Narrabeen": (-33.7180, 151.3062),
     "Mona Vale": (-33.6830, 151.3160),  # Wannasurf pin -33.682, 151.314
     "North Avalon": (-33.6342, 151.3360),  # Mondo pin -33.6342, 151.3352
+    "Queenscliff Bombie": (-33.7892, 151.2949),
+    "Deadmans": (-33.8003, 151.3005),
+    "Long Reef Bombie": (-33.7459, 151.3084),
+    "Diggers Rights": (-33.7798, 151.2964),  # Wannasurf pin, below the Harbord Diggers
+    "Turimetta": (-33.7002, 151.3122),  # off the Wannasurf pin -33.700, 151.310
+    "Bungan": (-33.6662, 151.3228),  # off the Wannasurf pin -33.666, 151.321
+    "Bilgola": (-33.6441, 151.3322),  # off the north end (Wannasurf -33.6439, 151.3308)
+    "Little Avalon": (-33.6398, 151.3337),  # Mondo pin, about 400m off the pool
+    "Whale Beach": (-33.6108, 151.3342),
+    "The Wedge": (-33.6080, 151.3355),  # off the north end of the sand (OSM beach -33.6134 to -33.6075)
 }
 
 NORTHERN = Region(

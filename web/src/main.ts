@@ -82,11 +82,14 @@ const tags = (spot: Spot) =>
   `<span class="tag">${TAG[spot.kind]}</span>` +
   (spot.snorkel ? `<span class="tag">Snorkel</span>` : "") +
   (spot.women_only ? `<span class="tag">Women only</span>` : "") +
-  (spot.level === "advanced" || spot.level === "expert"
-    ? `<span class="tag tag-level" title="Heavy reef or bombie: experienced surfers only">${spot.level === "expert" ? "Expert" : "Advanced"}</span>`
+  (spot.level === "advanced" || spot.level === "expert" || spot.level === "pro"
+    ? `<span class="tag tag-level" title="${spot.level === "pro" ? "Big-wave spot for pros: scored so you know when it's worth watching" : "Heavy reef or bombie: experienced surfers only"}">${spot.level === "pro" ? "Pros only" : spot.level === "expert" ? "Expert" : "Advanced"}</span>`
     : spot.level === "intermediate"
       ? `<span class="tag">Intermediate</span>`
-      : "");
+      : "") +
+  (spot.checked === false
+    ? `<span class="tag" title="Set up from the surf guides; not yet checked against real days">Not checked yet</span>`
+    : "");
 // Surf mode shows the surf breaks. Swim mode shows a spot if it suits any ticked activity (Clovelly is a swim and a
 // snorkel spot)
 const shows = (spot: Spot) =>
@@ -664,7 +667,7 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
+    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}${spot.watch_from ? `<p class="watch">Watch from ${esc(spot.watch_from)}</p>` : ""}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
   </li>`;
 }
 

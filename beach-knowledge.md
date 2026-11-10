@@ -220,6 +220,25 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
     - Maroubra (north end): on ten dated north-corner days, good days have a median of 6 and the flat day 2. Two of the three poor days score 6–7: one fell when ABC reported the corner's sand stripped (Aug 2024), and the other we can't explain. In a N–NE wind of 12 km/h or more it scores 1–3 points above the open beach.
   - Backtest 2023-01 to 2026-11, days a year at 8+: Ben Buckler 1.3, Wedding Cake 1.6, Clovelly Bombie 2.9, Lurline 2.9, Malabar 2.6, Mackenzies 13, Maroubra (north end) 15. The original four breaks are unchanged.
 
+- R-SU9 Pros-only spots (added 2026-11-10, research/pro-spots-dated.md). Scored so people know when to go and watch, never the surf call or the calendar (level "pro", tagged "Pros only", each with `watch_from`):
+  - Cape Solander ("Ours", Kurnell): an E swell 2m+ at the break, 45–160°, high tide. Watch from the whale-watching platform.
+  - Queenscliff Bombie: a big E swell only, 3m+ at the break, 60–130°.
+  - Deadmans (under North Head): S and E both work, 2m+, high tide, out of the S–SW wind.
+  - Long Reef Bombie: S–SE swell 2.5m+.
+  - Ben Buckler and Wedding Cake Island stay "expert" and now have watch-from spots too.
+  - Backtest against dated sessions:
+    - Cape Solander: good days 6, 7, 8 and 8.
+    - Queenscliff Bombie: 1 on every big S swell that only "tickled" it, and 7 on the E swell of 5 Aug 2025.
+    - Long Reef Bombie: its good day 8, its poor day 2.
+    - Deadmans: the ridden day 7, good days 5–6, and most so-so days 1–3, after facing it ENE (sheltered by North Head).
+  - Days a year at 8+: Solander 2.3, Queenscliff Bombie 0.4, Long Reef Bombie 0.2, Deadmans 3.1.
+  - Still left out: Voodoo (Bate Bay, outside the region's swell, one dated session), Honeycomb (part of Lurline Bay), Diamonds and Diggers Rights (no dated sessions), Kelso Beach (no location), Lighthouse Rights (no pin).
+
+- R-SU10 Not checked yet (added 2026-11-10). Breaks set up from the surf guides alone, with too few dated sessions to check them against. They're scored and shown, tagged "Not checked yet", and kept out of the surf call and the calendar (`checked=False`) until real days back them up:
+  - Eastern: Diamonds (pros only, Diamond Bay) and Voodoo (pros only, Bate Bay, faces S).
+  - Northern: Diggers Rights (pros only), Turimetta and Little Avalon (advanced), the Wedge (advanced, the north end of Whale Beach, measured at the pin), and Bungan, Bilgola and Whale Beach (intermediate).
+  - Days a year at 8+ over the archive: Diamonds 5.4, Voodoo 2.1, Diggers Rights 0.2, Turimetta 6.6, Little Avalon 5.6, the Wedge 3.1, Bungan 5.0, Bilgola 7.4, Whale Beach 8.7.
+
 ### 4.4 Rain / water-quality rules
 - R-R1 IF the Beachwatch API `pollutionForecast` for the site = "Likely" → NO. = "Possible" → −30. [S12, S60]
 - R-R2 Fallback when the API fails, using the per-site thresholds in §3.1 [S10]:
