@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-10
+
+- **Visit counts with GoatCounter.** One script tag in `index.html` gives daily unique visitors, page views and referrers at beachbot.goatcounter.com. It uses no cookies, needs no consent banner, and doesn't count localhost. The About section says so.
+
 ## 2026-11-09
 
 - **Seven more surf breaks in the eastern suburbs, tagged by level.** Ben Buckler and Wedding Cake Island (expert), Clovelly Bombie, Lurline Bay and Malabar (advanced), and Mackenzies and Maroubra (north end) (intermediate).
