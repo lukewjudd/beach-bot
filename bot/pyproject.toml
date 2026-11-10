@@ -16,6 +16,9 @@ beach-backtest = "beach_bot.backtest:main"
 
 [dependency-groups]
 build = [
+    "laspy[lazrs]>=2.7.0",
+    "numpy>=2.5.4",
+    "pyproj>=3.8.0",
     "shapely>=2.2.0",
 ]
 dev = ["pytest>=8", "ruff>=0.6"]

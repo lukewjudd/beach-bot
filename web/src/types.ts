@@ -1,6 +1,6 @@
 // Shape of scores.json, written by the bot (bot/src/beach_bot/export.py) on every run.
 
-export type SpotKind = "swim" | "harbour" | "pool" | "surf";
+export type SpotKind = "swim" | "harbour" | "pool" | "surf" | "spear";
 
 export interface Spot {
   id: string;
@@ -8,11 +8,15 @@ export interface Spot {
   kind: SpotKind;
   snorkel?: boolean;
   women_only?: boolean;
-  level?: "all" | "intermediate" | "advanced" | "expert" | "pro" | null; // surf breaks: who it's for
+  level?: "all" | "intermediate" | "advanced" | "expert" | "pro" | null; // surf breaks and spear spots: who it's for
   /** Big-wave spots: a public place to watch from */
   watch_from?: string | null;
-  /** False: set up from the surf guides, not yet checked against real days */
+  /** False: set up from the guides, not yet checked against real days */
   checked?: boolean;
+  /** Spearfishing spots: how to get in */
+  entry?: string | null;
+  /** Spearfishing spots: the bottom round the pin, from the NSW seabed survey */
+  seabed?: { range_m: [number, number]; reef?: number | null; steep?: number | null } | null;
   /** The place it belongs to, e.g. Coogee for the beach, its surf break and its pools */
   area?: string;
   lat: number;
@@ -38,6 +42,9 @@ export interface SpotScore {
     wind_kmh: number;
     wind_dir: string;
     wind_kind: string;
+    /** Spearfishing: predicted visibility (m) and how far the water surges on the bottom (m) */
+    vis_m?: number;
+    surge_m?: number;
     /** Surf breaks: each swell train as it arrives at the break, biggest first */
     trains?: { kind: "swell" | "swell2" | "chop"; m: number; dir: string; deg: number; s: number }[];
   };
@@ -63,6 +70,8 @@ export interface Session {
   sun?: { rise: string; set: string } | null;
   /** Surf's own call: the best break on the surf scale, and whether it's in the day's surf event */
   surf?: SurfCall | null;
+  /** Spearfishing's own call: the best spot for everyone (no advanced or unchecked spots) */
+  spear?: SpearCall | null;
   lead: { id: string | null; kind: SpotKind; name: string | null; score: number; rating: number; window: [string, string] | null };
   conditions: {
     wind_kmh: number;
@@ -101,6 +110,14 @@ export interface SurfCall {
   /** Pumping: 8/10 or better on the surf scale */
   posted: boolean;
   in_event: boolean;
+}
+
+export interface SpearCall {
+  id: string;
+  name: string;
+  score: number;
+  rating: number;
+  window: [string, string] | null;
 }
 
 /** A lifeguard's morning report for a beach (Randwick's patrolled beaches), as the feed has it */

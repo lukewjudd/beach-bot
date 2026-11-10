@@ -81,7 +81,7 @@ def load_data(region=EASTERN):
             "wind_direction_10m,wind_gusts_10m,cloud_cover,uv_index,weather_code,cape",
             "daily": "sunrise,sunset",
             "timezone": "Australia/Sydney",
-            "past_days": 4,
+            "past_days": 7,  # a week back: spearfishing reads a week of rain and three days of swell
             "forecast_days": FORECAST_DAYS,
         },
     )
@@ -94,9 +94,9 @@ def load_data(region=EASTERN):
             "hourly": "wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,"
             "secondary_swell_wave_height,secondary_swell_wave_direction,secondary_swell_wave_period,"
             "wind_wave_height,wind_wave_direction,wind_wave_period,wave_period,"
-            "sea_surface_temperature,sea_level_height_msl",
+            "sea_surface_temperature,sea_level_height_msl,ocean_current_velocity",
             "timezone": "Australia/Sydney",
-            "past_days": 4,
+            "past_days": 7,  # a week back: spearfishing reads a week of rain and three days of swell
             "forecast_days": FORECAST_DAYS,
         },
     )
@@ -230,7 +230,7 @@ def past_rain(hours, now, point):
                 "hourly": "precipitation",
                 "models": ",".join(RAIN_MODELS),
                 "timezone": "Australia/Sydney",
-                "past_days": 4,
+                "past_days": 7,  # a week back: spearfishing reads a week of rain and three days of swell
                 "forecast_days": 1,
             },
         )

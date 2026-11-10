@@ -19,6 +19,12 @@ export const ICONS = {
   ),
   // Surfboard
   surf: svg('<path d="M18 3c2.5 2.5-1 9-5 13s-8.5 6.5-10 5S4 13 8 9s7.5-8.5 10-6z"/><path d="M6 18l9-9"/>'),
+  // A fish, for spearfishing spots: one outline with a forked tail, so it still reads as a fish at pin size
+  spear: svg(
+    '<path d="M2 12c3-3.5 6.5-5 10-5 2.5 0 4.5 1.5 6 3.5L22 7v10l-4-3.5C16.5 15.5 14.5 17 12 17c-3.5 0-7-1.5-10-5z"/><circle cx="7" cy="11" r="1" fill="currentColor" stroke="none"/>',
+  ),
+  // Stacked sheets, for the map style (plain map or aerial photos)
+  layers: svg('<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>'),
   // Settings
   cog: svg(
     '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',

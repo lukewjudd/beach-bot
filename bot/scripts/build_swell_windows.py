@@ -19,7 +19,8 @@ from pathlib import Path
 
 from shapely import LineString, STRtree
 
-from beach_bot.beaches import REGIONS, SurfSpot
+from beach_bot import swell
+from beach_bot.beaches import REGIONS, SpearSpot, SurfSpot
 
 HERE = Path(__file__).parent
 CACHE = HERE / "coastline.json"  # gitignored
@@ -91,6 +92,14 @@ def origin(tree, lines, region, spot):
     break near the sand: walk back in toward the shore and measure from BREAK_M off it."""
     lat, lon = region.pin(spot)
     x0, y0 = xy(lat, lon)
+    if isinstance(spot, SpearSpot):  # the reef itself: from the pin, nudged out the way it faces if it's on the rocks
+        dx, dy = math.sin(math.radians(spot.facing)), math.cos(math.radians(spot.facing))
+        for d in range(0, 800, 10):
+            if in_water(tree, lines, x0 + dx * d, y0 + dy * d):
+                if d:
+                    print(f"  {spot.name}: pin moved {d} m out to the water")
+                return lat + d * dy / M_PER_DEG_LAT, lon + d * dx / M_PER_DEG_LON
+        raise ValueError(f"no water off {spot.name}")
     if isinstance(spot, SurfSpot) and spot.at_pin:  # a bombie or point reef: the swell meets it right where the pin is
         if not in_water(tree, lines, x0, y0):
             raise ValueError(f"{spot.name}'s pin is on land")
@@ -118,10 +127,11 @@ def main():
     print(f"{len(lines)} coastline ways")
     result = {"step": STEP, "cap_km": CAP_KM, "spots": {}}
     for region in REGIONS:
-        for spot in [*region.beaches, *region.surf]:
-            if getattr(spot, "harbour", False):  # no ocean coastline inside the harbour: hand-set k stays
+        for spot in [*region.beaches, *region.surf, *region.spear]:
+            # no ocean coastline inside the harbour: hand-set k stays
+            if getattr(spot, "harbour", False) or getattr(spot, "water", None) == "harbour":
                 continue
-            key = f"{spot.name} surf" if isinstance(spot, SurfSpot) else spot.name
+            key = swell.key(spot)
             lat, lon = origin(tree, lines, region, spot)
             d = distances(tree, lines, lat, lon)
             result["spots"][key] = {"from": [round(lat, 5), round(lon, 5)], "km": d}

@@ -3,6 +3,8 @@
 
 from dataclasses import dataclass, field
 
+from .spearspots import NORTHERN_SPEAR, NORTHERN_SPEAR_COORDS, SPEAR_COORDS, SPEAR_SPOTS, SpearSpot
+
 
 @dataclass
 class Beach:
@@ -450,8 +452,11 @@ class Region:
     tiles: str  # map/<tiles>.pmtiles
     bounds: tuple  # ((south, west), (north, east)) the map can pan within; inside the tiles' bbox
     rain_gauges: tuple = ("94768", "94767")  # BOM stations: Observatory Hill, Sydney Airport
+    spear: list = field(default_factory=list)  # shore spearfishing spots (spearspots.py)
 
     def pin(self, spot):
+        if isinstance(spot, SpearSpot):
+            return self.coords[f"{spot.name} spear"]
         return self.coords[f"{spot.name} surf" if isinstance(spot, SurfSpot) else spot.name]
 
 
@@ -462,7 +467,13 @@ EASTERN = Region(
     beaches=BEACHES,
     pools=POOLS,
     surf=SURF_SPOTS,
-    coords={**COORDS, **POOL_COORDS, **{f"{name} surf": pin for name, pin in SURF_COORDS.items()}},
+    coords={
+        **COORDS,
+        **POOL_COORDS,
+        **{f"{name} surf": pin for name, pin in SURF_COORDS.items()},
+        **{f"{name} spear": pin for name, pin in SPEAR_COORDS.items()},
+    },
+    spear=SPEAR_SPOTS,
     forecast_point=(-33.914, 151.267),  # Clovelly
     marine_point=(-33.92, 151.33),
     favourite="Clovelly",
@@ -893,7 +904,9 @@ NORTHERN = Region(
         **NORTHERN_COORDS,
         **NORTHERN_POOL_COORDS,
         **{f"{name} surf": pin for name, pin in NORTHERN_SURF_COORDS.items()},
+        **{f"{name} spear": pin for name, pin in NORTHERN_SPEAR_COORDS.items()},
     },
+    spear=NORTHERN_SPEAR,
     forecast_point=(-33.752, 151.297),  # Dee Why: land cell by Narrabeen Lagoon, sea cell off Curl Curl
     marine_point=(-33.70, 151.37),  # MFWAM cell (-33.708, 151.375), ~6km off Narrabeen
     favourite="Shelly Beach",

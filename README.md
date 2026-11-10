@@ -11,6 +11,7 @@ Checks the weather and ocean forecast and tells me when it's worth going to the 
 - Anything 8/10 or better is "worth it" on the site; 9/10 or better goes in a shared Google Calendar, one event a day, and a 10/10 (every part at full marks) gets a 🔥
 - If the forecast turns, a session comes off its event once it drops below 8/10, so it doesn't flip-flop
 - Surf breaks are scored too, on their own scale: they never lead a session, and when it's pumping (8/10) the calendar gets a separate 🏄 Surf event
+- Shore spearfishing spots are scored too, on their own scale: predicted visibility (fitted to the Reef Life Survey's dated readings), surge on the bottom, wind, tide, light and water temperature. Site only, no calendar
 - Thunderstorms rule everything out
 - Writes all the scores to a JSON file, which the map site reads
 
@@ -26,7 +27,7 @@ web/       the map site: Vite + TypeScript + Leaflet, self-hosted Protomaps tile
 deploy.sh  Cloud Run job, schedule and public bucket
 beach-knowledge.md  the eastern suburbs rules and where they came from
 northern-beaches-knowledge.md  the same for the northern beaches
-research/  extra research (harbour beaches, missing pools)
+research/  extra research (harbour beaches, missing pools, surf breaks, spearfishing)
 ```
 
 ## Running it

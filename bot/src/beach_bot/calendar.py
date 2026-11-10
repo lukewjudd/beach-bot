@@ -87,7 +87,7 @@ def surf_day_body(sessions, hours, ctx, beachwatch, today):
     title = f"🏄 Surf {out_of_10(sc)}/10 {spot.name} · {top.day:%a} {when}"
     lines = ["Surf's pumping. This is the surf score, on its own scale: waves, wind and swell, not a swim.", ""]
     for s in sessions:
-        keys = window_hours(s, s.surf[0][1].name)
+        keys = window_hours(s, s.surf[0][1])
         c = conditions(s, hours, keys)
         lines += [
             f"{SLOT_NAMES[s.slot][1].capitalize()} {clock(s.start)}–{clock(s.end)}: surf {out_of_10(s.surf[0][0])}/10 "

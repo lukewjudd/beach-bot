@@ -2,6 +2,30 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-11
+
+- **Spearfishing, a third mode** (Settings: Swim, Surf or Spear). Rules R-SP0 to R-SP7 in beach-knowledge.md §4.9; research in research/spearfishing-*.md and research/spearospotter-notes.md (ideas from a friend's spearoSpotter and from spearo.app).
+  - **Shore spots, only ones it's legal to spear from** (19 to start; 26 with the seven below):
+    - **Eastern:** North Bondi, Wedding Cake Island, Lurline Bay, Mahon Pool, South Maroubra, Long Bay, Little Bay, Cape Banks, La Perouse, Kurnell bay side, the Leap and Yena, Camp Cove.
+    - **Northern:** Freshwater Head, Long Reef, Narrabeen Head, Bungan Head, Bilgola Head, Little Head, Barrenjoey Head.
+    - Closed waters, the outfalls, Magic Point and Bare Island (shut until about late 2027) aren't listed, so the site doesn't repeat the rules: they're implied. The closures were checked against the live DPIRD pages.
+    - Each card says how to get in, e.g. "In at the boat ramp, not the beach". Long swims, jump entries and exposed points are tagged Experienced; the headlands set up from guides alone are tagged Not checked yet. Neither makes the call.
+  - **Six bars:**
+    - Visibility (40%), predicted in metres from the reef's usual clarity, the last three days' swell there, a week of rain and the season. Fitted to the Reef Life Survey's dated visibility readings: 331 site-days, 2009–2025 (bot/scripts/fit_spear_vis.py).
+    - Surge (25%): how far the water moves on the bottom at the dive depth.
+    - Wind, tide, light and water temperature.
+    - Visibility and surge set the ceiling.
+  - **No-gos:** storms, waves breaking over the entry, a lagoon flushing after rain, and the harbour after rain.
+  - **"May be murky down deep":** a note for clear-on-top, milky-below days, from settling sand, cold upwelling or old runoff. It didn't flag 7 Nov, when the water was milky at 3 m: nothing in the forecast explains that day.
+  - **On the site:** the top card leads with predicted visibility; each card says what it's like on the reef ("About 8m visibility · under 1ft of swell on the reef · next to no surge"); the swell chart shows in spear mode too.
+  - **The forecast now looks back a week** (was four days), for the rain index, and reads the ocean current.
+- **Easter egg: under the water at Clovelly.** Clovelly's card has a link to a 1m depth map of the inlet, built from the 2018 NSW marine LiDAR point cloud (about 2 seabed points per square metre; bot/scripts/build_clovelly_depth.py, tiles ordered free from ELVIS and kept out of git). A slider runs through the session's day hour by hour, and the water over the seabed follows the forecast tide. It sits on NSW's aerial photo of the inlet, exported in the survey's own map projection so the two line up: the concrete and rocks are the photo, and only the water is coloured, see-through, in 1m depth bands with light relief shading. It starts at Clovelly's best hours, and you can hover or tap for the depth and whether it's reef or sand. Research in research/clovelly-bathymetry.md.
+- **Spearfishing reefs from the NSW seabed survey.** Each spot's pin now sits on the nearest reef to its entry at 3–15 m, found from NSW Marine LiDAR 2018 depths and the NSW Marine Habitats reef map (bot/scripts/build_spear_reefs.py). Its card says what's down there ("Reef, with drop-offs, 4–14m deep"), and surge is worked out at the real reef depth rather than a guess. Rule R-SP8; data sources in research/spearfishing-data-sources.md.
+- **Seven more spearfishing spots,** ideas from spearo.app, checked against the survey: Mackenzies Bay (Flat Rock), Henry Head (Experienced), Boat Harbour, Dee Why Head (North Curl Curl's reef), Mona Vale Headland, Newport Reef and Avalon's north headland. The last five and Boat Harbour are tagged Not checked yet.
+- **Aerial photos on the map:** a layers button in the map's top-right corner picks Map or Aerial (NSW Spatial Services' imagery, where reefs show as dark patches against the sand), and the page remembers it. The credits line wraps in its own corner rather than reaching across the Wind and Swell switches on a phone.
+- **A clearer fish icon** for spear spots: one outline with a forked tail, so it reads at pin size.
+- **Fix: a surf break's best hours overwrote its beach's.** Session windows were keyed by name, so Maroubra, Bronte and Coogee's swim cards showed their surf break's best hours (and the strip ringed those). Surf breaks and spear spots now keep their own.
+
 ## 2026-11-10
 
 - **Nine more breaks, tagged "Not checked yet".** These were left out for want of dated sessions, but they're well-known breaks and worth showing. Their numbers come from the surf guides, and they stay out of the surf call and the calendar until real days back them up (`checked=False`, rule R-SU10).

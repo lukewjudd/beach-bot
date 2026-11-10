@@ -16,3 +16,5 @@ __pycache__/
 web/public/map
 bot/scripts/coastline.json
 research/dcceew-email.md
+bot/scripts/reef_samples.json
+bot/scripts/clovelly_lidar/

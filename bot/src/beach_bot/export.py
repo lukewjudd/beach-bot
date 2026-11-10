@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 from . import swell
-from .beaches import EASTERN, Pool, SurfSpot
+from .beaches import EASTERN, Pool, SpearSpot, SurfSpot
 from .config import (
     DAYS_AHEAD,
     EVENT_THRESHOLD,
@@ -25,9 +25,12 @@ from .sessions import (
     lead_kind,
     out_of_10,
     report,
+    spear_context,
     spot_key,
     window_hours,
+    windows_of,
 )
+from .spear import predicted_vis, surge, swell_here
 
 
 def slug(name, kind):
@@ -40,6 +43,8 @@ def kind_of(spot):
         return "pool"
     if isinstance(spot, SurfSpot):
         return "surf"
+    if isinstance(spot, SpearSpot):
+        return "spear"
     return "harbour" if spot.harbour else "swim"
 
 
@@ -60,12 +65,12 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
     """Everything the map site needs for one region, as one JSON-able dict. `posted` is the session keys with a
     live calendar event (from sync), so the site says "worth it" exactly when the calendar has it; without a
     sync, 8/10+. `sun` is load_data()'s sunrise and sunset by date."""
-    all_spots = [*region.beaches, *region.surf, *region.pools]
+    all_spots = [*region.beaches, *region.surf, *region.pools, *region.spear]
     by_name = {}  # (name, kind) -> spot: a beach and its surf break can share a name ("Maroubra")
     spots = []
     for sp in all_spots:
         by_name[sp.name, kind_of(sp)] = sp
-        water = sp.beach if isinstance(sp, Pool | SurfSpot) else sp
+        water = sp.beach if isinstance(sp, Pool | SurfSpot) else sp  # spearfishing spots are their own place
         spots.append(
             {
                 "id": spot_id(sp),
@@ -76,6 +81,13 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 "level": getattr(sp, "level", None),
                 "watch_from": getattr(sp, "watch_from", None),
                 "checked": getattr(sp, "checked", True),
+                "entry": getattr(sp, "entry_note", None),
+                # Spearfishing: the bottom round the pin, from the NSW seabed survey (depth range, reef share)
+                "seabed": (
+                    {k: sp.reef[k] for k in ("range_m", "reef", "steep") if k in sp.reef}
+                    if isinstance(sp, SpearSpot) and sp.reef
+                    else None
+                ),
                 "area": area(water),
                 "lat": region.pin(sp)[0],
                 "lon": region.pin(sp)[1],
@@ -90,8 +102,9 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
         best = sess.best
         kind = lead_kind(sess)
 
-        def window(name, sess=sess):
-            w = sess.windows.get(name)
+        def window(spot, sess=sess):
+            """A spot's best hours as labels; `spot` is a spot, or a beach or pool's name (the headline)."""
+            w = sess.windows.get(spot) if isinstance(spot, str) else windows_of(sess, spot).get(spot.name)
             return [hour_label(w[0], 0), hour_label(w[1], 1)] if w else None
 
         def entry(sc, spot, notes, sess=sess):
@@ -99,20 +112,21 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
             when ruled out) and, for hours ruled out or stormy, why."""
             results = sess.hourly.get(spot_key(spot), [])
             why = {str(k): ns[0] for k, (s, ns) in enumerate(results) if ns and (s is None or "storms" in ns[0])}
-            out = {"id": spot_id(spot), "score": sc, "rating": out_of_10(sc), "window": window(spot.name)}
+            out = {"id": spot_id(spot), "score": sc, "rating": out_of_10(sc), "window": window(spot)}
             out["notes"] = notes
             out["hourly"] = [None if s is None else round(s) for s, _ in results]
             if why:
                 out["why"] = why
             if later := later_warning(sess, spot):
                 out["later"] = later
-            if here := conditions_here(sess, spot, hours):
+            if here := conditions_here(sess, spot, hours, ctx):
                 out["here"] = here
             return out
 
         scores = [entry(sc, b, notes) for sc, b, notes in sess.swim]
         scores += [entry(sc, sp, notes) for sc, sp, notes in sess.surf]
         scores += [entry(sc, p, notes) for sc, p, notes in sess.pools]
+        scores += [entry(sc, sp, notes) for sc, sp, notes in sess.spear]
         out_sessions.append(
             {
                 "key": sess.key,
@@ -137,6 +151,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 # Surf's own call, for the site's surf mode: the best break on the surf scale, and whether it's in
                 # the day's surf event (pumping, 8/10+ on that scale)
                 "surf": surf_call(sess, posted, window),
+                # Spearfishing's own call: the best spot for everyone (not the advanced or unchecked ones)
+                "spear": spear_call(sess, window),
                 "lead": {
                     "id": slug(lead, kind) if lead else None,
                     "kind": kind,
@@ -169,7 +185,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 "ruled_out": {
                     spot_id(by_name.get((name, "pool")) or next(b for b in region.beaches if b.name == name)): why
                     for name, why in sess.ruled_out.items()
-                },
+                }
+                | {spot_id(sp): why for sp in region.spear if (why := sess.spear_ruled_out.get(sp.name))},
                 "scores": scores,
             }
         )
@@ -236,11 +253,11 @@ def swell_trains(hours, keys):
     return out
 
 
-def conditions_here(sess, spot, hours):
+def conditions_here(sess, spot, hours, ctx=None):
     """What the session is like at this spot rather than out at sea, over its best window: the waves at its sand
     or break (the swell chip is the offshore swell, the same for the whole coast) and which way the wind blows
     there. Pools are left without waves: what matters there is swell over the walls, which the score covers."""
-    keys = [t for t in window_hours(sess, spot.name) if t in hours]
+    keys = [t for t in window_hours(sess, spot) if t in hours]
     if not keys:
         return None
     mid = hours[keys[len(keys) // 2]]
@@ -254,7 +271,14 @@ def conditions_here(sess, spot, hours):
     sheltered = sheltered or (spot.name == "Bondi (north end)" and 0 <= wdir <= 70)  # R-W6: under Ben Buckler
     if sheltered and round(kmh) >= 8:
         out["wind_kind"] += ", sheltered"
-    if isinstance(spot, SurfSpot):
+    if isinstance(spot, SpearSpot):
+        # What it's like on the reef: the predicted visibility, the swell there, and how far the water surges on
+        # the bottom
+        sctx = spear_context(ctx)
+        out["vis_m"] = round(sum(predicted_vis(spot, t, sctx) for t in keys) / len(keys))
+        out["waves_m"] = round(sum(swell_here(hours[t], spot) for t in keys) / len(keys), 1)
+        out["surge_m"] = round(sum(surge(hours[t], spot) for t in keys) / len(keys), 1)
+    elif isinstance(spot, SurfSpot):
         out["waves_m"] = round(sum(at_break(hours[t], spot) for t in keys) / len(keys), 1)
         # Each swell train as it arrives at this break (its exposure to that direction and period, then breaking
         # height), biggest first: a south groundswell can be the bigger wave at Bondi's south end while an east
@@ -283,10 +307,19 @@ def surf_call(sess, posted, window):
         "name": sp.name,
         "score": sc,
         "rating": out_of_10(sc),
-        "window": window(sp.name),
+        "window": window(sp),
         "posted": sc >= SURF_THRESHOLD,
         "in_event": bool(in_event),
     }
+
+
+def spear_call(sess, window):
+    """The session's best spearfishing spot for everyone, or None when every one is a no-go."""
+    best = next((x for x in sess.spear if not x[1].advanced), None)
+    if not best:
+        return None
+    sc, sp, _ = best
+    return {"id": spot_id(sp), "name": sp.name, "score": sc, "rating": out_of_10(sc), "window": window(sp)}
 
 
 def lifeguards(region, hours, beachwatch):

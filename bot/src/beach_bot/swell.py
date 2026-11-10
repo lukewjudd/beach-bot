@@ -160,7 +160,9 @@ def correction(key, facing, k, deg):
 
 
 def key(spot):
-    """swell_windows.json key: surf breaks share names with beaches."""
+    """swell_windows.json key: surf breaks and spearfishing spots share names with beaches."""
+    if hasattr(spot, "depth"):
+        return f"{spot.name} spear"
     return f"{spot.name} surf" if hasattr(spot, "max_hs") else spot.name
 
 

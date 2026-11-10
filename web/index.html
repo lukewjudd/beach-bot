@@ -37,16 +37,18 @@
     </div>
   </header>
 
+  <dialog class="about depth" id="depth" aria-label="Under the water at Clovelly"></dialog>
   <dialog class="about settings" id="settings" aria-labelledby="settings-title">
     <div class="about-head">
       <h2 id="settings-title">Settings</h2>
       <button type="button" class="link" id="settings-close">Done</button>
     </div>
     <div class="setting">
-      <h3 id="mode-label">Swim or surf</h3>
+      <h3 id="mode-label">Swim, surf or spear</h3>
       <div class="mode-pick seg" id="mode-pick" role="group" aria-labelledby="mode-label">
         <button type="button" data-mode="swim" aria-pressed="true">Swim</button>
         <button type="button" data-mode="surf" aria-pressed="false">Surf</button>
+        <button type="button" data-mode="spear" aria-pressed="false">Spear</button>
       </div>
     </div>
     <div class="setting">
@@ -114,6 +116,14 @@
       Breaks we haven't been able to check against real days yet are tagged Not checked yet: their numbers come from
       the surf guides, and like the advanced breaks they never make the call. Anything locals keep quiet is left
       out.</p>
+    <p>Spear mode scores shore spearfishing spots, and only ones it's legal to spear from: closed waters aren't
+      listed. Visibility leads the score. It's predicted in metres from the reef's usual clarity, the last three days'
+      swell there (stirred-up sand takes a day or two to settle), a week of rain (worse by lagoons, estuaries and in
+      the harbour) and the season, fitted to the Reef Life Survey's dated readings round Sydney. Then surge: how far
+      the water pushes you back and forth on the bottom, which long-period swell makes much worse. Then wind, tide,
+      light and water temperature. Waves breaking over the entry, a lagoon flushing after heavy rain and the harbour
+      after rain rule a spot out. "May be murky down deep" flags days that can look clear on top and be milky a few
+      metres down; it can't catch them all. Spearfishing is on the site only, never the calendar.</p>
     <p>Surf mode also shows the swell itself. The top card lists each wave train in the sea: the main swell, a second
       swell from another direction if there is one, and the wind chop, each with its height, direction and period.
       Under it, a chart shows the week hour by hour, with arrows for the way the main swell comes from and the tide
@@ -318,8 +328,13 @@
         between rays.</li>
       <li>Swell windows: measured from the <a href="https://openstreetmap.org/copyright" target="_blank"
         rel="noopener">OpenStreetMap</a> coastline.</li>
+      <li>Spearfishing reefs: depth from <a href="https://datasets.seed.nsw.gov.au/dataset/marine-lidar-topo-bathy-2018"
+        target="_blank" rel="noopener">NSW Marine LiDAR 2018</a> (© State of NSW, DCCEEW, CC BY 4.0) and reef or sand from
+        NSW Marine Habitats (© State of NSW, DPIRD, CC BY 4.0).</li>
+      <li>Spearfishing visibility: fitted to the <a href="https://reeflifesurvey.com" target="_blank" rel="noopener">Reef
+        Life Survey</a> readings (IMOS NRMN, CC BY 4.0).</li>
       <li>Map: <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps</a> and
-        <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.</li>
+        <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Aerial photos: © Spatial Services NSW.</li>
     </ul>
     <p class="fine">Visits are counted with <a href="https://www.goatcounter.com" target="_blank" rel="noopener">GoatCounter</a>,
       which uses no cookies and keeps no personal data. Settings stay in your browser.</p>

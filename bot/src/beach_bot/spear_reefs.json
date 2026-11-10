@@ -1,0 +1,366 @@
+{
+ "North Bondi": {
+  "pin": [
+   -33.89363,
+   151.28252
+  ],
+  "depth_m": 5.5,
+  "range_m": [
+   4,
+   10
+  ],
+  "reef": 0.38,
+  "steep": 0.38,
+  "from_entry_m": 272
+ },
+ "Mackenzies Bay": {
+  "pin": [
+   -33.89954,
+   151.2762
+  ],
+  "depth_m": 5.6,
+  "range_m": [
+   3,
+   11
+  ],
+  "reef": 0.49,
+  "steep": 0.33,
+  "from_entry_m": 60
+ },
+ "Wedding Cake Island": {
+  "pin": [
+   -33.9259,
+   151.26475
+  ],
+  "depth_m": 6.6,
+  "range_m": [
+   2,
+   13
+  ],
+  "reef": 0.99,
+  "steep": 0.4,
+  "from_entry_m": 60
+ },
+ "Lurline Bay": {
+  "pin": [
+   -33.9375,
+   151.2618
+  ],
+  "depth_m": 6.0,
+  "range_m": [
+   3,
+   9
+  ],
+  "reef": 1.0,
+  "steep": 0.24,
+  "from_entry_m": 0
+ },
+ "Mahon Pool": {
+  "pin": [
+   -33.943,
+   151.26455
+  ],
+  "depth_m": 4.6,
+  "range_m": [
+   1,
+   9
+  ],
+  "reef": 0.68,
+  "steep": 0.53,
+  "from_entry_m": 60
+ },
+ "South Maroubra": {
+  "pin": [
+   -33.9535,
+   151.2598
+  ],
+  "depth_m": 3.2,
+  "range_m": [
+   1,
+   9
+  ],
+  "reef": 0.58,
+  "steep": 0.16,
+  "from_entry_m": 0
+ },
+ "Long Bay": {
+  "pin": [
+   -33.96769,
+   151.25525
+  ],
+  "depth_m": 4.9,
+  "range_m": [
+   1,
+   8
+  ],
+  "reef": 0.44,
+  "steep": 0.22,
+  "from_entry_m": 108
+ },
+ "Little Bay": {
+  "pin": [
+   -33.979,
+   151.2545
+  ],
+  "depth_m": 6.3,
+  "range_m": [
+   2,
+   12
+  ],
+  "reef": 1.0,
+  "steep": 0.43,
+  "from_entry_m": 0
+ },
+ "Cape Banks": {
+  "pin": [
+   -34.00023,
+   151.24982
+  ],
+  "depth_m": 7.1,
+  "range_m": [
+   1,
+   13
+  ],
+  "reef": 1.0,
+  "steep": 0.59,
+  "from_entry_m": 42
+ },
+ "Henry Head": {
+  "pin": [
+   -33.99884,
+   151.2383
+  ],
+  "depth_m": 9.3,
+  "range_m": [
+   4,
+   20
+  ],
+  "reef": 0.96,
+  "steep": 0.7,
+  "from_entry_m": 60
+ },
+ "La Perouse": {
+  "pin": [
+   -33.9901,
+   151.2304
+  ],
+  "depth_m": 5.9,
+  "range_m": [
+   2,
+   10
+  ],
+  "reef": 0.43,
+  "steep": 0.24,
+  "from_entry_m": 0
+ },
+ "Kurnell (bay side)": {
+  "pin": [
+   -34.002,
+   151.22448
+  ],
+  "depth_m": 4.2,
+  "range_m": [
+   1,
+   13
+  ],
+  "reef": 0.62,
+  "steep": 0.33,
+  "from_entry_m": 30
+ },
+ "The Leap and Yena": {
+  "pin": [
+   -34.00487,
+   151.2294
+  ],
+  "depth_m": 12.2,
+  "range_m": [
+   6,
+   21
+  ],
+  "reef": 0.68,
+  "steep": 0.39,
+  "from_entry_m": 30
+ },
+ "Boat Harbour": {
+  "pin": [
+   -34.04135,
+   151.2003
+  ],
+  "depth_m": 3.5,
+  "range_m": [
+   1,
+   8
+  ],
+  "reef": 0.82,
+  "steep": 0.3,
+  "from_entry_m": 192
+ },
+ "Camp Cove": {
+  "pin": [
+   -33.8389,
+   151.2787
+  ],
+  "depth_m": 5.1,
+  "range_m": [
+   2,
+   8
+  ],
+  "reef": null,
+  "steep": 0.09,
+  "from_entry_m": 0
+ },
+ "Freshwater Head": {
+  "pin": [
+   -33.78231,
+   151.29448
+  ],
+  "depth_m": 2.7,
+  "range_m": [
+   1,
+   9
+  ],
+  "reef": 0.37,
+  "steep": 0.2,
+  "from_entry_m": 95
+ },
+ "Dee Why Head": {
+  "pin": [
+   -33.7685,
+   151.3015
+  ],
+  "depth_m": 5.8,
+  "range_m": [
+   2,
+   7
+  ],
+  "reef": 0.45,
+  "steep": 0.18,
+  "from_entry_m": 0
+ },
+ "Long Reef": {
+  "pin": [
+   -33.73788,
+   151.30903
+  ],
+  "depth_m": 2.5,
+  "range_m": [
+   0,
+   4
+  ],
+  "reef": 0.53,
+  "steep": 0.06,
+  "from_entry_m": 201
+ },
+ "Narrabeen Head": {
+  "pin": [
+   -33.70407,
+   151.31032
+  ],
+  "depth_m": 3.0,
+  "range_m": [
+   1,
+   8
+  ],
+  "reef": 0.39,
+  "steep": 0.08,
+  "from_entry_m": 42
+ },
+ "Mona Vale Headland": {
+  "pin": [
+   -33.67524,
+   151.32045
+  ],
+  "depth_m": 7.2,
+  "range_m": [
+   2,
+   12
+  ],
+  "reef": 0.95,
+  "steep": 0.38,
+  "from_entry_m": 85
+ },
+ "Bungan Head": {
+  "pin": [
+   -33.66454,
+   151.32455
+  ],
+  "depth_m": 3.6,
+  "range_m": [
+   2,
+   9
+  ],
+  "reef": 0.47,
+  "steep": 0.17,
+  "from_entry_m": 85
+ },
+ "Newport Reef": {
+  "pin": [
+   -33.65477,
+   151.32465
+  ],
+  "depth_m": 5.4,
+  "range_m": [
+   1,
+   6
+  ],
+  "reef": 0.06,
+  "steep": 0.0,
+  "from_entry_m": 67
+ },
+ "Bilgola Head": {
+  "pin": [
+   -33.64434,
+   151.33455
+  ],
+  "depth_m": 5.8,
+  "range_m": [
+   4,
+   9
+  ],
+  "reef": 0.57,
+  "steep": 0.28,
+  "from_entry_m": 85
+ },
+ "Avalon (north headland)": {
+  "pin": [
+   -33.63427,
+   151.33609
+  ],
+  "depth_m": 2.5,
+  "range_m": [
+   0,
+   5
+  ],
+  "reef": 0.28,
+  "steep": 0.0,
+  "from_entry_m": 242
+ },
+ "Little Head": {
+  "pin": [
+   -33.60677,
+   151.33622
+  ],
+  "depth_m": 8.5,
+  "range_m": [
+   4,
+   13
+  ],
+  "reef": 0.39,
+  "steep": 0.28,
+  "from_entry_m": 42
+ },
+ "Barrenjoey Head": {
+  "pin": [
+   -33.57838,
+   151.32568
+  ],
+  "depth_m": 4.1,
+  "range_m": [
+   4,
+   8
+  ],
+  "reef": 0.23,
+  "steep": 0.14,
+  "from_entry_m": 182
+ }
+}

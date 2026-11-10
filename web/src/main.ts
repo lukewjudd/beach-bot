@@ -7,7 +7,7 @@ import { height, localise, setUnit, speed, speedNum, temp, units } from "./units
 import type { Units } from "./units";
 import { pickRegion, REGIONS } from "./regions";
 import "./style.css";
-import type { Scores, Session, Spot, SpotKind, SpotScore, SurfCall } from "./types";
+import type { Scores, Session, SpearCall, Spot, SpotKind, SpotScore, SurfCall } from "./types";
 
 // the About dialog's figures, drawn by bot/scripts/draw_about_figures.py
 const figures = import.meta.glob<string>("./about/*.svg", { query: "?raw", import: "default", eager: true });
@@ -72,29 +72,35 @@ try {
 let sort = load("sort") ?? "best";
 let windOn = load("wind") === "on";
 let swellOn = load("swell") === "on"; // off unless this browser turned it on
-// Swim or surf: two models with their own scores and calendar events, so the whole page follows one. Swim unless
-// the link says surf or this browser last picked it
-type Mode = "swim" | "surf";
-let mode: Mode = (params.get("mode") ?? load("mode")) === "surf" ? "surf" : "swim";
+let basemap: "map" | "aerial" = load("basemap") === "aerial" ? "aerial" : "map";
+// Swim, surf or spear: separate models with their own scores, so the whole page follows one. Swim unless the link
+// says otherwise or this browser last picked another
+type Mode = "swim" | "surf" | "spear";
+const MODES: Mode[] = ["swim", "surf", "spear"];
+const asMode = (v: string | null): Mode => (MODES.includes(v as Mode) ? (v as Mode) : "swim");
+let mode: Mode = asMode(params.get("mode") ?? load("mode"));
+const MODE_NAME: Record<Mode, string> = { swim: "Swim", surf: "Surf", spear: "Spear" };
 
-const TAG: Record<SpotKind, string> = { swim: "Beach", harbour: "Harbour", pool: "Pool", surf: "Surf" };
+const TAG: Record<SpotKind, string> = { swim: "Beach", harbour: "Harbour", pool: "Pool", surf: "Surf", spear: "Spear" };
 const tags = (spot: Spot) =>
   `<span class="tag">${TAG[spot.kind]}</span>` +
   (spot.snorkel ? `<span class="tag">Snorkel</span>` : "") +
   (spot.women_only ? `<span class="tag">Women only</span>` : "") +
-  (spot.level === "advanced" || spot.level === "expert" || spot.level === "pro"
+  (spot.kind === "spear" && spot.level === "advanced"
+    ? `<span class="tag tag-level" title="A long swim, a jump entry or an exposed point">Experienced</span>`
+    : spot.level === "advanced" || spot.level === "expert" || spot.level === "pro"
     ? `<span class="tag tag-level" title="${spot.level === "pro" ? "Big-wave spot for pros: scored so you know when it's worth watching" : "Heavy reef or bombie: experienced surfers only"}">${spot.level === "pro" ? "Pros only" : spot.level === "expert" ? "Expert" : "Advanced"}</span>`
     : spot.level === "intermediate"
       ? `<span class="tag">Intermediate</span>`
       : "") +
   (spot.checked === false
-    ? `<span class="tag" title="Set up from the surf guides; not yet checked against real days">Not checked yet</span>`
+    ? `<span class="tag" title="Set up from the guides; not yet checked against real days">Not checked yet</span>`
     : "");
 // Surf mode shows the surf breaks. Swim mode shows a spot if it suits any ticked activity (Clovelly is a swim and a
 // snorkel spot)
 const shows = (spot: Spot) =>
-  mode === "surf"
-    ? spot.kind === "surf"
+  mode !== "swim"
+    ? spot.kind === mode
     : spot.kind === "harbour"
       ? activities.has("harbour") // only ever with Harbour ticked, even the snorkel spots
       : (activities.has("swim") && spot.kind === "swim") ||
@@ -102,20 +108,28 @@ const shows = (spot: Spot) =>
         (activities.has("pool") && spot.kind === "pool");
 
 // Notes that should change your mind stand out from the nice-to-knows ("wave pool fun")
-const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach/i;
+const WARN = /pollution|bluebottle|rain|murky|closed|shut|washy|rough|storm|southerly|upwelling|waves|swell|at the beach|current|shark|chop|drift/i;
 const notesHtml = (notes: string[]) =>
   notes
     .map(localise)
     .map((n) => (WARN.test(n) ? `<span class="warn"><span aria-hidden="true">⚠</span> ${esc(n)}</span>` : esc(n)))
     .join(" · ");
 
-// The session's call in this mode: swimming's lead spot, or the best surf break on the surf scale
+// The session's call in this mode: swimming's lead spot, the best surf break on the surf scale, or the best
+// spearfishing spot
 const NO_SURF: SurfCall = { id: "", name: "", score: 0, rating: 0, window: null, posted: false, in_event: false };
-const call = (s: Session) => (mode === "surf" ? (s.surf ?? NO_SURF) : s.lead);
+const NO_SPEAR: SpearCall = { id: "", name: "", score: 0, rating: 0, window: null };
+const call = (s: Session) => (mode === "surf" ? (s.surf ?? NO_SURF) : mode === "spear" ? (s.spear ?? NO_SPEAR) : s.lead);
+// The session has a call in this mode (sessions called before a mode existed have none)
+const hasCall = (s: Session) => mode === "swim" || !!(mode === "surf" ? s.surf : s.spear);
 // Worth it: a swim at 8/10 or better (the calendar holds out for 9; further out than it posts, it's an early guess),
-// or surf that's pumping, 8/10 or better on the surf scale
+// surf that's pumping (8/10 or better on the surf scale), or a spearfishing spot at 8/10
 const worth = (s: Session) =>
-  mode === "surf" ? !!s.surf?.posted : s.posted || (s.confidence === "low" && s.lead.score >= data.thresholds.post);
+  mode === "surf"
+    ? !!s.surf?.posted
+    : mode === "spear"
+      ? (s.spear?.rating ?? 0) >= 8
+      : s.posted || (s.confidence === "low" && s.lead.score >= data.thresholds.post);
 // Ranking: score, with the favourite winning close calls like the headline does
 const rankScore = (x: SpotScore | undefined) =>
   x ? x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0) : -1;
@@ -153,7 +167,7 @@ function renderRegionPick() {
       b.addEventListener("click", () => {
         if (b.dataset.r === region.id) return;
         save("region", b.dataset.r as string);
-        location.href = location.pathname + (mode === "surf" ? "?mode=surf" : ""); // drop ?s=, which belongs to the other region
+        location.href = location.pathname + (mode !== "swim" ? `?mode=${mode}` : ""); // drop ?s=, which belongs to the other region
       }),
     );
 }
@@ -183,13 +197,14 @@ function wireSettings() {
   wireModePick();
 }
 
-// Swim / Surf. Remembered per browser and kept in the link, so a surf view can be shared
+// Swim / Surf / Spear. Remembered per browser and kept in the link, so a surf or spear view can be shared
 function wireModePick() {
   const buttons = [...$("mode-pick").querySelectorAll<HTMLButtonElement>("button")];
   const apply = () => {
     document.body.classList.toggle("mode-surf", mode === "surf");
+    document.body.classList.toggle("mode-spear", mode === "spear");
     buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
-    $("activity").hidden = mode === "surf"; // nothing to filter: it's all surf breaks
+    $("activity").hidden = mode !== "swim"; // nothing to filter: it's all surf breaks, or all spear spots
     if (data) renderUpdated();
   };
   buttons.forEach((b) =>
@@ -198,12 +213,13 @@ function wireModePick() {
       mode = b.dataset.mode as Mode;
       save("mode", mode);
       const url = new URL(location.href);
-      if (mode === "surf") url.searchParams.set("mode", "surf");
+      if (mode !== "swim") url.searchParams.set("mode", mode);
       else url.searchParams.delete("mode");
       history.replaceState(null, "", url);
       apply();
       openSpot = null;
       if (data) {
+        if (!hasCall(data.sessions[current])) current = firstUpcoming();
         render();
         fitToShown();
       }
@@ -222,6 +238,10 @@ async function start() {
     wind.show(windOn);
     swell = m.swellLayer(map, region.id);
     swell.show(swellOn);
+    m.basemapPicker(map, basemap, (b) => {
+      basemap = b;
+      save("basemap", b);
+    });
     m.layerSwitches(map, [
       { label: "Wind", icon: "wind", on: windOn, toggle: toggleWind },
       { label: "Swell", icon: "swell", on: swellOn, toggle: toggleSwell },
@@ -260,9 +280,15 @@ function adopt(next: Scores, wantKey: string | null) {
   data = next;
   spotsById = Object.fromEntries(data.spots.map((s) => [s.id, s]));
   const wanted = wantKey ? data.sessions.findIndex((s) => s.key === wantKey) : -1;
-  const upcoming = data.sessions.findIndex((s) => !isPast(s));
-  current = wanted >= 0 ? wanted : upcoming >= 0 ? upcoming : 0;
+  current = wanted >= 0 ? wanted : firstUpcoming();
   renderUpdated();
+}
+
+// The next session that has a call in this mode (one frozen before the mode existed has none), else the next one
+function firstUpcoming() {
+  const withCall = data.sessions.findIndex((s) => !isPast(s) && hasCall(s));
+  const upcoming = data.sessions.findIndex((s) => !isPast(s));
+  return withCall >= 0 ? withCall : upcoming >= 0 ? upcoming : 0;
 }
 
 // New scores land hourly; pick them up without a reload so an open tab never goes quietly stale
@@ -293,7 +319,7 @@ function renderUpdated() {
     timeZone: "Australia/Sydney",
   });
   $("updated").innerHTML =
-    `${esc(region.name)} · ${mode === "surf" ? "Surf" : "Swim"} · <span title="${esc(exact)}">updated ${age ? `${age} ago` : "just now"}</span>`;
+    `${esc(region.name)} · ${MODE_NAME[mode]} · <span title="${esc(exact)}">updated ${age ? `${age} ago` : "just now"}</span>`;
   const stale = $("stale");
   stale.hidden = mins <= STALE_MINS;
   stale.textContent = `These scores are ${age} old, so conditions may have changed. The page updates itself when new ones arrive.`;
@@ -411,7 +437,7 @@ function renderWeek() {
     const low = daySessions.length > 0 && daySessions.every(({ s }) => s.confidence === "low");
     const slot = (code: SlotCode) => {
       // A session called before surf had its own call has none to show in surf mode
-      const found = daySessions.find(({ s }) => slotOf(s) === code && (mode === "swim" || s.surf));
+      const found = daySessions.find(({ s }) => slotOf(s) === code && hasCall(s));
       const live = found && !isPast(found.s);
       const name = `${dayName(d, "long")} ${SLOTS[code].name.toLowerCase()}`;
       // Finished sessions stay for the week, greyed out but still tappable, with the call made before they started
@@ -421,7 +447,7 @@ function renderWeek() {
         ? `<span class="pill${live ? ` ${ratingClass(r)}` : " none"}">${r}</span>`
         : `<span class="pill none">–</span>`;
       return `<button type="button" class="slot${found && !live ? " past" : ""}" ${found ? `data-i="${found.idx}"` : "disabled"}
-          aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${mode === "surf" ? "surf " : ""}${r} out of 10` : said}">
+          aria-pressed="${found?.idx === current}" aria-label="${name}${live ? `, ${mode !== "swim" ? `${mode} ` : ""}${r} out of 10` : said}">
         <span class="lbl">${SLOTS[code].short}</span>${score}
       </button>`;
     };
@@ -465,6 +491,13 @@ function whyWorth(s: Session) {
     "Wave quality": `clean ${c.period_s}s swell`,
     Weather: `${temp(c.air_c)} and dry`,
     "Water quality": "clean water",
+    // Spearfishing
+    Visibility: (() => {
+      const vis = s.scores.find((x) => x.id === call(s).id)?.here?.vis_m;
+      return vis ? `about ${vis}m visibility` : "good visibility";
+    })(),
+    Surge: "little surge",
+    Light: "good light",
   };
   const good = Object.entries(rep)
     .filter(([k, v]) => v >= 8 && say[k])
@@ -481,8 +514,18 @@ function whyNotWorth(s: Session) {
   const top = `Nothing above ${call(s).rating}/10`;
   // Surf: the best break's weakest parts. Ruled-out beaches and pools are a swimming matter
   if (mode === "surf" && !s.surf) return "No surf call: this session was called before surf had its own";
-  if (mode === "surf") {
-    const weak = Object.entries((s.surf && s.reports?.[s.surf.id]) || {})
+  if (mode === "spear" && !s.spear) {
+    // Every spot's a no-go, or the session was called before spearfishing had its own
+    const reasons = Object.entries(s.ruled_out ?? {}).filter(([id]) => spotsById[id]?.kind === "spear");
+    if (!reasons.length) return "No spearfishing call: this session was called before spearfishing had its own";
+    const counts = new Map<string, number>();
+    reasons.forEach(([, r]) => counts.set(r, (counts.get(r) ?? 0) + 1));
+    const [reason] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return `No spot worth it · ${localise(reason)}`;
+  }
+  if (mode !== "swim") {
+    const id = call(s).id;
+    const weak = Object.entries((id && s.reports?.[id]) || {})
       .filter(([, v]) => v <= 4)
       .sort((a, b) => a[1] - b[1])
       .slice(0, 2)
@@ -575,7 +618,9 @@ function renderHero(s: Session) {
   // Chip colours. Swim: the typical beach, the median of each bar across the ocean beaches. Surf: the best break.
   // The bars themselves are in each spot's card, so they always match that spot's score
   const surfRep = mode === "surf" && s.surf ? s.reports?.[s.surf.id] : undefined;
-  const coast = surfRep ?? s.coast ?? s.report;
+  const spearRep = mode === "spear" && s.spear ? s.reports?.[s.spear.id] : undefined;
+  const coast = surfRep ?? spearRep ?? s.coast ?? s.report;
+  const spearHere = mode === "spear" && s.spear ? s.scores.find((x) => x.id === s.spear!.id)?.here : undefined;
   const air = c.air_c >= 26 ? 10 : c.air_c >= 23 ? 8 : c.air_c >= 21 ? 6 : c.air_c >= 19 ? 4 : 2; // the scoring bands
   const rain = c.rain_pct >= 60 ? 2 : c.rain_pct >= 40 ? 5 : 10;
   // Water: how it feels going in (20°+ green, 17-19° amber, colder red). Only a colour: cool water is never
@@ -620,7 +665,8 @@ function renderHero(s: Session) {
                 ),
               )
               .join("")
-          : chip(ICONS.swell, "Swell", `<b>${height(c.swell_m)} ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast[surfRep ? "Wave size" : "Calm water"], true)) +
+          : (spearHere?.vis_m != null ? chip(ICONS.spear, "Visibility", `Vis <b>about ${spearHere.vis_m}m</b>`, coast.Visibility, true) : "") +
+            chip(ICONS.swell, "Swell", `<b>${height(c.swell_m)} ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast[surfRep ? "Wave size" : spearRep ? "Surge" : "Calm water"], !spearHere)) +
           (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${temp(c.water_c)}</b>`, water) : "") +
           (tides ? chip(ICONS.tide, "Tides", tides) : ""),
       )}
@@ -636,7 +682,7 @@ function renderHero(s: Session) {
 // ---------------------------------------------------------------- spots: list and map
 function popup(spot: Spot, sc: SpotScore | undefined) {
   // Just enough to say which spot it is; its details and warnings live in its card, not twice
-  return `<div class="popup"><span class="t">${esc(spot.name)}</span> · ${spot.kind === "surf" ? "surf " : ""}${sc ? sc.rating : 0}/10
+  return `<div class="popup"><span class="t">${esc(spot.name)}</span> · ${spot.kind === "surf" || spot.kind === "spear" ? `${spot.kind} ` : ""}${sc ? sc.rating : 0}/10
     <span class="tag">${TAG[spot.kind]}</span> <button type="button" class="link" data-details="${spot.id}">Details</button></div>`;
 }
 
@@ -667,7 +713,7 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}${spot.watch_from ? `<p class="watch">Watch from ${esc(spot.watch_from)}</p>` : ""}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
+    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}${spot.watch_from ? `<p class="watch">Watch from ${esc(spot.watch_from)}</p>` : ""}${spot.id === "swim-clovelly" ? `<button type="button" class="link depth-open" data-depth>Under the water at Clovelly</button>` : ""}${seabed(spot)}${spot.entry ? `<p class="watch">${esc(spot.entry)}</p>` : ""}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
   </li>`;
 }
 
@@ -678,6 +724,18 @@ function here(spot: Spot, sc: SpotScore | undefined) {
   const h = sc?.here;
   if (!h) return "";
   const feet = (m: number) => (units.height === "ft" && m * 3.281 < 1 ? "under 1ft" : height(m));
+  const [kind0, shelter0] = h.wind_kind.split(", ");
+  const windWords = kind0 === "light" ? "" : `${WIND_KIND[kind0] ?? esc(kind0)}${shelter0 ? `, ${esc(shelter0)}` : ""}`;
+  if (spot.kind === "spear") {
+    // On the reef: what you'll see, the swell there, and how far it pushes you about on the bottom
+    const parts = [
+      h.vis_m != null ? `About ${h.vis_m}m visibility` : "",
+      h.waves_m != null ? (h.waves_m < 0.15 ? "flat on the reef" : `${feet(h.waves_m)} of swell on the reef`) : "",
+      h.surge_m != null ? (h.surge_m < 0.15 ? "next to no surge" : `surge ${feet(h.surge_m)} either way`) : "",
+      windWords,
+    ].filter(Boolean);
+    return parts.length ? `<p class="here">${parts.join(" · ")}</p>` : "";
+  }
   const trains = h.trains?.length
     ? `${h.trains.map((t) => `${feet(t.m)} ${esc(t.dir)} @ ${t.s}s`).join(", ")} at the break`
     : "";
@@ -692,6 +750,18 @@ function here(spot: Spot, sc: SpotScore | undefined) {
   const wind = kind === "light" ? "" : `${WIND_KIND[kind] ?? esc(kind)}${shelter ? `, ${esc(shelter)}` : ""}`;
   const line = [waves, wind].filter(Boolean).join(" · ");
   return line ? `<p class="here">${line.charAt(0).toUpperCase()}${line.slice(1)}</p>` : "";
+}
+
+// Spearfishing: the bottom round the pin, from the NSW seabed survey. "Reef, 4–12m deep" or "Reef and sand"
+function seabed(spot: Spot) {
+  const b = spot.seabed;
+  if (!b) return "";
+  const kind = b.reef == null ? "" : b.reef >= 0.6 ? "Reef" : b.reef >= 0.25 ? "Reef and sand" : "Mostly sand";
+  const [lo, hi] = b.range_m;
+  const depth = units.height === "ft" ? `${Math.round(lo * 3.281)}–${Math.round(hi * 3.281)}ft` : `${lo}–${hi}m`;
+  const steep = b.steep != null && b.steep >= 0.3 ? ", with drop-offs" : "";
+  const words = kind ? `${kind}${steep}, ${depth} deep` : `${depth} deep${steep}`;
+  return `<p class="here">${words}</p>`;
 }
 
 // This morning's lifeguard report, on today's sessions only: it's what they saw first thing, not a forecast
@@ -757,6 +827,17 @@ function renderSpots(s: Session) {
     );
 }
 
+// Clovelly's underwater map, from its card: the seabed at 1m and the water over it through the session's day
+document.addEventListener("click", async (e) => {
+  if (!(e.target as HTMLElement).closest("[data-depth]")) return;
+  const s = data.sessions[current];
+  const { openClovelly } = await import("./clovelly");
+  // Start on Clovelly's best hours this session, else the session's first hour
+  const w = s.scores.find((x) => x.id === "swim-clovelly")?.window;
+  const start = w ? hourOfLabel(w[0]) : Number(s.start.slice(11, 13));
+  openClovelly($("depth") as HTMLDialogElement, data.swell_hours, s.date, start);
+});
+
 // Expand a spot's card (closing any other), bring it into view, and show it on the map
 // The top pick's name in the top card opens its card in the list (and flies the map to it)
 document.addEventListener("click", (e) => {
@@ -800,7 +881,7 @@ const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "
 // Surf mode only: the week's swell, hour by hour. Redrawn when the session or the window width changes
 function renderChart(s: Session) {
   const el = $("swell-chart");
-  el.hidden = mode !== "surf" || !data.swell_hours;
+  el.hidden = mode === "swim" || !data.swell_hours; // surf and spearfishing both read the swell
   if (el.hidden || !data.swell_hours) return;
   renderSwellChart(el, {
     data: data.swell_hours,

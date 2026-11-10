@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from .beaches import EASTERN, Beach, Pool, Region, SurfSpot
+from .beaches import EASTERN, Beach, Pool, Region, SpearSpot, SurfSpot
 from .config import (
     CALENDAR_THRESHOLD,
     DAYS_AHEAD,
@@ -26,6 +26,8 @@ from .scoring import (
     surf_parts,
     swim_parts,
 )
+from .spear import WEIGHTS as SPEAR_WEIGHTS
+from .spear import SpearContext, score_spear_hour, spear_parts
 
 
 @dataclass
@@ -38,7 +40,13 @@ class Session:
     swim: list = field(default_factory=list)  # [(score, beach, notes)] best first
     surf: list = field(default_factory=list)  # [(score, spot, notes)] best first, every spot
     pools: list = field(default_factory=list)  # [(score, pool, notes)] best first
-    windows: dict = field(default_factory=dict)  # spot name -> (first hour, last hour) of its best window
+    spear: list = field(default_factory=list)  # [(score, spot, notes)] best first, the ones that aren't a no-go
+    # spot name -> (first hour, last hour) of its best window: beaches and pools here, surf breaks and spearfishing
+    # spots in their own (they share names with beaches: Maroubra's surf window used to overwrite the beach's)
+    windows: dict = field(default_factory=dict)
+    surf_windows: dict = field(default_factory=dict)
+    spear_windows: dict = field(default_factory=dict)
+    spear_ruled_out: dict = field(default_factory=dict)  # spearfishing spot name -> why it's a no-go all session
     hourly: dict = field(default_factory=dict)  # (kind, name) -> [(score or None, notes)] for every hour
     ruled_out: dict = field(default_factory=dict)  # spot name -> why it's a no-go all session
     region: Region = EASTERN
@@ -168,15 +176,47 @@ def score_session(sess, hours, ctx, beachwatch, today):
         sc, i = best_window(sess, [r[0] for r in results])  # never None: surf always scores
         notes = sorted({x for _, ns in results[i : i + n] for x in ns})
         sess.surf.append((round(sc), sp, notes))
-        sess.windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
+        sess.surf_windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
     sess.surf.sort(key=lambda x: (x[1].advanced, -x[0]))  # the surf call is always a break for everyone
 
+    sctx = spear_context(ctx)
+    for sp in region.spear:
+        results = [score_spear_hour(sp, t, hours[t], sctx) for t in sess.hours]
+        sess.hourly[spot_key(sp)] = results
+        best = best_window(sess, [r[0] for r in results])
+        if not best:
+            sess.spear_ruled_out[sp.name] = main_reason(results)
+            continue
+        sc, i = best
+        notes = sorted({x for _, ns in results[i : i + n] for x in ns})
+        sess.spear.append((round(sc), sp, notes))
+        sess.spear_windows[sp.name] = (sess.hours[i], sess.hours[i + n - 1])
+    sess.spear.sort(key=lambda x: (x[1].advanced, -x[0]))  # the spear call is a spot for everyone
 
-def window_hours(sess, name):
-    """Hour keys of a spot's best window (falls back to the whole session)."""
-    if name not in sess.windows:
+
+def spear_context(ctx):
+    """One SpearContext per forecast, so its swell memory is worked out once for every session."""
+    if getattr(ctx, "_spear", None) is None:
+        ctx._spear = SpearContext(ctx)
+    return ctx._spear
+
+
+def windows_of(sess, spot):
+    """The windows dict a spot's best window is in (see Session.windows)."""
+    if isinstance(spot, SurfSpot):
+        return sess.surf_windows
+    if isinstance(spot, SpearSpot):
+        return sess.spear_windows
+    return sess.windows
+
+
+def window_hours(sess, spot):
+    """Hour keys of a spot's best window (falls back to the whole session). `spot` is a spot, or a beach or
+    pool's name (the session's headline)."""
+    w = sess.windows.get(spot) if isinstance(spot, str) else windows_of(sess, spot).get(spot.name)
+    if not w:
         return sess.hours
-    first, last = sess.windows[name]
+    first, last = w
     return sess.hours[sess.hours.index(first) : sess.hours.index(last) + 1]
 
 
@@ -189,9 +229,10 @@ def later_warning(sess, spot):
     """What rules out the rest of a session after a spot's best stretch, e.g. "⚡ storms from 4pm", or None.
     The score is the best two hours, so without this a lovely 2pm hides a stormy 5pm."""
     results = sess.hourly.get(spot_key(spot))
-    if not results or spot.name not in sess.windows:
+    w = windows_of(sess, spot).get(spot.name)
+    if not results or not w:
         return None
-    end = sess.hours.index(sess.windows[spot.name][1])
+    end = sess.hours.index(w[1])
     for t, (sc, notes) in zip(sess.hours[end + 1 :], results[end + 1 :], strict=True):
         why = notes[0] if notes else ""
         if sc is None or "storms" in why:  # surf scores storms as 1/10 rather than ruling them out
@@ -280,7 +321,11 @@ def report(sess, hours, ctx, beachwatch, today, spot=None):
     sea temperature for the whole coast, a stat in the summary, and its points sit in Weather. Without a spot it's
     the top swim pick, which is what the calendar event shows."""
     spot = spot or (sess.best_swim[1] if sess.best_swim else sess.region.beaches[0])
-    keys = window_hours(sess, spot.name)
+    keys = window_hours(sess, spot)
+    if isinstance(spot, SpearSpot):  # each part is already 0-1: the bar is that out of 10
+        sctx = spear_context(ctx)
+        hourly = [spear_parts(spot, t, hours[t], sctx)[0] for t in keys]
+        return {k: max(1, min(10, round(10 * mean(p[k] for p in hourly)))) for k in SPEAR_WEIGHTS}
     if isinstance(spot, SurfSpot):
         out = {}
         hourly = [surf_parts(spot, t, hours[t], ctx, beachwatch, today) for t in keys]

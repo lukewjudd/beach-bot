@@ -293,6 +293,29 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
   - Wave height is logged next to the swell model's height at that beach and hour, for calibrating exposure (§4.2). On 9 Nov 2026, with a 2m south swell, the lifeguards had 2m at Coogee and "+2m" at Maroubra; the model had 0.9 m and 1.2 m.
   - Water temperature, rips and the description are shown only.
 
+### 4.9 Spearfishing (both regions; added 2026-11-11)
+Spots, rules and conditions research: research/spearfishing-spots.md, research/spearfishing-conditions.md and research/spearospotter-notes.md. Code: bot/src/beach_bot/spear.py (scoring) and spearspots.py (the spots).
+- R-SP8 Each spot's reef comes from the NSW seabed survey (scripts/build_spear_reefs.py → spear_reefs.json). Around the shore entry, depth and slope are sampled every 30 m out to 400 m from NSW Marine LiDAR 2018 (5 m grid), and reef or sand from NSW Marine Habitats. The pin goes on the nearest reef at 3–15 m. Around it (150 m) the card shows the depth range (10th–90th percentile) and whether it's reef, reef and sand, or mostly sand, and "with drop-offs" when 30%+ of it is steeper than 10°. Surge (R-SP2) is worked out at the median reef depth there. The swell windows are measured at that pin.
+- R-SP0 Only spots where it's legal to spear from shore are listed (checked against the live DPIRD closures and aquatic reserve pages on 2026-11-11). Closed waters aren't shown at all, so the site doesn't repeat the rules or protected-species lists: they're implied by what's listed. Also left out: Diamond Bay and Turimetta Head (sewage outfalls), Magic Point (grey nurse shark habitat; legal, but don't) and Bare Island (closed to visitors until about late 2027).
+- R-SP1 Visibility (40% of the score) is predicted in metres: `base[water] × exp(−0.009 × swell memory) × exp(−0.0044 × rain index) × season`.
+  - Base, for a calm, dry day: 8.1 m on the open coast, 6.2 m in a bay (Botany Bay, Broken Bay) and 5.7 m in the harbour.
+  - Swell memory: the most swell energy at the reef (height² × period, summed over the trains) in the last 72 h, each hour fading with a 24 h half-life as the stirred-up sand settles.
+  - Rain index: a week of rain, each day back counting 0.6 of the one after. Spots by a lagoon, estuary or drain, and the bays and harbour, take it 1.75× harder. A 100 mm week caps those spots at 3 m.
+  - Season: ×1.15 June–September and ×0.93 December–February.
+  - The base, rain and season numbers are fitted to the Reef Life Survey's dated visibility readings (331 site-days on 204 dates, 2009–2025; bot/scripts/fit_spear_vis.py). Held out a year at a time, it ranks visibility with Spearman 0.41, mostly from the open coast being clearer than the bays and the harbour. The surveys only run on calm days, so the swell term comes from the pilot instead (open coast: 10 m after a small three days, 6 m after 3 m offshore).
+  - The bar: 3 m is 0, 5 m 0.3, 8 m 0.6, 12 m 0.85 and 15 m+ full marks. A normal 5–10 m Sydney day is a 3–7, and it takes about 12 m for an 8.
+- R-SP2 Surge (25%): how far the water swings back and forth on the bottom at the spot's dive depth, Hs / (2 sinh(kh)) from linear wave theory, each train added as energy. 0.4 m or less is full marks, 0.8 m 0.6, 1.2 m 0.3 and 1.8 m+ 0. Long-period swell surges harder: 1 m at 12 s moves the water about 1 m at 8 m deep, and 1.2 m at 7 s about 0.6 m.
+- R-SP2a Entry: waves breaking at the entry (the swimming-beach breaker formula, on the swell at the reef) over 1.0 m at a rock-platform entry or 1.5 m at a sheltered one rule the hour out. Both limits drop a fifth for 12 s+ groundswell.
+- R-SP3 Runoff: a lagoon mouth (Narrabeen Head) is a no-go for 72 h after 30 mm. The harbour (Camp Cove) is a no-go for 72 h after 20 mm. A note says bull sharks are more likely after 20 mm in 48 h at lagoon, estuary, bay and harbour spots; it doesn't change the score.
+- R-SP4 Tide (10%): bay and harbour spots want the incoming tide (the clean water coming in; the ebb carries the runoff, and after 20 mm it scores 0.2). Spots with a rock exit want high tide. Others prefer high slack.
+- R-SP5 "May be murky down deep": clear on the surface and milky a few metres down. It's flagged, not scored, when any of these holds:
+  - the swell memory is still 2.5× what today's swell would stir up, after a solid swell (sand still settling);
+  - 2+ days of NE wind and the sea 1.5° colder than three days ago (cold upwelling);
+  - 20 mm+ of rain one to six days ago at a spot by an outlet (old runoff).
+  - It can miss: a replay of 7 Nov 2026 (milky at 3 m on the northern beaches, fine on top) flags nothing. The swell was small and short-period and it was dry, so cold water pushing in along the bottom, which the surface temperature can't see, is the likeliest cause.
+- R-SP6 Wind (15%, chop and drift: halved by a spot's wind shelter, ×0.7 onshore, ×0.6 for 30 km/h+ offshore, ×0.7 for a 2 km/h+ current), light (5%, sun height and cloud) and water temperature (5%, comfort in a 5 mm suit).
+- R-SP7 Visibility and surge set the ceiling: the score is the weighted parts × min(1, 0.4 + 0.8 × the lower of the two), so a glassy, sunny day in 3 m of visibility is still a poor dive. 8/10 is worth it on the site. Spearfishing never goes in the calendar. Spots tagged Experienced (long swims, jump entries, exposed points) or Not checked yet are scored and shown but never make the session's call.
+
 ### 4.8 Tie-break
 - R-TB1 After all rules, IF Clovelly's score ≥ (best score − 5) AND Clovelly is not "NO" → pick Clovelly. (User preference. A 5-point tolerance acts as a soft tie.)
 
