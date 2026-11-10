@@ -4,6 +4,24 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-10
 
+- **Surf mode shows the swell.** Feedback from a surfer: they want to see the swell. Ideas from open-swells (ideas only: it has no licence).
+  - **Every train, in the top card:** the Ocean line has a chip per wave train at the middle of the session's best hours: the main swell, a second swell and the wind chop. For example "3ft ENE @ 6s · 1ft SSE @ 9s · Chop 1ft NNE @ 2s". A groundswell hiding under wind swell now shows. Exported as `conditions.trains`.
+  - **At each break, on its card:** each train's height once it gets there (that break's exposure to its direction and period, then breaking height), biggest first. For example "Under 1ft ENE @ 6s, under 1ft SSE @ 9s at the break". Several breaks can share the top score, so this sits on every card rather than only the top one. Exported as `here.trains`.
+  - **A swell chart for the week** (`swellchart.ts`):
+    - each train offshore hour by hour: the main swell as a filled area, the second swell and the chop as lines
+    - arrows every six hours for the way the main swell comes from, and the tide underneath in its own sand colour. The legend lists the tide too, and the chop's key is dashed like its line, so the two greys aren't confused
+    - night shading and the selected session as a band
+    - hover or drag for a readout; tap to jump to that session.
+    - open a break's card and the chart adds that break's own line: the wave height at the break, hour by hour, over the offshore swell, so you can see what its shelter does. The legend and readout name the break. Exported as `swell_hours.breaks`, by spot id.
+    - Exported as `swell_hours`, every forecast hour, about 50 KB with the breaks. It works on a phone.
+    - On desktop, surf mode scrolls the page so the chart doesn't squeeze the map and list. They keep a full-height block under it. Swim mode stays a fixed-height page.
+  - The main swell's period is the longer of its own and the whole sea's, as the surf score reads it (R-SU6). Swim mode is unchanged.
+
+- **Each spot's card says what it's like there, not out at sea.** Feedback: are the chips beach-specific? They aren't. Wind, air, rain, swell, water and tides are one value for the whole coast. So every spot's card now has a short line with what is specific to it: the waves at its sand or break, and which way the wind blows there (offshore, cross-shore, onshore, or sheltered, such as Bondi's north end in a nor'easter). For example "Under 1ft at the sand · cross-shore". Exported as `here` on each score.
+- **The top card names its top pick, and the bars live in the cards.** Clicking AM, Midday or PM didn't make it obvious the top card's hours were one spot's. Its bars were the typical beach's, so they could disagree with the headline score. Now:
+  - the headline's spot name ("Clovelly · 8/10") opens its card and flies the map to it, and its hours sit under it with the best ones highlighted (no caption line, to save space)
+  - the top card has no bars. Each spot's own bars are in its card, so they always match its score.
+  - tried and dropped: taking the hours out of the top card and auto-opening the top pick's card instead. On a phone the hours ended up a long scroll from the session you tapped.
 - **Visit counts with GoatCounter.** One script tag in `index.html` gives daily unique visitors, page views and referrers at beachbot.goatcounter.com. It uses no cookies, needs no consent banner, and doesn't count localhost. The About section says so.
 
 ## 2026-11-09

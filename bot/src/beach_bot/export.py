@@ -3,6 +3,7 @@
 import json
 from datetime import timedelta
 
+from . import swell
 from .beaches import EASTERN, Pool, SurfSpot
 from .config import (
     DAYS_AHEAD,
@@ -13,7 +14,8 @@ from .config import (
     SLOT_NAMES,
     SURF_THRESHOLD,
 )
-from .scoring import at_beach
+from .geo import compass, in_range, wind_kind
+from .scoring import at_beach, at_break, surf_period
 from .sessions import (
     coast_report,
     conditions,
@@ -102,6 +104,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 out["why"] = why
             if later := later_warning(sess, spot):
                 out["later"] = later
+            if here := conditions_here(sess, spot, hours):
+                out["here"] = here
             return out
 
         scores = [entry(sc, b, notes) for sc, b, notes in sess.swim]
@@ -153,6 +157,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                     "water_c": round(c["sea"]) if c["sea"] else None,
                     "rain_pct": round(c["rain_prob"]),
                     "uv": round(c["uv"]),
+                    "trains": swell_trains(hours, keys),
                 },
                 "report": report(sess, hours, ctx, beachwatch, now.date()),
                 "coast": coast_report(sess, hours, ctx, beachwatch, now.date()),
@@ -182,7 +187,87 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
         "spots": spots,
         "sessions": out_sessions,
         "lifeguards": lifeguards(region, hours, beachwatch),
+        "swell_hours": swell_hours(hours, sessions, region),
     }
+
+
+def swell_hours(hours, sessions, region=EASTERN):
+    """Every hour of the forecast's days, for surf mode's swell chart: each wave train offshore as [height m,
+    direction it comes from, period s] (null when there isn't one), the tide (sea level, m) and the height at each
+    surf break. Hour i is `start` plus i hours. The main swell's period is the longer of its own and the whole
+    sea's (R-SU6)."""
+    days = sorted({s.day.isoformat() for s in sessions})
+    keys = sorted(t for t in hours if days and days[0] <= t[:10] <= days[-1])
+    if not keys:
+        return None
+    out = {"start": keys[0], "swell": [], "swell2": [], "chop": [], "tide": []}
+    # The wave height at each surf break, hour by hour, as the surf score sees it: the chart draws the open
+    # break's line over the offshore swell, so you can see what its shelter does to it
+    out["breaks"] = {spot_id(sp): [round(at_break(hours[t], sp), 1) for t in keys] for sp in region.surf}
+    for t in keys:
+        h = hours[t]
+        for kind, p in (("swell", "swell_wave"), ("swell2", "secondary_swell_wave"), ("chop", "wind_wave")):
+            ht, deg = h.get(f"{p}_height"), h.get(f"{p}_direction")
+            per = surf_period(h) if kind == "swell" else h.get(f"{p}_period") or 0
+            ok = ht is not None and deg is not None and ht >= 0.05
+            out[kind].append([round(ht, 2), round(deg), round(per, 1)] if ok else None)
+        tide = h.get("sea_level_height_msl")
+        out["tide"].append(None if tide is None else round(tide, 2))
+    return out
+
+
+def swell_trains(hours, keys):
+    """Every wave train in the sea at the middle of the session's best hours, for surf mode: the main swell, a
+    second swell from another direction, and the local wind chop. Surfers read a day by these: a clean groundswell
+    under some wind chop is a different day from chop alone. The main swell's period is the longer of its own and
+    the whole sea's, as the surf score reads it (R-SU6: the swell partition reads short on groundswell days)."""
+    if not keys:
+        return []
+    h = hours[keys[len(keys) // 2]]
+    out = []
+    for kind, p in (("swell", "swell_wave"), ("swell2", "secondary_swell_wave"), ("chop", "wind_wave")):
+        ht, deg, per = h.get(f"{p}_height"), h.get(f"{p}_direction"), h.get(f"{p}_period") or 0
+        if not ht or ht < 0.1 or deg is None:
+            continue
+        per = surf_period(h) if kind == "swell" else per
+        out.append({"kind": kind, "m": round(ht, 1), "dir": compass(deg), "deg": round(deg), "s": round(per)})
+    return out
+
+
+def conditions_here(sess, spot, hours):
+    """What the session is like at this spot rather than out at sea, over its best window: the waves at its sand
+    or break (the swell chip is the offshore swell, the same for the whole coast) and which way the wind blows
+    there. Pools are left without waves: what matters there is swell over the walls, which the score covers."""
+    keys = [t for t in window_hours(sess, spot.name) if t in hours]
+    if not keys:
+        return None
+    mid = hours[keys[len(keys) // 2]]
+    wdir, kmh = mid["wind_direction_10m"], mid["wind_speed_10m"]
+    out = {
+        "wind_kmh": round(kmh),
+        "wind_dir": compass(wdir),
+        "wind_kind": "light" if round(kmh) < 8 else wind_kind(wdir, spot.facing),
+    }
+    sheltered = getattr(spot, "wind_shelter", None) and in_range(wdir, *spot.wind_shelter)
+    sheltered = sheltered or (spot.name == "Bondi (north end)" and 0 <= wdir <= 70)  # R-W6: under Ben Buckler
+    if sheltered and round(kmh) >= 8:
+        out["wind_kind"] += ", sheltered"
+    if isinstance(spot, SurfSpot):
+        out["waves_m"] = round(sum(at_break(hours[t], spot) for t in keys) / len(keys), 1)
+        # Each swell train as it arrives at this break (its exposure to that direction and period, then breaking
+        # height), biggest first: a south groundswell can be the bigger wave at Bondi's south end while an east
+        # wind swell is the bigger one offshore. The score itself reads the whole sea on the main swell's direction
+        key = swell.key(spot)
+        trains = []
+        for t in swell_trains(hours, keys):
+            k = swell.exposure(spot, key, t["deg"], t["s"])
+            m = swell.breaker(t["m"] * k, t["s"], exponent=0.7, ref=10)
+            if m >= 0.1:
+                trains.append({**t, "m": round(m, 1)})
+        out["trains"] = sorted(trains, key=lambda t: -t["m"])
+    elif not isinstance(spot, Pool):
+        out["waves_m"] = round(sum(at_beach(hours[t], spot) for t in keys) / len(keys), 1)
+    return out
 
 
 def surf_call(sess, posted, window):

@@ -2,6 +2,7 @@
 
 import type { Map as LeafletMap, Marker } from "leaflet";
 import { ICONS } from "./icons";
+import { renderSwellChart } from "./swellchart";
 import { height, localise, setUnit, speed, speedNum, temp, units } from "./units";
 import type { Units } from "./units";
 import { pickRegion, REGIONS } from "./regions";
@@ -511,7 +512,7 @@ const span = (a: string, b: string) => (a.slice(-2) === b.slice(-2) ? `${a.slice
 // A row of hours for one spot: each coloured by its own score, the best two hours (what the score is) ringed,
 // storms and ruled-out hours marked, and hours already gone faded. The score stays the best stretch; this shows
 // how the rest of the session goes, so a lovely 2pm doesn't hide a stormy 5pm.
-function strip(s: Session, sc: SpotScore | undefined, name: string) {
+function strip(s: Session, sc: SpotScore | undefined, name: string, named = false) {
   if (!sc?.hourly || !s.hours || sc.hourly.length !== s.hours.length) return "";
   const offset = s.start.slice(-6); // the session's UTC offset, e.g. +11:00
   const [w0, w1] = sc.window ? [hourOfLabel(sc.window[0]), hourOfLabel(sc.window[1])] : [-1, -1];
@@ -535,7 +536,8 @@ function strip(s: Session, sc: SpotScore | undefined, name: string) {
     })
     .join("");
   // Under the strip, in words: when the best two hours are, and what ends the session early if anything does
-  const best = sc.window ? `Best ${span(sc.window[0], sc.window[1])}` : "";
+  // The top card leaves the best hours to the highlighted cells; only an early end (storms) gets a line there
+  const best = sc.window && !named ? `Best ${span(sc.window[0], sc.window[1])}` : "";
   const note = [best && `<span>${esc(best)}</span>`, sc.later && `<span class="later">${esc(sc.later)}</span>`]
     .filter(Boolean)
     .join(`<span aria-hidden="true"> · </span>`);
@@ -552,7 +554,7 @@ function renderHero(s: Session) {
   const ok = worth(s);
   const leadSpot = lead.id ? spotsById[lead.id] : undefined;
   const verdict = ok
-    ? `<span class="where">${esc(lead.name)}${leadSpot && leadSpot.kind !== "swim" && leadSpot.kind !== "surf" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
+    ? `<span class="where"><button type="button" class="link top-name" data-open="${esc(lead.id ?? "")}">${esc(lead.name)}</button>${leadSpot && leadSpot.kind !== "swim" && leadSpot.kind !== "surf" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
        ${whyWorth(s) ? `<span class="why worth">${esc(whyWorth(s))}</span>` : ""}`
     : `<span class="why">${esc(whyNotWorth(s))}</span>`;
   // Only what matters for this session: sunrise for a morning, sunset for an evening, and that part of the day's
@@ -567,7 +569,8 @@ function renderHero(s: Session) {
   // tides, sun and UV are just information and stay plain
   const chip = (icon: string, label: string, value: string, rating?: number, lead = false) =>
     `<span class="chip${lead ? " lead" : ""}${rating != null ? ` edge-${ratingClass(rating).slice(2)}` : ""}">${icon}<span class="sr-only">${label}</span> ${value}</span>`;
-  // Swim: the typical beach. Surf: the best break, which says more than a median of four breaks
+  // Chip colours. Swim: the typical beach, the median of each bar across the ocean beaches. Surf: the best break.
+  // The bars themselves are in each spot's card, so they always match that spot's score
   const surfRep = mode === "surf" && s.surf ? s.reports?.[s.surf.id] : undefined;
   const coast = surfRep ?? s.coast ?? s.report;
   const air = c.air_c >= 26 ? 10 : c.air_c >= 23 ? 8 : c.air_c >= 21 ? 6 : c.air_c >= 19 ? 4 : 2; // the scoring bands
@@ -589,7 +592,7 @@ function renderHero(s: Session) {
       ${verdict}
     </div>
     </div>
-    ${lead.id ? strip(s, s.scores.find((x) => x.id === lead.id), lead.name ?? "") : ""}
+    ${lead.id ? strip(s, s.scores.find((x) => x.id === lead.id), lead.name ?? "", true) : ""}
     ${isPast(s) ? `<p class="done">Finished. This is the call the bot made before it started.</p>` : ""}
     ${s.confidence === "low" ? `<p class="early">Early forecast: more than two days out, so treat it as a guide. The calendar only posts once it's two days away.</p>` : ""}
     <div class="stats-wrap">
@@ -602,7 +605,19 @@ function renderHero(s: Session) {
       )}
       ${line(
         "Ocean",
-        chip(ICONS.swell, "Swell", `<b>${height(c.swell_m)} ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast[surfRep ? "Wave size" : "Calm water"], true) +
+        (mode === "surf" && c.trains?.length
+          ? c.trains
+              .map((t, i) =>
+                chip(
+                  ICONS.swell,
+                  t.kind === "chop" ? "Wind chop" : t.kind === "swell2" ? "Second swell" : "Main swell",
+                  `${t.kind === "chop" ? "Chop " : ""}<b>${height(t.m)} ${esc(t.dir)}</b> @ ${t.s}s`,
+                  i === 0 ? coast["Wave size"] : undefined,
+                  i === 0,
+                ),
+              )
+              .join("")
+          : chip(ICONS.swell, "Swell", `<b>${height(c.swell_m)} ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast[surfRep ? "Wave size" : "Calm water"], true)) +
           (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${temp(c.water_c)}</b>`, water) : "") +
           (tides ? chip(ICONS.tide, "Tides", tides) : ""),
       )}
@@ -612,7 +627,6 @@ function renderHero(s: Session) {
           chip(ICONS.uv, "UV", `UV <b>${c.uv}</b>`),
       )}
     </div>
-    <div class="stat-line coast-line"><span class="stat-label">${surfRep ? "Surf" : "Coast"}</span><div class="report coast">${bars(coast)}</div></div>
     </div>`;
 }
 
@@ -650,8 +664,31 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
+    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
   </li>`;
+}
+
+// The session at this spot rather than out at sea: the swell chip up top is the offshore swell, the same for the
+// whole coast, while a sheltered beach like Clovelly might only see a fraction of it at the sand
+const WIND_KIND: Record<string, string> = { offshore: "offshore", cross: "cross-shore", onshore: "onshore" };
+function here(spot: Spot, sc: SpotScore | undefined) {
+  const h = sc?.here;
+  if (!h) return "";
+  const feet = (m: number) => (units.height === "ft" && m * 3.281 < 1 ? "under 1ft" : height(m));
+  const trains = h.trains?.length
+    ? `${h.trains.map((t) => `${feet(t.m)} ${esc(t.dir)} @ ${t.s}s`).join(", ")} at the break`
+    : "";
+  const waves = trains
+    ? trains
+    : h.waves_m === undefined
+      ? ""
+      : h.waves_m < 0.15
+        ? "Flat"
+        : `${units.height === "ft" && h.waves_m * 3.281 < 1 ? "Under 1ft" : height(h.waves_m)} ${spot.kind === "surf" ? "at the break" : "at the sand"}`;
+  const [kind, shelter] = h.wind_kind.split(", ");
+  const wind = kind === "light" ? "" : `${WIND_KIND[kind] ?? esc(kind)}${shelter ? `, ${esc(shelter)}` : ""}`;
+  const line = [waves, wind].filter(Boolean).join(" · ");
+  return line ? `<p class="here">${line.charAt(0).toUpperCase()}${line.slice(1)}</p>` : "";
 }
 
 // This morning's lifeguard report, on today's sessions only: it's what they saw first thing, not a forecast
@@ -710,6 +747,7 @@ function renderSpots(s: Session) {
         if (openSpot === id) {
           openSpot = null; // tap an open card to close it
           renderSpots(s);
+          renderChart(s);
           markOpenPin();
         } else openCard(id, true);
       }),
@@ -717,9 +755,16 @@ function renderSpots(s: Session) {
 }
 
 // Expand a spot's card (closing any other), bring it into view, and show it on the map
+// The top pick's name in the top card opens its card in the list (and flies the map to it)
+document.addEventListener("click", (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>("[data-open]");
+  if (el?.dataset.open) openCard(el.dataset.open, true);
+});
+
 function openCard(id: string, fly: boolean) {
   openSpot = id;
   renderSpots(data.sessions[current]);
+  renderChart(data.sessions[current]);
   markOpenPin();
   document.querySelector(`.spot[data-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   if (fly) focusPin(id);
@@ -749,11 +794,35 @@ function whyNot(s: Session, spot: Spot) {
 
 const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 
+// Surf mode only: the week's swell, hour by hour. Redrawn when the session or the window width changes
+function renderChart(s: Session) {
+  const el = $("swell-chart");
+  el.hidden = mode !== "surf" || !data.swell_hours;
+  if (el.hidden || !data.swell_hours) return;
+  renderSwellChart(el, {
+    data: data.swell_hours,
+    sessions: data.sessions.filter((x) => weekOf(x) === weekOf(s)),
+    selected: s,
+    weekStart: monday(parse(s.date)),
+    onPick: (x) => selectSession(data.sessions.indexOf(x)),
+    spot: openSpot && spotsById[openSpot]?.kind === "surf" ? { id: openSpot, name: spotsById[openSpot].name } : undefined,
+  });
+}
+let chartWidth = 0;
+new ResizeObserver(() => {
+  const w = $("swell-chart").clientWidth;
+  if (data && w && Math.abs(w - chartWidth) > 4) {
+    chartWidth = w;
+    renderChart(data.sessions[current]);
+  }
+}).observe($("swell-chart"));
+
 function render() {
   const s = data.sessions[current];
   week = weekOf(s);
   renderWeek();
   renderHero(s);
+  renderChart(s);
   const c = s.conditions;
   if (c.wind_deg !== undefined) wind?.set(c.wind_kmh, c.gust_kmh, c.wind_deg);
   const swellDeg = c.swell_deg ?? COMPASS.indexOf(c.swell_dir) * 22.5; // older scores only have the compass point

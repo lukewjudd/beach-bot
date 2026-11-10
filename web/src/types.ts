@@ -27,6 +27,16 @@ export interface SpotScore {
   why?: Record<string, string>;
   /** What rules out the rest of the session after the best hours, e.g. "⚡ storms from 4pm" */
   later?: string;
+  /** Conditions at this spot over its best window, not out at sea: waves at its sand or break (none for pools),
+   * and which way the wind blows there ("offshore", "cross", "onshore", "light", maybe ", sheltered") */
+  here?: {
+    waves_m?: number;
+    wind_kmh: number;
+    wind_dir: string;
+    wind_kind: string;
+    /** Surf breaks: each swell train as it arrives at the break, biggest first */
+    trains?: { kind: "swell" | "swell2" | "chop"; m: number; dir: string; deg: number; s: number }[];
+  };
 }
 
 export interface Session {
@@ -60,6 +70,8 @@ export interface Session {
     swell_dir: string;
     /** Where the swell comes from, in degrees, for the map's swell layer */
     swell_deg?: number;
+    /** Every wave train at the middle of the best hours, for surf mode: main swell, second swell, wind chop */
+    trains?: { kind: "swell" | "swell2" | "chop"; m: number; dir: string; deg: number; s: number }[];
     period_s: number;
     air_c: number;
     water_c: number | null;
@@ -109,4 +121,17 @@ export interface Scores {
   sessions: Session[];
   /** This morning's lifeguard reports, by spot id */
   lifeguards?: Record<string, LifeguardReport>;
+  /** Every forecast hour, for surf mode's swell chart */
+  swell_hours?: SwellHours | null;
+}
+
+/** Hour i is `start` (Sydney local) plus i hours. Each train is [height m, from deg, period s], or null */
+export interface SwellHours {
+  start: string;
+  swell: ([number, number, number] | null)[];
+  swell2: ([number, number, number] | null)[];
+  chop: ([number, number, number] | null)[];
+  tide: (number | null)[];
+  /** The wave height at each surf break (m), by spot id */
+  breaks?: Record<string, number[]>;
 }

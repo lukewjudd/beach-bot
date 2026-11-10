@@ -14,6 +14,10 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .05);
   --wind: rgba(255, 255, 255, .75);
   --swell: rgba(14, 110, 140, .6);
+  --train1: #0e6e8c;
+  --train2: #7c4dbd;
+  --train3: #8a969d;
+  --tide: #a07a2c;
   color-scheme: light;
 }
 
@@ -33,6 +37,10 @@
     --shadow: none;
     --wind: rgba(255, 255, 255, .5);
     --swell: rgba(160, 225, 245, .7);
+    --train1: #5cc3e0;
+    --train2: #b897ee;
+    --train3: #7d8a91;
+    --tide: #d6b36a;
     color-scheme: dark;
   }
 }
@@ -52,6 +60,10 @@
   --shadow: none;
   --wind: rgba(255, 255, 255, .5);
   --swell: rgba(160, 225, 245, .7);
+  --train1: #5cc3e0;
+  --train2: #b897ee;
+  --train3: #7d8a91;
+  --tide: #d6b36a;
   color-scheme: dark;
 }
 
@@ -206,6 +218,8 @@ button:disabled { opacity: .45; cursor: default; }
 .hero-title { margin: 0 0 10px; font-size: 18px; letter-spacing: -.01em; }
 .hero .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero .where { font-size: 18px; font-weight: 600; }
+.hero .top-name { font: inherit; color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.hero .top-name:hover { text-decoration-color: currentColor; }
 .hero .why { color: var(--muted); }
 .hero .why.worth { flex-basis: 100%; } /* its own line under the spot and time */
 .flag { font-size: 20px; font-weight: 800; letter-spacing: -.01em; padding: 2px 10px; border-radius: 8px; }
@@ -281,6 +295,9 @@ button:disabled { opacity: .45; cursor: default; }
   .layout { flex: 1; min-height: 0; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr; }
   .panel { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-right: 4px; }
   .controls { position: sticky; top: 0; z-index: 2; background: var(--bg); }
+  /* Surf mode adds the swell chart, so the page scrolls: the map and list keep their own full-height block */
+  body.mode-surf { height: auto; overflow: visible; }
+  body.mode-surf .layout { flex: none; height: calc(100dvh - 24px); margin-top: 12px; }
 }
 
 #map { height: 100%; min-height: 0; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
@@ -423,8 +440,45 @@ button:disabled { opacity: .45; cursor: default; }
 
 /* This morning's lifeguard report, under a beach's conditions */
 .details .report + h3 { margin-top: 16px; }
+.details .here { margin: 0 0 12px; font-size: 14px; }
+.details .here .muted { color: var(--muted); }
 .details dl.lifeguards { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 0; font-size: 14px; }
 .details dl.lifeguards dt { color: var(--muted); }
 .details dl.lifeguards dd { margin: 0; }
 .details dl.lifeguards.closed dd:first-of-type { color: var(--r-red); font-weight: 700; }
 .details .lifeguard-says { margin: 8px 0 0; font-size: 14px; color: var(--muted); font-style: italic; }
+
+/* Surf mode's swell chart */
+.swell-chart { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 8px; margin-top: 12px; box-shadow: var(--shadow); }
+.swell-chart[hidden] { display: none; }
+.swell-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.swell-head h3 { margin: 0; font-size: 15px; }
+.swell-chart .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.swell-chart .key::before { content: ""; display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
+.swell-chart .key.t1 { color: var(--train1); }
+.swell-chart .key.t2 { color: var(--train2); }
+.swell-chart .key.t3 { color: var(--train3); }
+.swell-chart .key.brk { color: var(--text); }
+.swell-chart .key.t3::before { background: none; border-top: 2px dashed currentColor; height: 0; } /* dashed, like its line */
+.swell-chart .key.tide-key { color: var(--tide); }
+.swell-readout { margin: 6px 0 4px; min-height: 20px; font-size: 13px; display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.swell-readout .key b { color: var(--text); }
+@media (max-width: 600px) { .swell-readout { min-height: 40px; align-content: flex-start; } } /* two lines, so dragging doesn't jump */
+.swell-readout .muted { color: var(--muted); }
+.swell-chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; cursor: crosshair; }
+.swell-chart .night { fill: var(--text); opacity: .05; }
+.swell-chart .band { fill: var(--accent); opacity: .12; }
+.swell-chart .day { stroke: var(--line); }
+.swell-chart .day-label, .swell-chart .tick-label, .swell-chart .lane-label { fill: var(--muted); font-size: 11px; }
+.swell-chart .lane-label { fill: var(--tide); }
+.swell-chart .day-label { text-anchor: middle; font-weight: 600; }
+.swell-chart .tick { stroke: var(--line); stroke-dasharray: 2 3; }
+.swell-chart .train { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.swell-chart .train.t1 { stroke: var(--train1); }
+.swell-chart .train.t1.area { fill: var(--train1); fill-opacity: .18; }
+.swell-chart .train.t2 { stroke: var(--train2); }
+.swell-chart .train.t3 { stroke: var(--train3); stroke-dasharray: 3 3; stroke-width: 1.5; }
+.swell-chart .train.at-break { stroke: var(--text); stroke-width: 2.5; }
+.swell-chart .arrow { fill: var(--train1); }
+.swell-chart .tide { fill: none; stroke: var(--tide); stroke-width: 1.5; }
+.swell-chart .cursor { stroke: var(--text); stroke-width: 1; opacity: .5; }

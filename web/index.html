@@ -108,6 +108,12 @@
       direction it breaks on and, ideally, groundswell, and some like a particular tide. Advanced and expert breaks are
       never the session's surf call and never go in the calendar: they're there for people who already know them.
       Spots that are heavy slabs for pros only, and anything locals keep quiet, are left out.</p>
+    <p>Surf mode also shows the swell itself. The top card lists each wave train in the sea: the main swell, a second
+      swell from another direction if there is one, and the wind chop, each with its height, direction and period.
+      Under it, a chart shows the week hour by hour, with arrows for the way the main swell comes from and the tide
+      underneath. Hover or drag along it for the numbers, and tap to jump to that session. These are offshore and the
+      same along the coast. Open a break's card and the chart adds a line for the waves at that break, and the card
+      says how big each train is by the time it gets there.</p>
     <h3>How swell and wind are worked out</h3>
     <p>The forecast describes the sea well offshore: a main swell, sometimes a second one, and chop from the local
       wind, each with a height, a direction and a period (the seconds between waves). What matters for a swim is
@@ -324,6 +330,7 @@
     <section class="hero" id="hero" aria-live="polite">
       <div class="loading"><span class="spinner" aria-hidden="true"></span> Checking the forecast…</div>
     </section>
+    <section class="swell-chart" id="swell-chart" aria-label="Swell this week" hidden></section>
     <div class="view-toggle" id="view-toggle" role="group" aria-label="View">
       <button type="button" data-view="list" aria-pressed="true">List</button>
       <button type="button" data-view="map" aria-pressed="false">Map</button>
