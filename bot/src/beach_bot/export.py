@@ -211,12 +211,17 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
 
 
 def swell_hours(hours, sessions, region=EASTERN):
-    """Every hour of the forecast's days, for surf mode's swell chart: each wave train offshore as [height m,
-    direction it comes from, period s] (null when there isn't one), the tide (sea level, m) and the height at each
-    surf break. Hour i is `start` plus i hours. The main swell's period is the longer of its own and the whole
-    sea's (R-SU6)."""
-    days = sorted({s.day.isoformat() for s in sessions})
-    keys = sorted(t for t in hours if days and days[0] <= t[:10] <= days[-1])
+    """Every hour from the Monday of this week to the last forecast day, for the swell chart: each wave train
+    offshore as [height m, direction it comes from, period s] (null when there isn't one), the tide (sea level, m)
+    and the height at each surf break. Hour i is `start` plus i hours. The main swell's period is the longer of
+    its own and the whole sea's (R-SU6)."""
+    days = sorted({s.day for s in sessions})
+    if not days:
+        return None
+    # From the Monday of the first session's week, so the chart shows the whole week: the days already gone come
+    # from the forecast's look-back (load_data fetches the past week)
+    first = (days[0] - timedelta(days=days[0].weekday())).isoformat()
+    keys = sorted(t for t in hours if first <= t[:10] <= days[-1].isoformat())
     if not keys:
         return None
     out = {"start": keys[0], "swell": [], "swell2": [], "chop": [], "tide": []}

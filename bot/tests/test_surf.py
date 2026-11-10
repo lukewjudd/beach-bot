@@ -180,3 +180,17 @@ def test_a_break_not_checked_yet_is_scored_but_never_the_call():
     assert not whale[1].checked and whale[1].advanced  # kept out of the call like the advanced breaks
     assert out_of_10(whale[0]) >= 6
     assert am.surf[0][1].checked
+
+
+def test_the_swell_chart_covers_the_whole_week_including_the_days_already_gone():
+    from datetime import datetime
+
+    from beach_bot.config import TZ
+    from beach_bot.export import swell_hours
+
+    hours, sun = make_forecast(WED, swell(1.0, 150, 10), lookback_days=7)  # WED is a Wednesday
+    sessions, _ = score(hours, sun, WED, now=datetime(2026, 11, 4, 3, tzinfo=TZ))
+
+    data = swell_hours(hours, list(sessions.values()))
+    assert data["start"] == "2026-11-02T00:00"  # Monday
+    assert len(data["swell"]) == 3 * 24  # Mon, Tue and Wed

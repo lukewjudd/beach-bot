@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-11
 
+- **The swell chart shows the whole week.** It used to start on the first session still to come, so by Wednesday, Monday and Tuesday were blank. It now starts on Monday, with the days already gone from the forecast's week of look-back. Clovelly's underwater map gets those days' tides too.
 - **Spearfishing, a third mode** (Settings: Swim, Surf or Spear). Rules R-SP0 to R-SP7 in beach-knowledge.md §4.9; research in research/spearfishing-*.md and research/spearospotter-notes.md (ideas from a friend's spearoSpotter and from spearo.app).
   - **Shore spots, only ones it's legal to spear from** (19 to start; 26 with the seven below):
     - **Eastern:** North Bondi, Wedding Cake Island, Lurline Bay, Mahon Pool, South Maroubra, Long Bay, Little Bay, Cape Banks, La Perouse, Kurnell bay side, the Leap and Yena, Camp Cove.
