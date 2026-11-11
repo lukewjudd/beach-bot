@@ -3,8 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Beach Calls</title>
-  <meta name="description" content="Best beach sessions in Sydney's eastern suburbs, scored every hour.">
+  <title>Beach Bot</title>
+  <meta name="description" content="Swim, surf and fish in Sydney.">
+  <!-- What a shared link shows (WhatsApp, iMessage, Slack read these first) -->
+  <meta property="og:site_name" content="Beach Bot">
+  <meta property="og:title" content="Beach Bot">
+  <meta property="og:description" content="Swim, surf and fish in Sydney.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lukewjudd.github.io/beach-bot/">
+  <meta name="twitter:card" content="summary">
   <!-- Start fetching the scores alongside the JS rather than after it -->
   <link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
   <script>
@@ -28,7 +35,7 @@
 </head>
 <body>
   <header class="top">
-    <h1>Beach calls</h1>
+    <h1>Beach Bot</h1>
     <p class="sub" id="updated"></p>
     <div class="top-btns">
       <button type="button" class="info-btn cog-btn" id="settings-open" aria-haspopup="dialog">

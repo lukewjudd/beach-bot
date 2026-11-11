@@ -1,4 +1,4 @@
-// Beach calls: renders scores.json as a week of days, a summary of the chosen session, a map and a list of spots.
+// Beach Bot: renders scores.json as a week of days, a summary of the chosen session, a map and a list of spots.
 
 import type { Map as LeafletMap, Marker } from "leaflet";
 import { ICONS } from "./icons";

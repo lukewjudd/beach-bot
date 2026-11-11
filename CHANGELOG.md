@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-12
 
+- **It's Beach Bot.** The page title, header and link previews said "Beach Calls" and "Best beach sessions in Sydney's eastern suburbs". They now say Beach Bot, "Swim, surf and fish in Sydney.", and the page has Open Graph tags so WhatsApp, iMessage and Slack show that when a link's shared.
 - **The page scrolls in every mode on desktop.** Swim mode was still locked to the window's height with the map and list squeezed in; it now scrolls like surf and spear, with the map and list in their own screen-high block.
 - **The reason sits under the spot name** in the top card ("Barely any wind · calm water · clean water"), rather than wrapping back to the start of the row.
 - **About uses the page's own visual cues.** "How it works" is now a key of the score pills (8 worth going, 9 in the calendar, 6 so-so, 3 don't bother, 0 out), the AM/MID/PM labels, the ringed best hours on a mini strip and a dashed early-forecast day. "Swim, surf or spear" is a key of the actual tags (Harbour, Snorkel, Intermediate, Advanced and Expert, Pros only, Experienced, Not checked yet) and a tiny swell-and-tide chart, each with a few words.
