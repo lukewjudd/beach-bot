@@ -20,6 +20,9 @@
   </script>
   <!-- Visit counts: GoatCounter, no cookies or personal data (it skips localhost, so local previews don't count) -->
   <link rel="dns-prefetch" href="https://beachbot.goatcounter.com">
+  <!-- Every visit counts as the page itself, not its link (?s=, ?spot= and ?mode= would split it into a row per
+    session and spot). What people do is counted as events instead: link/, share/, mode/ and clovelly-depth (main.ts) -->
+  <script>window.goatcounter = { path: function () { return location.pathname.replace(/\/+$/, "") || "/"; } };</script>
   <script data-goatcounter="https://beachbot.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
 </head>
@@ -337,7 +340,8 @@
         <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Aerial photos: © Spatial Services NSW.</li>
     </ul>
     <p class="fine">Visits are counted with <a href="https://www.goatcounter.com" target="_blank" rel="noopener">GoatCounter</a>,
-      which uses no cookies and keeps no personal data. Settings stay in your browser.</p>
+      which uses no cookies and keeps no personal data. It also counts which spots get shared and opened from a shared
+      link, and switches to surf or spear mode, by spot name only. Settings stay in your browser.</p>
     <p class="fine">It's a hobby project and forecasts are forecasts: check the flags and the water before you go in.</p>
   </dialog>
   <p class="stale-banner" id="stale" hidden></p>

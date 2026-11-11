@@ -15,6 +15,7 @@ const figures = import.meta.glob<string>("./about/*.svg", { query: "?raw", impor
 // Which stretch of coast: from the link, else the browser's last choice, else the eastern suburbs
 const params = new URLSearchParams(location.search);
 const region = pickRegion(params);
+const linkedSpot = params.get("spot"); // a shared spot link: see openLinked
 // Set in .env.production / .env.development; ?data= overrides it
 const DATA_URL = params.get("data") ?? `${import.meta.env.VITE_DATA_BASE}scores-${region.id}.json`;
 const REFRESH_MS = 5 * 60_000; // the bot runs hourly; checking every 5 minutes keeps an open tab current
@@ -30,6 +31,15 @@ const badge = (kind: SpotKind, r: number, label = `${r} out of 10`) =>
   `<span class="score ${kind} ${ratingClass(r)}" aria-label="${kind === "surf" ? `surf ${label}` : label}">${ICONS[kind]}<span>${r}</span></span>`;
 const esc = (s: unknown) =>
   String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+// GoatCounter events (index.html counts visits under the page alone, so links don't split it): link/<spot>,
+// share/<spot>, mode/<mode> and clovelly-depth. It skips localhost, and does nothing if it's blocked
+const track = (path: string, title?: string) => {
+  try {
+    (window as unknown as { goatcounter?: { count?: (o: object) => void } }).goatcounter?.count?.({ path, title, event: true });
+  } catch {
+    // blocked or not loaded: not counted
+  }
+};
 const save = (k: string, v: string) => {
   try {
     localStorage.setItem(k, v);
@@ -69,6 +79,11 @@ try {
 } catch {
   // nothing saved, or garbled: show everything
 }
+// A linked swim spot shows whatever its activity filter: a harbour link ticks Harbour for this visit (not saved)
+if (linkedSpot) {
+  const kind = linkedSpot.split("-")[0];
+  if (kind === "harbour" || kind === "swim" || kind === "pool") activities.add(kind as Activity);
+}
 let sort = load("sort") ?? "best";
 let windOn = load("wind") === "on";
 let swellOn = load("swell") === "on"; // off unless this browser turned it on
@@ -78,7 +93,9 @@ let basemap: "map" | "aerial" = load("basemap") === "aerial" ? "aerial" : "map";
 type Mode = "swim" | "surf" | "spear";
 const MODES: Mode[] = ["swim", "surf", "spear"];
 const asMode = (v: string | null): Mode => (MODES.includes(v as Mode) ? (v as Mode) : "swim");
-let mode: Mode = asMode(params.get("mode") ?? load("mode"));
+// A shared spot link (?spot=surf-maroubra) opens in that spot's own mode: its id starts with its kind
+const linkedMode = linkedSpot?.startsWith("surf-") ? "surf" : linkedSpot?.startsWith("spear-") ? "spear" : linkedSpot ? "swim" : null;
+let mode: Mode = linkedMode ?? asMode(params.get("mode") ?? load("mode"));
 const MODE_NAME: Record<Mode, string> = { swim: "Swim", surf: "Surf", spear: "Spear" };
 
 const TAG: Record<SpotKind, string> = { swim: "Beach", harbour: "Harbour", pool: "Pool", surf: "Surf", spear: "Spear" };
@@ -212,10 +229,7 @@ function wireModePick() {
       if (b.dataset.mode === mode) return;
       mode = b.dataset.mode as Mode;
       save("mode", mode);
-      const url = new URL(location.href);
-      if (mode !== "swim") url.searchParams.set("mode", mode);
-      else url.searchParams.delete("mode");
-      history.replaceState(null, "", url);
+      track(`mode/${mode}`);
       apply();
       openSpot = null;
       if (data) {
@@ -268,11 +282,21 @@ async function start() {
   }
   wireControls();
   render();
+  openLinked();
   setInterval(renderUpdated, 60_000);
   setInterval(refresh, REFRESH_MS);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refresh();
   });
+}
+
+// A shared spot link: open its card (the list on a phone), fly the map to it, and for ?depth Clovelly's underwater map
+function openLinked() {
+  if (!linkedSpot || !spotsById[linkedSpot]) return;
+  track(`link/${linkedSpot}`, spotsById[linkedSpot].name);
+  if (innerWidth < 860) setView("list");
+  openCard(linkedSpot, true);
+  if (params.has("depth") && linkedSpot === "swim-clovelly") openDepth();
 }
 
 // Take on a scores.json, keeping the chosen session (or the one in the link) if it's there
@@ -713,7 +737,7 @@ function card(s: Session, spot: Spot, sc: SpotScore | undefined) {
       <span class="body"><span class="name">${esc(spot.name)}</span>${notes ? `<span class="meta">${notes}</span>` : ""}</span>
       <span class="side">${tags(spot)}</span>
     </button>
-    ${open && rep ? `<div class="details">${strip(s, sc, spot.name)}${here(spot, sc)}${spot.watch_from ? `<p class="watch">Watch from ${esc(spot.watch_from)}</p>` : ""}${spot.id === "swim-clovelly" ? `<button type="button" class="link depth-open" data-depth>Under the water at Clovelly</button>` : ""}${seabed(spot)}${spot.entry ? `<p class="watch">${esc(spot.entry)}</p>` : ""}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
+    ${open && rep ? `<div class="details"><button type="button" class="link share" data-share="${spot.id}">Share</button>${strip(s, sc, spot.name)}${here(spot, sc)}${spot.watch_from ? `<p class="watch">Watch from ${esc(spot.watch_from)}</p>` : ""}${spot.id === "swim-clovelly" ? `<button type="button" class="link depth-open" data-depth>Under the water at Clovelly</button>` : ""}${seabed(spot)}${spot.entry ? `<p class="watch">${esc(spot.entry)}</p>` : ""}<h3>Conditions at ${esc(spot.name)}</h3><div class="report">${bars(rep)}</div>${lifeguards(s, spot)}</div>` : ""}
   </li>`;
 }
 
@@ -784,6 +808,44 @@ function lifeguards(s: Session, spot: Spot) {
     ${r.description ? `<p class="lifeguard-says">“${esc(r.description)}”</p>` : ""}`;
 }
 
+// The address says which card is open, so it can be copied or shared as it is
+function syncSpotParam() {
+  const url = new URL(location.href);
+  if (openSpot) url.searchParams.set("spot", openSpot);
+  else url.searchParams.delete("spot");
+  url.searchParams.delete("mode"); // a spot link carries its mode in its id; otherwise the page remembers it
+  if (mode !== "swim" && !openSpot) url.searchParams.set("mode", mode);
+  if (!openSpot) url.searchParams.delete("depth");
+  history.replaceState(null, "", url);
+}
+
+// The link for a spot in a session: the session (which says the region) and the spot (which says the mode)
+function spotLink(id: string, s: Session) {
+  const url = new URL(location.pathname, location.origin);
+  url.searchParams.set("s", s.key);
+  url.searchParams.set("spot", id);
+  return url.toString();
+}
+
+async function share(id: string, btn: HTMLElement) {
+  const s = data.sessions[current];
+  const spot = spotsById[id];
+  const url = spotLink(id, s);
+  const title = `${spot.name} · ${s.label}`;
+  track(`share/${id}`, spot.name);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    btn.textContent = "Link copied";
+  } catch {
+    btn.textContent = "Couldn't share"; // cancelled the share sheet, or no clipboard access
+  }
+  setTimeout(() => (btn.textContent = "Share"), 2000);
+}
+
 function renderSpots(s: Session) {
   const byId = Object.fromEntries(s.scores.map((x) => [x.id, x]));
   const spots = data.spots.filter(shows);
@@ -812,6 +874,7 @@ function renderSpots(s: Session) {
       .join("");
   }
   $("spots").innerHTML = html || `<li class="empty">No spots: tick an activity to see some.</li>`;
+  syncSpotParam();
   $("spots")
     .querySelectorAll<HTMLElement>(".spot")
     .forEach((li) =>
@@ -827,16 +890,35 @@ function renderSpots(s: Session) {
     );
 }
 
-// Clovelly's underwater map, from its card: the seabed at 1m and the water over it through the session's day
-document.addEventListener("click", async (e) => {
-  if (!(e.target as HTMLElement).closest("[data-depth]")) return;
+// A card's Share button: the phone's share sheet, else the link copied
+document.addEventListener("click", (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-share]");
+  if (btn?.dataset.share) share(btn.dataset.share, btn);
+});
+
+// Clovelly's underwater map, from its card: the seabed at 1m and the water over it through the session's day.
+// While it's open the address carries &depth, so a shared link opens it too
+document.addEventListener("click", (e) => {
+  if ((e.target as HTMLElement).closest("[data-depth]")) openDepth();
+});
+async function openDepth() {
   const s = data.sessions[current];
   const { openClovelly } = await import("./clovelly");
   // Start on Clovelly's best hours this session, else the session's first hour
   const w = s.scores.find((x) => x.id === "swim-clovelly")?.window;
   const start = w ? hourOfLabel(w[0]) : Number(s.start.slice(11, 13));
-  openClovelly($("depth") as HTMLDialogElement, data.swell_hours, s.date, start);
-});
+  track("clovelly-depth", "Under the water at Clovelly");
+  const dlg = $("depth") as HTMLDialogElement;
+  await openClovelly(dlg, data.swell_hours, s.date, start);
+  const url = new URL(location.href);
+  url.searchParams.set("depth", "1");
+  history.replaceState(null, "", url);
+  dlg.onclose = () => {
+    const u = new URL(location.href);
+    u.searchParams.delete("depth");
+    history.replaceState(null, "", u);
+  };
+}
 
 // Expand a spot's card (closing any other), bring it into view, and show it on the map
 // The top pick's name in the top card opens its card in the list (and flies the map to it)
