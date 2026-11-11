@@ -50,7 +50,7 @@ export function swellLayer(map: L.Map, regionId: string): Swell {
   let travel = 0; // px the swell has moved since the layer was switched on; only ever grows
 
   const colour = () =>
-    getComputedStyle(document.documentElement).getPropertyValue("--swell").trim() || "rgba(255, 255, 255, .6)";
+    getComputedStyle(container).getPropertyValue("--swell") // the map's own: it changes over the aerial photo.trim() || "rgba(255, 255, 255, .6)";
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;

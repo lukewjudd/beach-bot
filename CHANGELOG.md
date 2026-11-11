@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-11
 
+- **Swell and wind lines show over the aerial photos.** In light mode the swell lines were a dark teal that vanished against the dark sea in the photos. With Aerial picked, both now draw in bright white (the map sets its own colours, so the rest of the page keeps its theme).
 - **Mosman and the lower north shore,** on request from friends there: Balmoral Baths, Edwards Beach, Chinamans Beach, Clifton Gardens (tagged Snorkel), Clontarf, Northbridge Baths, Hayes Street Beach and MacCallum Pool, as harbour spots in the northern region (tick Harbour in swim mode). All are Beachwatch-tested except MacCallum, which goes on Hayes Street's water. Rule R-NH1 in northern-beaches-knowledge.md; research in research/mosman-harbour.md. Gurney Crescent Baths is left out: closed since 2023.
 - **The swell chart shows the whole week.** It used to start on the first session still to come, so by Wednesday, Monday and Tuesday were blank. It now starts on Monday, with the days already gone from the forecast's week of look-back. Clovelly's underwater map gets those days' tides too.
 - **Spearfishing, a third mode** (Settings: Swim, Surf or Spear). Rules R-SP0 to R-SP7 in beach-knowledge.md §4.9; research in research/spearfishing-*.md and research/spearospotter-notes.md (ideas from a friend's spearoSpotter and from spearo.app).

@@ -85,7 +85,11 @@ export function basemapPicker(map: L.Map, initial: Basemap, onPick: (b: Basemap)
     attribution: "Imagery &copy; Spatial Services NSW",
   });
   let current = initial;
-  const apply = () => (current === "aerial" ? aerial.addTo(map) : aerial.remove());
+  const apply = () => {
+    if (current === "aerial") aerial.addTo(map);
+    else aerial.remove();
+    map.getContainer().classList.toggle("aerial", current === "aerial"); // brighter swell and wind lines (style.css)
+  };
   const OPTIONS: [Basemap, string][] = [
     ["map", "Map"],
     ["aerial", "Aerial"],

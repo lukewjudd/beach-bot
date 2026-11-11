@@ -431,6 +431,8 @@ button:disabled { opacity: .45; cursor: default; }
 }
 #map .basemap-menu button[aria-checked="true"] { background: var(--accent); color: var(--on-pill); }
 /* Credits stay in their corner, wrapping rather than reaching across to the layer switches */
+/* Over the aerial photo the sea is dark in either theme: the swell lines and wind trails go bright white */
+#map.aerial { --swell: rgba(255, 255, 255, .85); --wind: rgba(255, 255, 255, .8); }
 #map .leaflet-control-attribution { max-width: min(320px, 42vw); text-align: right; }
 
 .error { color: var(--muted); padding: 24px 0; }

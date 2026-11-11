@@ -35,7 +35,7 @@ export function windLayer(map: L.Map): Wind {
   let h = 0;
 
   const colour = () =>
-    getComputedStyle(document.documentElement).getPropertyValue("--wind").trim() || "rgba(30, 60, 80, .55)";
+    getComputedStyle(container).getPropertyValue("--wind") // the map's own: it changes over the aerial photo.trim() || "rgba(30, 60, 80, .55)";
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
