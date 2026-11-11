@@ -587,6 +587,103 @@ NORTHERN_BEACHES = [
         poor_grade=True,
         harbour=True,
     ),
+    # Mosman, Middle Harbour and the lower north shore (research/mosman-harbour.md, R-NH1): all Beachwatch-tested,
+    # unpatrolled and estuarine, so the 3-day rain rule. Facings from the OSM outlines. The three near the Middle
+    # Harbour mouth get a trace of E/SE swell; the rest none. Rain thresholds from the 2025-26 report
+    Beach(
+        "Balmoral Baths",
+        45,
+        {"NE": 0.0, "E": 0.05, "SE": 0.05, "S": 0.0},
+        1,
+        10,
+        1,
+        "Balmoral Baths",
+        poor_grade=True,
+        harbour=True,
+    ),  # netted ~80x80m
+    Beach(
+        "Edwards Beach",
+        90,
+        {"NE": 0.0, "E": 0.05, "SE": 0.05, "S": 0.0},
+        5,
+        20,
+        1,
+        "Edwards Beach",
+        poor_grade=True,
+        harbour=True,
+    ),  # Balmoral's north end
+    Beach(
+        "Chinamans Beach",
+        65,
+        {"NE": 0.0, "E": 0.05, "SE": 0.05, "S": 0.0},
+        1,
+        10,
+        1,
+        "Chinamans Beach",
+        poor_grade=True,
+        harbour=True,
+    ),
+    # Netted; Chowder Bay's dive site (seahorses, frogfish) off the jetty steps
+    Beach(
+        "Clifton Gardens",
+        116,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        10,
+        1,
+        "Clifton Gardens",
+        poor_grade=True,
+        snorkel=True,
+        harbour=True,
+    ),
+    # Netted 64m; faces WSW, so the NE sea breeze is offshore: the afternoon pick
+    Beach(
+        "Clontarf",
+        240,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        10,
+        1,
+        "Clontarf Pool",
+        poor_grade=True,
+        harbour=True,
+    ),
+    Beach(
+        "Northbridge Baths",
+        66,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        10,
+        1,
+        "Northbridge Baths",
+        poor_grade=True,
+        harbour=True,
+    ),  # enclosed
+    Beach(
+        "Hayes Street Beach",
+        157,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        5,
+        1,
+        "Hayes Street Beach",
+        poor_grade=True,
+        harbour=True,
+    ),  # Neutral Bay
+    # Cremorne Point's free 24h harbour pool, filled by the harbour: scored as a harbour spot (so it never leads a
+    # session or goes in the calendar, as an ocean pool can) on Hayes Street's water. It's cleaned on dates North
+    # Sydney Council posts, with no set weekday, so closures aren't known here
+    Beach(
+        "MacCallum Pool",
+        222,
+        {"NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0},
+        1,
+        5,
+        1,
+        "Hayes Street Beach",
+        poor_grade=True,
+        harbour=True,
+    ),
 ]
 _NB = {b.name: b for b in NORTHERN_BEACHES}
 
@@ -846,6 +943,15 @@ NORTHERN_COORDS = {  # on the sand: OSM natural=beach polygon centres (§2, §3)
     "Fairlight": (-33.7999, 151.2750),
     "Forty Baskets": (-33.8035, 151.2700),
     "Paradise Beach Baths": (-33.6243, 151.3168),
+    # Mosman and the lower north shore (OSM points on the sand or in the baths)
+    "Balmoral Baths": (-33.8272, 151.2533),
+    "Edwards Beach": (-33.8210, 151.2512),
+    "Chinamans Beach": (-33.8147, 151.2484),
+    "Clifton Gardens": (-33.8398, 151.2527),
+    "Clontarf": (-33.8060, 151.2519),
+    "Northbridge Baths": (-33.8064, 151.2222),
+    "Hayes Street Beach": (-33.8416, 151.2194),
+    "MacCallum Pool": (-33.8453, 151.2280),
 }
 NORTHERN_POOL_COORDS = {  # OSM leisure=swimming_pool polygon centres (main pool where there's a toddler pool too)
     "Fairy Bower": (-33.8008, 151.2945),

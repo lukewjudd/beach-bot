@@ -82,6 +82,25 @@ Considered and not recommended for now: **Clareville** (a "narrow strip of high 
 
 ---
 
+### 3a. Mosman, Middle Harbour and the lower north shore (added 2026-11-11; research/mosman-harbour.md)
+
+- R-NH1 Eight more harbour spots, for friends in Mosman. All are Beachwatch-tested except MacCallum Pool, all are unpatrolled, and all use the 3-day rain rule (R-NL2). Facings come from OSM outlines.
+
+| Spot (Beachwatch site) | Faces | Netted | Grades 23-24 / 24-25 / 25-26 | Rain occ/often (mm) | Notes |
+|---|---|---|---|---|---|
+| Balmoral Baths | 45 | yes, ~80x80 m | G/G/G | 1/10 | Sharks got inside the net in Mar 2026 |
+| Edwards Beach | 90 | netted pool at the south end | G/G/G | 5/20 | Balmoral's north end |
+| Chinamans Beach | 65 | no | G/G/G | 1/10 | Cleanest in dry weather (98%) |
+| Clifton Gardens | 116 | yes, ~110x75 m | G/G/G | 1/10 | Snorkel: Chowder Bay's dive site off the jetty |
+| Clontarf (Clontarf Pool) | 240 | yes, 64 m | G/F/F | 1/10 | The NE sea breeze is offshore here |
+| Northbridge Baths | 66 | enclosed baths | P/F/F | 1/10 | Sheltered all round |
+| Hayes Street Beach | 157 | no | G/G/G | 1/5 | Neutral Bay, next to the ferry wharf |
+| MacCallum Pool (on Hayes Street's water) | 222 | harbour-fed pool | not tested | 1/5 | Free, 24 h; cleaned on posted dates with no set weekday, so closures aren't known |
+
+- The three near the Middle Harbour mouth (Balmoral Baths, Edwards, Chinamans) get a trace of E/SE swell (0.05); the rest none.
+- MacCallum is scored as a harbour spot, not a pool, so like every harbour spot it never leads a session or goes in the calendar.
+- Left out: Gurney Crescent Baths (closed since 2023, to be removed), Obelisk and Reef Beach (untested, hard to reach), Sirius Cove and Taylors Bay (untested). Cobblers (nude, stingrays) is optional on Balmoral's water.
+
 ## 4. Per-location table: ocean rock pools
 
 Water quality follows the beach next to it (R-R5 in the east). Pins are the centre of the OSM `leisure=swimming_pool` polygon (or the nearest point inside it) [N14]. For pools with a toddler pool beside them, the pin is on the main pool. "Cleaning" is from the council's dated 2026 roster [N7]. D = the weekday it closes. Re-opening is at 5am or 5pm on D+1; the 5am/5pm counts are for 2026. Closing times vary with the tide, mostly afternoon to late evening (some after midnight, which is still the night of D).
