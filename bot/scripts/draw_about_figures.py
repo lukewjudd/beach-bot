@@ -12,6 +12,7 @@ Writes web/src/about/*.svg:
   share.svg   North Bondi: how much of a NE, E, SE and S swell gets in
   period.svg  Breaking height of a 1.5 m swell by period, at a beach and at a surf break
   swell-types.svg  side-on: wind swell vs groundswell, true to scale, and the depth each starts to feel the seabed
+  chop.svg    from above: the same 1.5 m as a wind swell and a groundswell reaching a beach, and how big each breaks
   refraction.svg  plan view: 8 s and 14 s crests bending round a made-up headland (eikonal solve over its seabed)
   wind.svg    Coogee: which winds are offshore, cross-shore and onshore
   wind-water.svg  side-on: the same swell under an offshore and an onshore wind
@@ -446,6 +447,98 @@ def deep_length(t):
 def group_kmh(t):
     """How fast a swell's energy crosses deep water (km/h): half the crest speed, g t / 4 pi."""
     return G * t / (4 * math.pi) * 3.6
+
+
+def chop_fig():
+    """From above, side by side: 1.5 m of 6 s wind swell and 1.5 m of 13 s groundswell coming in to a beach. The
+    wind swell is short, broken crests from two directions with whitecaps; the groundswell long, even lines that bend
+    to the sand. The crests are spaced for reading rather than to scale (the swell-types figure has that). Under
+    each, how big it breaks at a swimming beach, from the score's own formula."""
+    import random
+
+    w, gap = WIDTH, 12
+    pw = (w - gap) / 2  # each panel
+    sea_top, sea_h, sand_h = 30, 150, 16
+    body = []
+    rnd = random.Random(7)
+    for k, (t, name, rough) in enumerate(((6, "Wind swell", True), (13, "Groundswell", False))):
+        x0 = k * (pw + gap)
+        clip = f"chop-clip-{k}"
+        body.append(
+            f'<clipPath id="{clip}"><rect x="{x0:.1f}" y="{sea_top}" width="{pw:.1f}" height="{sea_h}" rx="8"/>'
+            "</clipPath>"
+        )
+        body.append(f'<rect x="{x0:.1f}" y="{sea_top}" width="{pw:.1f}" height="{sea_h}" rx="8" fill="var(--hs-sea)"/>')
+        g = [f'<g clip-path="url(#{clip})">']
+        beach_y = sea_top + sea_h - sand_h
+        lam = 17 if rough else 38  # px between crests: short and close, against long and well apart
+        if rough:
+            # two trains crossing: short wobbly crest pieces at two angles, and whitecaps
+            for ang, phase in ((-12, 0.0), (20, 0.5)):
+                y = sea_top - 20 + phase * lam
+                while y < beach_y:
+                    xx = x0 - 20
+                    while xx < x0 + pw + 20:
+                        seg = rnd.uniform(10, 20)
+                        dy = math.tan(math.radians(ang)) * seg
+                        yy = y + math.tan(math.radians(ang)) * (xx - x0) + rnd.uniform(-2, 2)
+                        g.append(
+                            f'<path d="M{xx:.1f},{yy:.1f} q{seg / 2:.1f},{-2.5:.1f} {seg:.1f},{dy:.1f}" fill="none" '
+                            'stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>'
+                        )
+                        if rnd.random() < 0.12:
+                            g.append(
+                                f'<path d="M{xx + seg * 0.3:.1f},{yy - 1:.1f} h{rnd.uniform(4, 8):.1f}" '
+                                'stroke="#fff" stroke-width="2" stroke-linecap="round"/>'
+                            )
+                        xx += seg + rnd.uniform(12, 22)
+                    y += lam
+            # messy white water all along the sand
+            xx = x0
+            while xx < x0 + pw:
+                seg = rnd.uniform(6, 14)
+                g.append(
+                    f'<path d="M{xx:.1f},{beach_y - rnd.uniform(1, 5):.1f} h{seg:.1f}" stroke="#fff" '
+                    'stroke-width="2.5" stroke-linecap="round" opacity=".9"/>'
+                )
+                xx += seg + rnd.uniform(2, 8)
+        else:
+            # long, even lines bending a little to the sand, and one clean line of white water
+            y = sea_top + 8
+            while y < beach_y - 6:
+                bow = 6 * (1 - (y - sea_top) / sea_h)
+                g.append(
+                    f'<path d="M{x0 - 5:.1f},{y + bow:.1f} Q{x0 + pw / 2:.1f},{y - bow:.1f} '
+                    f'{x0 + pw + 5:.1f},{y + bow:.1f}" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                )
+                y += lam
+            g.append(
+                f'<path d="M{x0 + 6:.1f},{beach_y - 4:.1f} Q{x0 + pw / 2:.1f},{beach_y - 8:.1f} {x0 + pw - 6:.1f},'
+                f'{beach_y - 4:.1f}" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>'
+            )
+        g.append(f'<rect x="{x0:.1f}" y="{beach_y:.1f}" width="{pw:.1f}" height="{sand_h + 2}" fill="var(--hs-land)"/>')
+        g.append("</g>")
+        body += g
+        hb = swell.breaker(1.5, t)
+        body += [
+            f'<text x="{x0 + 2:.1f}" y="{sea_top - 10}" class="hs-label">{name} · {t} s</text>',
+            f'<text x="{x0 + 2:.1f}" y="{sea_top + sea_h + 18}" class="hs-label">'
+            f'Breaks about <tspan class="hs-num">{hb:.1f}m</tspan></text>',
+            f'<text x="{x0 + 2:.1f}" y="{sea_top + sea_h + 34}" class="hs-small">'
+            f"{'Choppy and crumbly, from two ways' if rough else 'Clean lines, well spaced'}</text>",
+        ]
+    svg(
+        "chop",
+        w,
+        sea_top + sea_h + 40,
+        "The same 1.5m, two different days",
+        "Two views from above of 1.5 metres of swell reaching a beach. On the left, a 6-second wind swell: short, "
+        f"broken crests close together from two directions, whitecaps, and messy white water; it breaks about "
+        f"{swell.breaker(1.5, 6):.1f} metres at a swimming beach. On the right, a 13-second groundswell: long, even "
+        f"lines well apart, bending to the sand, and one clean line of white water; it breaks about "
+        f"{swell.breaker(1.5, 13):.1f} metres.",
+        body,
+    )
 
 
 def swell_types_fig():
@@ -1303,6 +1396,7 @@ if __name__ == "__main__":
     wrap_fig()
     share_fig()
     period_fig()
+    chop_fig()
     wind_fig()
     wind_water_fig()
     water_fig()

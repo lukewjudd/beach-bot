@@ -84,55 +84,45 @@
       <h2 id="about-title">About the data</h2>
       <button type="button" class="link" id="about-close">Close</button>
     </div>
-    <h3>How often</h3>
-    <p>The bot runs every hour, at a quarter past, around the clock. The page picks up new scores on its own.
-      The 6:15am run lands just after Beachwatch's daily update.</p>
-    <h3>What a score means</h3>
-    <p>Every day is cut into three sessions, the same every day of the week: morning (sunrise to 11am), midday
-      (11am to 2pm) and evening (2pm to sunset). Every spot is scored out of 10 for each, on its best two hours,
-      and a strip under the call shows every hour of the session, the best two ringed, so you can see if it turns
-      (⚡ for storms). Warmth counts where the day's heading: a cool 7am on
-      a day going to 30° is a warm-day swim, but not after a southerly change. <b>8/10 or better is worth it.</b> 9/10 or better goes in the shared calendar (one event a day, up to two
-      days ahead), and a 10/10 is every part at full marks: as good as it gets.
-      Further out is an early forecast: a guide, not a plan. 0 means ruled out (pollution, storms, too rough, closed).</p>
+    <h3>How it works</h3>
+    <p>Every hour the bot checks the forecast, the tides and Beachwatch, and scores every spot out of 10.</p>
+    <ul class="key">
+      <li><span class="key-what"><span class="lbl">AM</span> <span class="lbl">MID</span> <span class="lbl">PM</span></span>
+        Three sessions a day: sunrise to 11am, 11am to 2pm, 2pm to sunset</li>
+      <li><span class="key-what"><span class="pill r-green">8</span></span> Worth going</li>
+      <li><span class="key-what"><span class="pill r-green">9</span></span> Worth it, and it goes in the calendar</li>
+      <li><span class="key-what"><span class="pill r-amber">6</span></span> So-so</li>
+      <li><span class="key-what"><span class="pill r-red">3</span></span> Don't bother</li>
+      <li><span class="key-what"><span class="pill none">0</span></span> Out: pollution, storms, too rough or closed</li>
+      <li><span class="key-what"><span class="key-strip"><i class="r-amber"></i><i class="r-green best"></i><i class="r-green best"></i><i class="r-amber"></i></span></span>
+        A score is the spot's best two hours (ringed); the strip shows every hour</li>
+      <li><span class="key-what"><span class="key-dash"></span></span> A dashed day is more than two days ahead: a guide, not a plan</li>
+    </ul>
     <figure class="how-swell-fig">
       <div data-how="sessions"></div>
       <figcaption>Each day's three sessions on a 24-hour clock, noon at the top. Sunrise and sunset move through
         the year.</figcaption>
     </figure>
-    <h3>Swim or surf</h3>
-    <p>Swimming and surfing are scored by two different models. A swim score wants calm, clean, warm water, and a
-      surf score wants waves with some size and shape, so a great surf day can be a terrible swim. Settings (the cog,
-      top right) picks which one the whole page follows: the week, the call, the bars, the list and the map. Swim is the
-      default. A surf session is worth it at 8/10 on the surf scale, and pumping surf gets its own calendar event,
-      never mixed in with the swim one. Settings also has the coast and units (wind in km/h, knots or mph, waves in
-      metres or feet, °C or °F), and the page remembers them in your browser.</p>
-    <p>Besides the main beach breaks, surf mode scores the reefs and bombies that only turn on a few times a year:
-      Ben Buckler, Clovelly Bombie, Wedding Cake Island, Lurline Bay and Malabar, plus Mackenzies and
-      Maroubra's north corner, which is out of the northerlies. On the northern beaches it adds Queenscliff, the
-      Bower (Fairy Bower), Collaroy's south corner (the hideout in a southerly), South Narrabeen, Mona Vale and North
-      Avalon. They're tagged Intermediate, Advanced or Expert. Each needs a minimum size, a swell from the
-      direction it breaks on and, ideally, groundswell, and some like a particular tide. Advanced and expert breaks are
-      never the session's surf call and never go in the calendar: they're there for people who already know them.
-      The big-wave spots, Cape Solander, Queenscliff Bombie, Deadmans and Long Reef Bombie, are tagged Pros only. They're
-      scored so you know when they're pumping and worth going to watch, and each card says where to watch from.
-      Breaks we haven't been able to check against real days yet are tagged Not checked yet: their numbers come from
-      the surf guides, and like the advanced breaks they never make the call. Anything locals keep quiet is left
-      out.</p>
-    <p>Spear mode scores shore spearfishing spots, and only ones it's legal to spear from: closed waters aren't
-      listed. Visibility leads the score. It's predicted in metres from the reef's usual clarity, the last three days'
-      swell there (stirred-up sand takes a day or two to settle), a week of rain (worse by lagoons, estuaries and in
-      the harbour) and the season, fitted to the Reef Life Survey's dated readings round Sydney. Then surge: how far
-      the water pushes you back and forth on the bottom, which long-period swell makes much worse. Then wind, tide,
-      light and water temperature. Waves breaking over the entry, a lagoon flushing after heavy rain and the harbour
-      after rain rule a spot out. "May be murky down deep" flags days that can look clear on top and be milky a few
-      metres down; it can't catch them all. Spearfishing is on the site only, never the calendar.</p>
-    <p>Surf mode also shows the swell itself. The top card lists each wave train in the sea: the main swell, a second
-      swell from another direction if there is one, and the wind chop, each with its height, direction and period.
-      Under it, a chart shows the week hour by hour, with arrows for the way the main swell comes from and the tide
-      underneath. Hover or drag along it for the numbers, and tap to jump to that session. These are offshore and the
-      same along the coast. Open a break's card and the chart adds a line for the waves at that break, and the card
-      says how big each train is by the time it gets there.</p>
+    <h3>Swim, surf or spear</h3>
+    <p>Pick one in Settings (the cog), along with the coast and your units. Each has its own score: a swim wants
+      calm, clean, warm water, a surf wants waves with some size and shape, and a dive wants clear water and not
+      much surge.</p>
+    <ul class="key">
+      <li><span class="key-what"><span class="tag">Harbour</span> <span class="tag">Snorkel</span></span>
+        What kind of spot it is. Harbour spots only show with Harbour ticked</li>
+      <li><span class="key-what"><span class="tag">Intermediate</span></span> Surf: not for beginners</li>
+      <li><span class="key-what"><span class="tag tag-level">Advanced</span> <span class="tag tag-level">Expert</span></span>
+        Heavy reefs and bombies. Scored, but never the session's pick</li>
+      <li><span class="key-what"><span class="tag tag-level">Pros only</span></span> Big-wave spots: scored so you
+        know when to go and watch</li>
+      <li><span class="key-what"><span class="tag tag-level">Experienced</span></span> Spear: long swims, jump
+        entries or exposed points</li>
+      <li><span class="key-what"><span class="tag">Not checked yet</span></span> From the guides, not yet checked
+        against real days. Never the pick</li>
+      <li><span class="key-what"><svg class="key-swell" viewBox="0 0 58 22" aria-hidden="true"><path class="area" d="M0 12 C8 6 14 6 20 9 S34 15 42 8 S54 5 58 7 V16 H0Z"/><path class="tide" d="M0 19 Q7 15 14 19 T28 19 T42 19 T58 19"/></svg></span> Surf and spear chart the week's swell and
+        tide: tap it to jump to a session</li>
+    </ul>
+    <p>Spear mode only lists spots where spearing is legal.</p>
     <h3>How swell and wind are worked out</h3>
     <p>The forecast describes the sea well offshore: a main swell, sometimes a second one, and chop from the local
       wind, each with a height, a direction and a period (the seconds between waves). What matters for a swim is
@@ -153,8 +143,11 @@
         bending from about 30 km out, long before a wind swell notices the bottom.</figcaption>
     </figure>
     <p>That's why period matters so much. Groundswell carries more energy for its height, it bends further round
-      headlands, and it stands up taller when it reaches the sandbank or reef. A 1.5m wind swell is a choppy day;
-      a 1.5m groundswell can be a very good one.</p>
+      headlands, and it stands up taller when it reaches the sandbank or reef.</p>
+    <figure class="how-swell-fig">
+      <div data-how="chop"></div>
+      <figcaption>The same 1.5m from above. Wind swell is a choppy day; groundswell can be a very good one.</figcaption>
+    </figure>
 
     <h4>1. Find the open ocean</h4>
     <p>From just off each beach we draw a line every 2°, out to 30 km, over the OpenStreetMap coastline. Lines that

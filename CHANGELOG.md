@@ -2,6 +2,14 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-12
+
+- **The page scrolls in every mode on desktop.** Swim mode was still locked to the window's height with the map and list squeezed in; it now scrolls like surf and spear, with the map and list in their own screen-high block.
+- **The reason sits under the spot name** in the top card ("Barely any wind · calm water · clean water"), rather than wrapping back to the start of the row.
+- **About uses the page's own visual cues.** "How it works" is now a key of the score pills (8 worth going, 9 in the calendar, 6 so-so, 3 don't bother, 0 out), the AM/MID/PM labels, the ringed best hours on a mini strip and a dashed early-forecast day. "Swim, surf or spear" is a key of the actual tags (Harbour, Snorkel, Intermediate, Advanced and Expert, Pros only, Experienced, Not checked yet) and a tiny swell-and-tide chart, each with a few words.
+- **A picture of wind swell against groundswell** in About (chop.svg, drawn by draw_about_figures.py): the same 1.5m from above, short crossing crests with whitecaps against long even lines, and how big each breaks at a beach by the score's own formula (about 1.3m against 1.7m). It replaces the sentence that said so.
+- **A shorter About.** The opening sections (how often, what a score means, swim or surf, the surf reefs, spear mode, the swell chart) are now two short paragraphs: how it works, and swim, surf or spear. The detailed explainers below are unchanged.
+
 ## 2026-11-11
 
 - **Share a spot.** An open card has a Share button (the phone's share sheet, else the link's copied), and the address follows the open card, so it can be copied as it is. A spot link (`?s=<session>&spot=<id>`) opens the page on that session with the card open, the map on its pin and the list showing on a phone. It opens in the spot's own mode (its id starts with its kind: `surf-`, `spear-`, `harbour-`...), and a harbour spot shows even with Harbour unticked, for that visit only. Clovelly's link with `&depth` opens the underwater map too.

@@ -624,8 +624,8 @@ function renderHero(s: Session) {
   const ok = worth(s);
   const leadSpot = lead.id ? spotsById[lead.id] : undefined;
   const verdict = ok
-    ? `<span class="where"><button type="button" class="link top-name" data-open="${esc(lead.id ?? "")}">${esc(lead.name)}</button>${leadSpot && leadSpot.kind !== "swim" && leadSpot.kind !== "surf" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
-       ${whyWorth(s) ? `<span class="why worth">${esc(whyWorth(s))}</span>` : ""}`
+    ? `<span class="verdict"><span class="where"><button type="button" class="link top-name" data-open="${esc(lead.id ?? "")}">${esc(lead.name)}</button>${leadSpot && leadSpot.kind !== "swim" && leadSpot.kind !== "surf" ? ` <span class="tag">${TAG[leadSpot.kind]}</span>` : ""} · ${lead.rating}/10</span>
+       ${whyWorth(s) ? `<span class="why worth">${esc(whyWorth(s))}</span>` : ""}</span>`
     : `<span class="why">${esc(whyNotWorth(s))}</span>`;
   // Only what matters for this session: sunrise for a morning, sunset for an evening, and that part of the day's
   // tides (a midday shows the ones from 9am to 4pm, and no sun times)
