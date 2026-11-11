@@ -29,7 +29,8 @@ export const speedNum = (kmh: number) =>
   Math.round(units.wind === "kn" ? kmh / 1.852 : units.wind === "mph" ? kmh / 1.609 : kmh);
 export const speed = (kmh: number) => `${speedNum(kmh)} ${units.wind === "kmh" ? "km/h" : units.wind}`;
 /** Wave height: metres to one decimal, or whole feet (as surfers say it) */
-export const height = (m: number) => (units.height === "ft" ? `${Math.max(1, Math.round(m * 3.281))}ft` : `${m}m`);
+export const height = (m: number) =>
+  units.height === "ft" ? `${Math.max(1, Math.round(m * 3.281))}ft` : `${Math.round(m * 10) / 10}m`;
 export const temp = (c: number) => (units.temp === "f" ? `${Math.round((c * 9) / 5 + 32)}°F` : `${c}°`);
 
 /** The same conversions on text: "~1.4m at the beach", "2m", "20°", "25 km/h". Rain in mm is left alone */
