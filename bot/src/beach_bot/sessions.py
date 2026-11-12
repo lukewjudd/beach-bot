@@ -272,6 +272,7 @@ def conditions(sess, hours, keys=None):
     return {
         "air": max(h["temperature_2m"] for h in hs),
         "sea": next((h["sea_surface_temperature"] for h in hs if h.get("sea_surface_temperature")), None),
+        "sea_measured": any(h.get("water_measured") for h in hs),
         "wind": wind,
         "wind_deg": wdir,
         "wind_dir": compass(wdir),

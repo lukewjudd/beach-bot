@@ -112,3 +112,24 @@ def test_the_log_keeps_each_morning_and_lets_old_ones_go():
 
     assert [(r["date"], r["id"]) for r in log] == [("2026-11-08", "swim-clovelly"), ("2026-11-09", "swim-coogee")]
     assert log[1]["reported_m"] == 2.0 and log[1]["modelled_m"] == 0.9
+
+
+def test_todays_water_is_the_lifeguards_middle_reading_and_later_days_keep_the_model():
+    from beach_bot.beaches import EASTERN, NORTHERN
+    from beach_bot.export import export_scores
+
+    hours, sun = make_forecast(MON, lookback_days=3)
+    reps = {name: {"water_c": c} for name, c in (("Coogee Beach", 17), ("Clovelly Beach", 19), ("Maroubra Beach", 20))}
+    model = hours["2026-11-09T09:00"]["sea_surface_temperature"]
+
+    assert forecast.measured_water(hours, EASTERN, reps, MON) == 19
+    assert hours["2026-11-09T09:00"]["sea_surface_temperature"] == 19
+    assert hours["2026-11-09T09:00"]["sea_surface_temperature_model"] == model
+    assert hours["2026-11-08T09:00"]["sea_surface_temperature"] == model  # other days keep the model
+    # Randwick's lifeguards don't speak for the northern beaches
+    assert forecast.measured_water({}, NORTHERN, reps, MON) is None
+
+    sessions, ctx = score(hours, sun, MON)
+    data = export_scores(list(sessions.values()), hours, ctx, {}, datetime(2026, 11, 9, 5, tzinfo=TZ), sun=sun)
+    today = [s["conditions"] for s in data["sessions"] if s["date"] == "2026-11-09"]
+    assert today and all(c["water_c"] == 19 and c["water_measured"] for c in today)

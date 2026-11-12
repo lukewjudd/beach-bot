@@ -47,4 +47,16 @@ STORM_RAIN_PROB = 60
 
 # Randwick Council's lifeguard reports: each patrolled beach, once a morning (about 6:45-8:30am)
 LIFEGUARD_FEED = "https://www.randwick.nsw.gov.au/integration/feeds/lifeguard-reports"
+# Northern Beaches Council's live status for each beach and rockpool (open / check at location / closed), on its
+# own listing pages, 20 a page
+COUNCIL_STATUS_PAGES = (
+    "https://www.northernbeaches.nsw.gov.au/things-to-do/beaches",
+    "https://www.northernbeaches.nsw.gov.au/things-to-do/rockpools",
+)
+# Measured waves: the national ocean data service's near-real-time wave buoys (no key). Each region names its
+# buoys by site_name: MHL's Sydney buoy (11 km off Long Reef, ~90 m deep) and IMOS's Collaroy-Narrabeen nearshore
+# buoy (1 km off Narrabeen, ~11 m deep)
+BUOY_WFS = "https://geoserver-123.aodn.org.au/geoserver/ows"
+BUOY_LAYER = "aodn:aodn_wave_nrt_v2_timeseries_data"
+BUOY_LOG_DAYS = 30  # measured vs modelled, every 3 hours
 LIFEGUARD_LOG_DAYS = 120  # how long scores.json keeps reported vs modelled wave heights for calibration

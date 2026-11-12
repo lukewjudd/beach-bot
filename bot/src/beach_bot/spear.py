@@ -116,10 +116,15 @@ class SpearContext:
         return sum(self.ctx.rain(t, d * 24, (d + 1) * 24) * API_DECAY**d for d in range(7))
 
     def sst_drop(self, t, hours=72):
-        """How much the sea's cooled over the last 3 days (positive = colder now), or 0 without the data."""
+        """How much the sea's cooled over the last 3 days (positive = colder now), or 0 without the data. The
+        model's reading at both ends, so today's lifeguard reading isn't compared with the model's."""
         i = self.ctx.index[t]
-        now = self.ctx.hours[t].get("sea_surface_temperature")
-        then = self.ctx.hours[self.ctx.times[max(0, i - hours)]].get("sea_surface_temperature")
+
+        def sst(h):
+            return h.get("sea_surface_temperature_model", h.get("sea_surface_temperature"))
+
+        now = sst(self.ctx.hours[t])
+        then = sst(self.ctx.hours[self.ctx.times[max(0, i - hours)]])
         return 0.0 if now is None or then is None else then - now
 
 

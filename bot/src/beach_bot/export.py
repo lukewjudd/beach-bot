@@ -6,6 +6,7 @@ from datetime import timedelta
 from . import swell
 from .beaches import EASTERN, Pool, SpearSpot, SurfSpot
 from .config import (
+    BUOY_LOG_DAYS,
     DAYS_AHEAD,
     EVENT_THRESHOLD,
     FAVOURITE_TOLERANCE,
@@ -173,6 +174,7 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                     "period_s": round(c["period"]),
                     "air_c": round(c["air"]),
                     "water_c": round(c["sea"]) if c["sea"] else None,
+                    "water_measured": c["sea_measured"],  # today's lifeguard reports, not the model
                     "rain_pct": round(c["rain_prob"]),
                     "uv": round(c["uv"]),
                     "trains": swell_trains(hours, keys),
@@ -206,6 +208,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
         "spots": spots,
         "sessions": out_sessions,
         "lifeguards": lifeguards(region, hours, beachwatch),
+        "buoys": buoys(region, hours, beachwatch),
+        "buoy_log": buoy_rows(hours, beachwatch),  # this run's; keep_this_week adds the last month's
         "swell_hours": swell_hours(hours, sessions, region),
     }
 
@@ -336,8 +340,83 @@ def lifeguards(region, hours, beachwatch):
         if not rep:
             continue
         h = hours.get(rep["time"][:13] + ":00")
-        out[spot_id(b)] = {**rep, "modelled_m": round(at_beach(h, b), 1) if h else None}
+        model_c = h.get("sea_surface_temperature_model", h.get("sea_surface_temperature")) if h else None
+        out[spot_id(b)] = {
+            **rep,
+            "modelled_m": round(at_beach(h, b), 1) if h else None,
+            "modelled_water_c": round(model_c, 1) if model_c is not None else None,
+        }
     return out
+
+
+BUOY_NAMES = {"Sydney": "Sydney buoy", "Collaroy Narrabeen": "Narrabeen buoy"}
+
+
+def _model_at(hours, time):
+    """The marine model offshore at a reading's hour: (Hs, swell period, swell direction), or Nones."""
+    h = hours.get(time[:13] + ":00") or {}
+    return h.get("wave_height"), h.get("swell_wave_period"), h.get("swell_wave_direction")
+
+
+def buoys(region, hours, beachwatch):
+    """The latest reading from each of the region's wave buoys (R-LG4), its own first (region.buoys), with the
+    model's offshore figures for the same hour."""
+    latest = {}
+    for r in getattr(beachwatch, "buoys", []):
+        latest[r["buoy"]] = r  # oldest first, so the last one stands
+    out = []
+    for name in [b for b in region.buoys if b in latest]:
+        r = latest[name]
+        hs, per, deg = _model_at(hours, r["time"])
+        out.append(
+            {
+                "name": BUOY_NAMES.get(name, name),
+                "time": r["time"],
+                "hs_m": r["hs"],
+                "period_s": r["period"],
+                "deg": r["deg"],
+                "dir": compass(r["deg"]) if r["deg"] is not None else None,
+                "modelled_m": round(hs, 1) if hs is not None else None,
+                "modelled_period_s": round(per, 1) if per is not None else None,
+            }
+        )
+    return out
+
+
+def buoy_rows(hours, beachwatch):
+    """One row per buoy every three hours (the reading nearest after 0, 3, 6... local), measured next to modelled,
+    for checking the model and each beach's exposure against."""
+    rows = {}
+    for r in getattr(beachwatch, "buoys", []):
+        slot = f"{r['time'][:11]}{int(r['time'][11:13]) // 3 * 3:02d}"
+        if (slot, r["buoy"]) in rows:
+            continue
+        hs, per, deg = _model_at(hours, r["time"])
+        rows[slot, r["buoy"]] = {
+            "time": r["time"][:16],
+            "buoy": r["buoy"],
+            "hs": r["hs"],
+            "period": r["period"],
+            "deg": r["deg"],
+            "model_hs": round(hs, 2) if hs is not None else None,
+            "model_period": round(per, 1) if per is not None else None,
+            "model_deg": round(deg) if deg is not None else None,
+        }
+    return list(rows.values())
+
+
+def buoy_log(data, previous, now):
+    """The last BUOY_LOG_DAYS of buoy_rows, carried in scores.json like the lifeguard log. A slot keeps its first
+    reading."""
+    since = (now.date() - timedelta(days=BUOY_LOG_DAYS)).isoformat()
+
+    def slot(r):
+        return f"{r['time'][:11]}{int(r['time'][11:13]) // 3 * 3:02d}", r["buoy"]
+
+    rows = {slot(r): r for r in (previous or {}).get("buoy_log", []) if r["time"][:10] >= since}
+    for r in data.get("buoy_log", []):
+        rows.setdefault(slot(r), r)
+    return sorted(rows.values(), key=lambda r: (r["time"], r["buoy"]))
 
 
 def keep_this_week(data, previous, now):
@@ -345,6 +424,7 @@ def keep_this_week(data, previous, now):
     so the site can show how each one was called. The bot keeps no history of its own: `previous` is the last
     scores.json, which already holds those frozen calls."""
     data["lifeguard_log"] = lifeguard_log(data, previous, now)
+    data["buoy_log"] = buoy_log(data, previous, now)
     if not previous:
         return data
     monday = (now.date() - timedelta(days=now.weekday())).isoformat()
@@ -359,8 +439,9 @@ def keep_this_week(data, previous, now):
 
 
 def lifeguard_log(data, previous, now):
-    """Wave height the lifeguards reported next to the swell model's, one row per beach per morning, kept for
-    LIFEGUARD_LOG_DAYS: the observations to tune each beach's exposure against. Carried in scores.json like the
+    """Wave height and water temperature the lifeguards reported next to the models', one row per beach per
+    morning, kept for LIFEGUARD_LOG_DAYS: the observations to tune each beach's exposure (and the sea
+    temperature) against. Carried in scores.json like the
     week's frozen calls, since the bot keeps no history of its own."""
     since = (now.date() - timedelta(days=LIFEGUARD_LOG_DAYS)).isoformat()
     rows = {(r["date"], r["id"]): r for r in (previous or {}).get("lifeguard_log", []) if r["date"] >= since}
@@ -375,6 +456,8 @@ def lifeguard_log(data, previous, now):
             "reported": rep.get("waves"),
             "reported_m": rep.get("waves_m"),
             "modelled_m": rep.get("modelled_m"),
+            "water_c": rep.get("water_c"),
+            "modelled_water_c": rep.get("modelled_water_c"),
         }
     return sorted(rows.values(), key=lambda r: (r["date"], r["id"]))
 

@@ -1,4 +1,5 @@
-"""Fetching forecasts (Open-Meteo, Beachwatch, Randwick lifeguards) and look-backs over the hourly series."""
+"""Fetching forecasts (Open-Meteo, Beachwatch), what is measured on the day (Randwick's lifeguards, Northern
+Beaches Council's closures, the wave buoys), and look-backs over the hourly series."""
 
 import html
 import io
@@ -9,7 +10,7 @@ import sys
 import tarfile
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from statistics import mean, quantiles
 
@@ -18,7 +19,10 @@ import requests
 from .beaches import EASTERN
 from .config import (
     BOM_OBS_URL,
+    BUOY_LAYER,
+    BUOY_WFS,
     COOL_CHANGE,
+    COUNCIL_STATUS_PAGES,
     FORECAST_DAYS,
     LIFEGUARD_FEED,
     RAIN_MODELS,
@@ -106,7 +110,12 @@ def load_data(region=EASTERN):
     except Exception as e:  # undocumented API: fall back to rain rules
         print(f"Beachwatch unavailable ({e}); using rain thresholds", file=sys.stderr)
         beachwatch = {}
-    beachwatch = Reports(beachwatch, lifeguard_reports(datetime.now(TZ).date()))
+    beachwatch = Reports(
+        beachwatch,
+        lifeguard_reports(datetime.now(TZ).date()),
+        council_statuses() if region.council_status else {},
+        buoy_readings(region.buoys, datetime.now(TZ)),
+    )
 
     hours = {}
     for i, t in enumerate(wx["hourly"]["time"]):
@@ -116,6 +125,7 @@ def load_data(region=EASTERN):
             hours[t].update({k: v[i] for k, v in sea["hourly"].items() if k != "time"})
     past_rain(hours, datetime.now(TZ), region.forecast_point)
     gauge_rain(hours, region.rain_gauges)
+    measured_water(hours, region, beachwatch.lifeguards, datetime.now(TZ).date())
     sun = {
         d: (datetime.fromisoformat(r), datetime.fromisoformat(s))
         for d, r, s in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"], strict=True)
@@ -123,14 +133,138 @@ def load_data(region=EASTERN):
     return hours, sun, beachwatch
 
 
-class Reports(dict):
-    """Today's reports from the people on the beach. The dict itself is Beachwatch's pollution forecasts by site
-    name (as it always was, so a plain dict still works); .lifeguards is the lifeguards' morning reports by
-    their feed title (Beach.lifeguard)."""
+def measured_water(hours, region, lifeguards, today):
+    """Today's water temperature from the region's lifeguard reports (R-LG2), in place of the marine model's.
+    The model's is a cell offshore and misses the cold a southerly or upwelling pushes onto the beaches (Coogee
+    17C on 12 Nov 2026 with the model at 20C). Readings vary beach to beach (17 to 20 that morning, 2km apart),
+    so the middle one stands for the region. Only today's hours: the reports say nothing about tomorrow. The
+    model's own reading is kept as sea_surface_temperature_model, for the trend and to compare against."""
+    temps = sorted(
+        rep["water_c"]
+        for b in region.beaches
+        if b.lifeguard and (rep := lifeguards.get(b.lifeguard)) and 10 <= (rep.get("water_c") or 0) <= 30
+    )
+    if not temps:
+        return None
+    n = len(temps)
+    water = temps[n // 2] if n % 2 else (temps[n // 2 - 1] + temps[n // 2]) / 2
+    for t, h in hours.items():
+        h["sea_surface_temperature_model"] = h.get("sea_surface_temperature")
+        if t[:10] == today.isoformat():
+            h["sea_surface_temperature"] = water
+            h["water_measured"] = True
+    return water
 
-    def __init__(self, beachwatch=None, lifeguards=None):
+
+class Reports(dict):
+    """Today's reports and measurements. The dict itself is Beachwatch's pollution forecasts by site name (as it
+    always was, so a plain dict still works); .lifeguards is the lifeguards' morning reports by their feed title
+    (Beach.lifeguard); .council is the council's status for each beach and rockpool (council_statuses); .buoys is
+    the last day of wave buoy readings (buoy_readings)."""
+
+    def __init__(self, beachwatch=None, lifeguards=None, council=None, buoys=None):
         super().__init__(beachwatch or {})
         self.lifeguards = lifeguards or {}
+        self.council = council or {"beaches": {}, "pools": {}}
+        self.buoys = buoys or []
+
+
+BROWSER_UA = "Mozilla/5.0 (compatible; beach-bot)"
+
+
+def council_name(name):
+    """Northern Beaches Council's names against ours: "Manly Beach" and "Manly", "Fairy Bower Rockpool" and "Fairy
+    Bower", "Paradise Beach" and "Paradise Beach Baths"."""
+    n = re.sub(r"\s+", " ", name.strip().lower())
+    return re.sub(r" (beach|rockpool|rock pool|baths)$", "", n)
+
+
+def council_statuses():
+    """Northern Beaches Council's status for each beach and rockpool right now (R-LG3), as
+    {"beaches": {name: {"status", "message"}}, "pools": {...}} with council_name() keys, or empty if the site's
+    down. The listings are 20 to a page."""
+    out = {"beaches": {}, "pools": {}}
+    for url, kind in zip(COUNCIL_STATUS_PAGES, ("beaches", "pools"), strict=True):
+        for page in range(5):
+            try:
+                r = requests.get(url, params={"page": page}, headers={"User-Agent": BROWSER_UA}, timeout=30)
+                r.raise_for_status()
+            except Exception as e:
+                print(f"council statuses unavailable ({e})", file=sys.stderr)
+                break
+            rows = parse_council(r.text)
+            if not rows or rows.keys() <= out[kind].keys():
+                break
+            out[kind].update(rows)
+    return out
+
+
+def parse_council(text):
+    """{council_name: {"status": "open" | "check at location" | "closed" | ..., "message": str | None}}"""
+    rows = {}
+    for art in re.findall(r"<article\b.*?</article>", text, re.S):
+        name = re.search(r'node__title">.*?<span>([^<]+)</span>', art, re.S)
+        status = re.search(r"status-wrapper status-([\w-]+)", art)
+        if not name or not status:
+            continue
+        msg = re.search(r"ras-message'>.*?Message</span>\s*<span>(.*?)</span>", art, re.S)
+        rows[council_name(html.unescape(name[1]))] = {
+            "status": status[1].replace("-", " "),
+            "message": html.unescape(re.sub(r"<[^>]+>", "", msg[1])).strip() if msg else None,
+        }
+    return rows
+
+
+def buoy_readings(sites, now):
+    """The last day's readings from the region's wave buoys (R-LG4), oldest first: [{"buoy", "time" (local, to
+    the minute), "hs" (m), "period" (peak, s), "deg" (peak direction, from)}], or [] if the feed's down. MHL's
+    buoys give Hs from zero crossings (WHTH), the IMOS ones spectral Hs (WSSH): near enough the same thing."""
+    if not sites:
+        return []
+    since = (now - timedelta(hours=24)).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        r = requests.get(
+            BUOY_WFS,
+            params={
+                "service": "WFS",
+                "version": "1.0.0",
+                "request": "GetFeature",
+                "typeName": BUOY_LAYER,
+                "outputFormat": "application/json",
+                "propertyName": "site_name,TIME,WSSH,WHTH,WPPE,WPDI",
+                # Sydney's stretch of coast, by place: a filter on the station names trips the server's firewall
+                "CQL_FILTER": f"TIME > '{since}' AND LATITUDE > -34.2 AND LATITUDE < -33.4 AND LONGITUDE > 151",
+            },
+            headers={"User-Agent": "beach-bot"},  # it turns away python-requests' own
+            timeout=60,
+        )
+        r.raise_for_status()
+        return parse_buoys(r.json()["features"], sites)
+    except Exception as e:
+        print(f"wave buoys unavailable ({e})", file=sys.stderr)
+        return []
+
+
+def parse_buoys(features, sites):
+    out = []
+    for f in features:
+        p = f["properties"]
+        if p.get("site_name") not in sites:
+            continue
+        hs = p.get("WSSH") if p.get("WSSH") is not None else p.get("WHTH")
+        if hs is None or not p.get("TIME"):
+            continue
+        t = datetime.fromisoformat(p["TIME"].replace("Z", "+00:00")).astimezone(TZ)
+        out.append(
+            {
+                "buoy": p["site_name"],
+                "time": t.isoformat(timespec="minutes"),
+                "hs": round(hs, 2),
+                "period": round(p["WPPE"], 1) if p.get("WPPE") is not None else None,
+                "deg": round(p["WPDI"]) if p.get("WPDI") is not None else None,
+            }
+        )
+    return sorted(out, key=lambda r: r["time"])
 
 
 def lifeguard_reports(today):

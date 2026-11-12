@@ -6,7 +6,7 @@ from datetime import date
 from . import swell
 from .beaches import Beach, Pool, SurfSpot
 from .config import STORM_CAPE, STORM_CODE, STORM_RAIN_PROB
-from .forecast import Context
+from .forecast import Context, council_name
 from .geo import in_range, swell_sector, wind_kind
 
 # ---------------------------------------------------------------- swell reaching a spot
@@ -140,6 +140,8 @@ def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today:
     lg = lifeguards_say(b, t, beachwatch, today)
     if lg and lg["closed"] and not storm(h):
         nogo = "closed by lifeguards"
+    elif council_closed(b.name, "beaches", t, beachwatch, today) and not storm(h):
+        nogo = "closed by council"
 
     # Snorkelling (R-S4, R-R4): small swell, and clear water. Rain and runoff cloud it for a couple of days.
     extras = 0
@@ -192,6 +194,19 @@ def lifeguards_say(b: Beach, t: str, beachwatch: dict, today: date):
     if not b.lifeguard or t[:10] != today.isoformat():
         return None
     return getattr(beachwatch, "lifeguards", {}).get(b.lifeguard)
+
+
+def council_says(name: str, kind: str, t: str, beachwatch: dict, today: date):
+    """Northern Beaches Council's status for this beach or rockpool (`kind` "beaches" or "pools") right now, which
+    stands for the rest of today (R-LG3); the bot runs hourly, so a reopening is picked up within the hour."""
+    if t[:10] != today.isoformat():
+        return None
+    return getattr(beachwatch, "council", {}).get(kind, {}).get(council_name(name))
+
+
+def council_closed(name: str, kind: str, t: str, beachwatch: dict, today: date):
+    cs = council_says(name, kind, t, beachwatch, today)
+    return bool(cs and cs["status"].startswith("closed"))
 
 
 def beachwatch_says(b: Beach, t: str, beachwatch: dict, today: date):
@@ -284,6 +299,9 @@ def pool_parts(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: 
         summer = (day.month, day.day) >= (10, 1) or (day.month, day.day) <= (4, 12)
         if hour < p.opens or hour >= (p.closes_summer if summer else p.closes_winter):
             nogo = nogo or (f"closed until {p.opens}am" if hour < p.opens else "closed for the day")
+
+    if council_closed(p.name, "pools", t, beachwatch, today):
+        nogo = nogo or "closed by council"  # R-LG3: cleaning, swell or damage
 
     # Swell over the walls (R-P3)
     near_high = tide is not None and abs(tide[0]) <= 2.5

@@ -152,6 +152,19 @@ const rankScore = (x: SpotScore | undefined) =>
   x ? x.score + (data.favourite && x.id === data.favourite.id ? data.favourite.tolerance + 0.5 : 0) : -1;
 const isPast = (s: Session) => s.started && new Date(s.end) < new Date();
 
+// What the wave buoy measured last (the region's own buoy), shown on today's sessions that haven't ended while
+// the reading is under 3 hours old: the forecast's swell next to the real thing
+function buoyChip(s: Session) {
+  const b = data.buoys?.[0];
+  const age = b ? (Date.now() - new Date(b.time).getTime()) / 3600_000 : Infinity;
+  if (!b || age > 3 || s.date !== data.generated_at.slice(0, 10) || new Date(s.end) < new Date()) return "";
+  const at = new Date(b.time)
+    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", timeZone: "Australia/Sydney" })
+    .replace(/\s/g, "")
+    .toLowerCase();
+  return `<span class="chip" title="Measured at the ${esc(b.name)}, ${at}">${ICONS.swell}<span class="sr-only">Measured</span> ${esc(b.name.replace(/ buoy$/, ""))} buoy <b>${height(b.hs_m)}${b.dir ? ` ${esc(b.dir)}` : ""}</b>${b.period_s ? ` @ ${Math.round(b.period_s)}s` : ""} · ${at}</span>`;
+}
+
 // ---------------------------------------------------------------- dates (calendar days, from the session dates)
 const DAY = 86_400_000;
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
@@ -691,7 +704,8 @@ function renderHero(s: Session) {
               .join("")
           : (spearHere?.vis_m != null ? chip(ICONS.spear, "Visibility", `Vis <b>about ${spearHere.vis_m}m</b>`, coast.Visibility, true) : "") +
             chip(ICONS.swell, "Swell", `<b>${height(c.swell_m)} ${esc(c.swell_dir)}</b> @ ${c.period_s}s`, coast[surfRep ? "Wave size" : spearRep ? "Surge" : "Calm water"], !spearHere)) +
-          (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${temp(c.water_c)}</b>`, water) : "") +
+          buoyChip(s) +
+          (c.water_c != null ? chip(ICONS.water, "Water", `Water <b>${temp(c.water_c)}</b>${c.water_measured ? " lifeguards" : ""}`, water) : "") +
           (tides ? chip(ICONS.tide, "Tides", tides) : ""),
       )}
       ${line(

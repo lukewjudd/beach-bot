@@ -453,6 +453,8 @@ class Region:
     bounds: tuple  # ((south, west), (north, east)) the map can pan within; inside the tiles' bbox
     rain_gauges: tuple = ("94768", "94767")  # BOM stations: Observatory Hill, Sydney Airport
     spear: list = field(default_factory=list)  # shore spearfishing spots (spearspots.py)
+    council_status: bool = False  # the council posts each beach's and rockpool's status (R-LG3)
+    buoys: tuple = ("Sydney",)  # wave buoys, by their site_name in the national feed (R-LG4)
 
     def pin(self, spot):
         if isinstance(spot, SpearSpot):
@@ -1020,5 +1022,7 @@ NORTHERN = Region(
     tiles="northern-beaches",
     bounds=((-33.87, 151.05), (-33.53, 151.45)),  # = the northern-beaches.pmtiles bbox
     rain_gauges=("94759", "94768"),  # Terrey Hills, Observatory Hill
+    council_status=True,
+    buoys=("Collaroy Narrabeen", "Sydney"),
 )
 REGIONS = [EASTERN, NORTHERN]

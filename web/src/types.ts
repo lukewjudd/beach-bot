@@ -88,6 +88,8 @@ export interface Session {
     period_s: number;
     air_c: number;
     water_c: number | null;
+    /** Today's lifeguard reports (the middle reading), not the marine model */
+    water_measured?: boolean;
     rain_pct: number;
     uv: number;
   };
@@ -142,6 +144,8 @@ export interface Scores {
   sessions: Session[];
   /** This morning's lifeguard reports, by spot id */
   lifeguards?: Record<string, LifeguardReport>;
+  /** The latest reading from each wave buoy, the region's own first */
+  buoys?: Buoy[];
   /** Every forecast hour, for surf mode's swell chart */
   swell_hours?: SwellHours | null;
 }
@@ -155,4 +159,16 @@ export interface SwellHours {
   tide: (number | null)[];
   /** The wave height at each surf break (m), by spot id */
   breaks?: Record<string, number[]>;
+}
+
+/** A wave buoy's latest reading (measured, not forecast), with the model's offshore figures for that hour */
+export interface Buoy {
+  name: string;
+  time: string;
+  hs_m: number;
+  period_s: number | null;
+  deg: number | null;
+  dir: string | null;
+  modelled_m: number | null;
+  modelled_period_s: number | null;
 }
