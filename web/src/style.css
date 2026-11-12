@@ -519,8 +519,29 @@ button:disabled { opacity: .45; cursor: default; }
 .depth-north { top: 8px; right: 10px; }
 .depth-scale { bottom: 8px; left: 10px; border-bottom: 2px solid #fff; padding-bottom: 1px; text-align: center; }
 .depth-readout { min-height: 1.4em; margin: 4px 0; font-weight: 600; }
-.depth-slider { display: grid; gap: 6px; margin: 8px 0; }
-.depth-slider input { width: 100%; accent-color: var(--accent); }
+.depth-when { margin: 8px 0 4px; }
+/* The tide through the week, scrolled sideways under a fixed centre line: the time is what's under the line */
+.tide-wrap { position: relative; margin: 0 0 8px; }
+.tide-scroll {
+  display: flex; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+}
+.tide-scroll::-webkit-scrollbar { display: none; }
+.tide-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tide-scroll { cursor: grab; user-select: none; }
+.tide-scroll.dragging { cursor: grabbing; }
+.tide-pad { flex: 0 0 auto; }
+.tide-chart { flex: 0 0 auto; display: block; }
+.tide-cursor {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px;
+  background: var(--accent); pointer-events: none;
+}
+.tide-night { fill: var(--line); opacity: .45; }
+.tide-midnight { stroke: var(--muted); stroke-width: 1; opacity: .5; }
+.tide-line { fill: none; stroke: var(--tide); stroke-width: 2; }
+.tide-turn { fill: var(--tide); }
+.tide-turn-label, .tide-hour, .tide-day { fill: var(--muted); font-size: 10px; text-anchor: middle; }
+.tide-day { font-size: 11px; font-weight: 600; fill: var(--text); text-anchor: start; }
 .depth-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); margin: 6px 0; }
 .depth-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .depth-open { display: block; margin: 6px 0; font-weight: 600; }

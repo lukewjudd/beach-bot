@@ -46,13 +46,21 @@ export function createMap(container: HTMLElement, region: Region): L.Map {
   const compact = () => container.classList.toggle("compact-pins", map.getZoom() < 14);
   map.on("zoomend", compact);
 
-  const fit = () => map.fitBounds(spotBounds, { padding: [24, 24], animate: false });
+  // The container can settle after first paint (fonts, grid), so the first view is refitted as it resizes, until
+  // the map's been moved to something else (a pan, a zoom, flying to a shared spot)
+  let fitting = false;
+  let moved = false;
+  const fit = () => {
+    fitting = true;
+    map.fitBounds(spotBounds, { padding: [24, 24], animate: false });
+    fitting = false;
+  };
+  map.on("movestart", () => (moved ||= !fitting));
   fit();
   compact();
-  // The container can settle after first paint (fonts, grid); refit once it has its final size
   new ResizeObserver(() => {
     map.invalidateSize();
-    fit();
+    if (!moved) fit();
   }).observe(container);
   return map;
 }

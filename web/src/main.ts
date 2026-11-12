@@ -283,6 +283,7 @@ async function start() {
       });
     });
     if (data) render(); // scores got here first: add the pins now
+    if (openSpot) focusPin(openSpot); // a shared spot link opened before the map was ready
   });
   try {
     // Plain fetch so it picks up the <link rel="preload"> in index.html
