@@ -82,7 +82,7 @@ export function basemapPicker(map: L.Map, initial: Basemap, onPick: (b: Basemap)
     maxNativeZoom: 19,
     maxZoom: 19,
     zIndex: 2, // over the base map, under the wind, swell and pins
-    attribution: "Imagery &copy; Spatial Services NSW",
+    attribution: "&copy; Spatial Services NSW",
   });
   let current = initial;
   const apply = () => {
