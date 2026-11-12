@@ -42,11 +42,18 @@ def test_big_swell_at_high_tide_washes_over_the_walls():
 
 
 def test_wylies_is_shut_before_7am():
-    hours, sun = make_forecast(WED, with_tide(high_at_hour=12))
-    sessions, _ = score(hours, sun, WED)
+    after_repairs = date(2026, 12, 9)  # a Wednesday
+    hours, sun = make_forecast(after_repairs, with_tide(high_at_hour=12))
+    sessions, _ = score(hours, sun, after_repairs)
 
     first, _ = sessions["am"].windows["Wylie's Baths"]
     assert first[11:13] >= "07"
+
+
+def test_wylies_is_out_while_the_council_repairs_its_wall():
+    sessions, _ = score(*make_forecast(WED, with_tide(high_at_hour=12)), WED)  # 4 Nov 2026
+    assert pool(sessions["am"], "Wylie's Baths") is None
+    assert sessions["am"].ruled_out["Wylie's Baths"] == "closed for wall repairs"
 
 
 def test_a_cleaning_day_is_a_warning_when_the_window_isnt_known():

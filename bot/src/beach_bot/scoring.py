@@ -300,6 +300,8 @@ def pool_parts(p: Pool, t: str, h: dict, ctx: Context, beachwatch: dict, today: 
         if hour < p.opens or hour >= (p.closes_summer if summer else p.closes_winter):
             nogo = nogo or (f"closed until {p.opens}am" if hour < p.opens else "closed for the day")
 
+    if p.closed_for and p.closed_for[0] <= t[:10] <= p.closed_for[1]:  # R-P11: works
+        nogo = nogo or p.closed_for[2]
     if council_closed(p.name, "pools", t, beachwatch, today):
         nogo = nogo or "closed by council"  # R-LG3: cleaning, swell or damage
 

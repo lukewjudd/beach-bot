@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-13
 
+- **Wylie's Baths is closed for repairs.** Randwick Council shut it on 3 November for about five weeks to stop the northern wall leaking. Until 8 December it shows as "closed for wall repairs" and never leads a session; that date moves if the works run over. The council's page is behind a bot check, so the dates are set by hand. Rule R-P11.
 - **Fewer calendar emails.** Saturday's Clovelly event was rewritten 12 times in two days, and Google emails every change. Two causes. First, an event was rewritten whenever the second or third spot in a session's top 3 changed, e.g. Gordons Bay going from 6 to 7 and back, or Bondi swapping in for it as the models updated. The event is now only rewritten when its title (score, spot, sessions), times or place change; the rest of the description catches up then, and the link always has the latest. Second, on Thursday evening one run had every Saturday session down to 6, which deleted the event, and the next run put it back. A session now only comes out of an event once two runs in a row say so: the first run leaves the event as it is. Which sessions are on that grace is carried in the scores file, as the week's frozen calls are.
 
 ## 2026-11-12

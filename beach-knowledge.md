@@ -279,6 +279,7 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 - R-P8 Opening hours: Wylie's 7am–7pm (1 Oct–12 Apr) / 7am–5pm; McIver's 7am–7pm (Oct–Mar) / 7am–4pm. Weekday early-morning slots before 7am → NO for these two. [S39, S40]
 - R-P9 Clovelly: big high tide (king tide) floods the concourse. Minor −5 for access only. [S65]
 - R-P10 Bronte (surf): rising tide +5 [S21]. Bondi South: mid, rising tide +5 [S19].
+- R-P11 Closed for works (added 2026-11-13): a pool shut for repairs is out for every session in the council's dates (`Pool.closed_for`), set by hand from the notice. Wylie's Baths: 3 Nov to about 8 Dec 2026 ("within 5 weeks, weather permitting"), wall repairs to stop it draining at low tide; the kiosk stays open. If the works run over, move the end date. [Randwick City Council, Wylie's Baths Pool Maintenance Works]
 
 ### 4.7 Patrol / time-slot rules
 - R-PT1 Weekday early morning (before ~7am) and evening (after 7pm): no patrols anywhere. Prefer low-hazard locations: Clovelly (2), Little Bay (2), Gordons (2), Malabar (3), Coogee (4) [S4–S9]. Then apply exposed beaches (hazard ≥6) −15. [Beachsafe hazard ratings] **Removed 2026-11-06**: no points are taken off for unpatrolled hours; the bot no longer scores patrols.

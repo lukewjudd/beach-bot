@@ -368,6 +368,8 @@ class Pool:
     closes_winter: int = 17
     facing_override: int | None = None  # where it faces, when that differs from its beach
     women_only: bool = False  # women and children only (McIver's)
+    # Closed for works (R-P11): (first day, last day, why), ISO dates, from the council's notice. Set by hand
+    closed_for: tuple[str, str, str] | None = None
 
     @property
     def facing(self):
@@ -402,7 +404,16 @@ POOLS = [
     Pool("Bondi Icebergs", _BEACH["Bondi (north end)"], 1.0, cleaning_day=3, facing_override=90),
     Pool("Bronte Baths", _BEACH["Bronte"], 0.8, cleaning_day=2, cleaning_before_low=True),  # R-P7: Wednesdays
     Pool("Giles Baths", _BEACH["Coogee"], 0.8, best_tide="mid"),  # R-P5
-    Pool("Wylie's Baths", _BEACH["Coogee"], 0.6, best_tide="low", opens=7),  # R-P1, R-P8
+    Pool(
+        "Wylie's Baths",
+        _BEACH["Coogee"],
+        0.6,
+        best_tide="low",
+        opens=7,  # R-P1, R-P8
+        # Randwick Council: closed from 3 Nov 2026 for about 5 weeks, weather permitting, to stop the northern
+        # wall leaking at low tide (the kiosk stays open)
+        closed_for=("2026-11-03", "2026-12-08", "closed for wall repairs"),
+    ),
     Pool("Ross Jones Pool", _BEACH["Coogee"], 0.9, cleaning_day=0),  # R-P7: Mondays
     Pool("Mahon Pool", _BEACH["Maroubra"], 1.0, best_tide="mid_high"),  # R-P3
     # Women and children only; cleaned Tuesdays; 7am-7pm Oct-Mar, 7am-4pm in winter (from 1 Apr; the bot's
