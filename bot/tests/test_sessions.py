@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime
 
 from conftest import make_forecast, score
@@ -224,8 +225,11 @@ def test_events_are_only_rewritten_when_the_call_changes():
     wobble = {**body, "description": desc.replace("Weather", "Weather (a point either way)")}
     # 6 Nov: the sea warmed to 20 overnight and "cold water" dropped off the top 3 spots' notes
     notes = {**body, "description": desc.replace("(good snorkelling)", "(cold water, good snorkelling)")}
+    # 13 Nov: Gordons Bay went 6 to 7 and back, and Bondi swapped in for it, each an email
+    top3 = {**body, "description": re.sub(r"(\n\s+2\. )[^\n]*", r"\1Bondi (north end): 9/10 swim", desc)}
     new_lead = {**body, "summary": title.replace("Clovelly", "Bronte")}
-    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble) == fingerprint(notes)
+    assert top3["description"] != desc
+    assert fingerprint(later) == fingerprint(body) == fingerprint(wobble) == fingerprint(notes) == fingerprint(top3)
     assert fingerprint(new_lead) != fingerprint(body)
 
 

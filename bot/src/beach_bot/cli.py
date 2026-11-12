@@ -61,13 +61,6 @@ def run_region(region, now, args):
             print(f"     → {title}")
             print("       " + desc.replace("\n", "\n       "))
 
-    # Each region has its own calendar; one without an id set yet just isn't posted
-    cal = os.environ.get(region.calendar_env)
-    posted = sync(soon, hours, ctx, beachwatch, now, cal) if args.sync and cal else None
-    if args.sync and not cal:
-        print(f"no {region.calendar_env} set: {region.name} isn't posted to a calendar")
-    data = export_scores(sessions, hours, ctx, beachwatch, now, posted, sun, region)
-
     name = f"scores-{region.id}.json"
     path = os.path.join(args.json, name) if args.json else None
     bucket = os.environ.get("BEACH_BUCKET") if args.sync else None
@@ -78,6 +71,17 @@ def run_region(region, now, args):
             previous = json.load(f)
     else:
         previous = None
+
+    # Each region has its own calendar; one without an id set yet just isn't posted
+    cal = os.environ.get(region.calendar_env)
+    posted = None
+    if args.sync and cal:
+        posted = sync(soon, hours, ctx, beachwatch, now, cal, doubted=(previous or {}).get("calendar_doubted", []))
+    if args.sync and not cal:
+        print(f"no {region.calendar_env} set: {region.name} isn't posted to a calendar")
+    data = export_scores(sessions, hours, ctx, beachwatch, now, posted, sun, region)
+    if posted is not None:  # sessions kept in an event on one run's grace: out next run if they're still down
+        data["calendar_doubted"] = sorted(posted.doubted)
     data = keep_this_week(data, previous, now)
     if path:
         with open(path, "w") as f:

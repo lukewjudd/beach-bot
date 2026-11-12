@@ -25,6 +25,7 @@ class FakeCalendar:
     def __init__(self, events=()):
         self.store = {e["id"]: e for e in events}
         self.log = []
+        self.doubted = []  # what the bot carries from run to run in its scores file
 
     def events(self):
         return self
@@ -51,7 +52,8 @@ class FakeCalendar:
 def run(day, now, svc, tweak=lambda t, h: h):
     hours, sun = make_forecast(day, tweak)
     sessions, ctx = score(hours, sun, day, now=now)
-    posted = sync(list(sessions.values()), hours, ctx, {}, now, "cal", svc=svc)
+    posted = sync(list(sessions.values()), hours, ctx, {}, now, "cal", svc=svc, doubted=svc.doubted)
+    svc.doubted = sorted(posted.doubted)
     return sessions, posted
 
 
@@ -109,6 +111,8 @@ def test_a_session_drops_off_below_7_and_the_event_goes_when_none_are_left():
         return h
 
     run(SAT, now, svc, stormy_afternoon)
+    assert svc.store["beach20261107"]["summary"].endswith("· Sat morning, midday & evening")  # one run's grace
+    run(SAT, now, svc, stormy_afternoon)
     assert svc.store["beach20261107"]["summary"].endswith("· Sat morning & midday")
 
     def washout(t, h):
@@ -116,7 +120,26 @@ def test_a_session_drops_off_below_7_and_the_event_goes_when_none_are_left():
         return h
 
     run(SAT, now, svc, washout)
+    assert svc.store["beach20261107"]["status"] == "confirmed"
+    run(SAT, now, svc, washout)
     assert svc.store["beach20261107"]["status"] == "cancelled"
+
+
+def test_one_odd_run_doesnt_take_an_event_out_and_put_it_back():
+    # 12 Nov: one run had every Saturday session at 6/10, the next had Clovelly back at 9: two emails for nothing
+    svc = FakeCalendar()
+    now = datetime(2026, 11, 7, 4, tzinfo=TZ)
+    run(SAT, now, svc)
+    svc.log.clear()
+
+    def washout(t, h):
+        h.update(precipitation_probability=90, precipitation=2.0, cloud_cover=100, temperature_2m=15.0)
+        return h
+
+    run(SAT, now, svc, washout)
+    run(SAT, now, svc)
+    assert svc.log == []
+    assert svc.doubted == []  # and the grace is spent only on runs that doubt it
 
 
 def test_an_event_under_way_is_left_alone():

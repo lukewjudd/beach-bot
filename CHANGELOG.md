@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-13
+
+- **Fewer calendar emails.** Saturday's Clovelly event was rewritten 12 times in two days, and Google emails every change. Two causes. First, an event was rewritten whenever the second or third spot in a session's top 3 changed, e.g. Gordons Bay going from 6 to 7 and back, or Bondi swapping in for it as the models updated. The event is now only rewritten when its title (score, spot, sessions), times or place change; the rest of the description catches up then, and the link always has the latest. Second, on Thursday evening one run had every Saturday session down to 6, which deleted the event, and the next run put it back. A session now only comes out of an event once two runs in a row say so: the first run leaves the event as it is. Which sessions are on that grace is carried in the scores file, as the week's frozen calls are.
+
 ## 2026-11-12
 
 - **Forecast rain is a vote of eight models.** Saturday's Clovelly dropped from 9 to 6, and its calendar event went, because the one model the bot read had moved to 14mm on Friday night, over Clovelly's 10mm limit. Five of the other seven had under 2.5mm. Rain still to come now comes from eight models (ECMWF, its AI model, ICON, GFS, UK Met Office, Canada, Japan, Météo-France), taking the third wettest: three have to agree. On two years of Sydney Airport's rain gauge, that caught about 60% of the 10mm days 1–2 days ahead, against 42% for the old model, for about the same false alarms. Saturday now reads 6mm. Rain that's fallen still comes from the BOM gauges. About has a figure of the vote. Rule R-RF1; the test is research/rain-forecast-verification.md and bot/scripts/verify_rain_models.py.

@@ -4,7 +4,6 @@ with the forecast."""
 import hashlib
 import json
 import os
-import re
 from datetime import datetime, timedelta
 
 from .config import FIRE_THRESHOLD, KEEP_THRESHOLD, SITE_URL, SLOT_NAMES, SURF_KEEP_THRESHOLD, TZ
@@ -112,11 +111,11 @@ def event_body(sess, hours, ctx, beachwatch, today):
 
 
 def fingerprint(body):
-    """What an event update is worth sending for: the title (score, spot, session), the times, the place and
-    the top 3 spots with their scores. Everything else (a spot's notes like "cold water", the best window, the
-    condition ratings, the wind) wobbles from run to run, and an update makes Google email an "event updated"."""
-    top3 = [re.sub(r"\s*\(.*\)$", "", x).strip() for x in body["description"].splitlines() if re.match(r"\s+\d\. ", x)]
-    parts = [body["summary"], body["start"]["dateTime"], body["end"]["dateTime"], body.get("location") or "", *top3]
+    """What an event update is worth sending for: the title (score, spot, sessions), the times and the place.
+    Every update makes Google email an "event updated", and the rest of the description (the top 3 spots' scores,
+    the ratings, the wind) wobbles from run to run as the models update: it's refreshed whenever the call itself
+    changes, and the link always has the latest."""
+    parts = [body["summary"], body["start"]["dateTime"], body["end"]["dateTime"], body.get("location") or ""]
     return hashlib.sha1("\n".join(parts).encode()).hexdigest()[:16]
 
 
@@ -135,18 +134,22 @@ def calendar_service():
 
 
 class Posted(set):
-    """Keys of the sessions in a live swim event (the set itself), and in a live surf event (.surf)."""
+    """Keys of the sessions in a live swim event (the set itself), and in a live surf event (.surf). `.doubted`:
+    sessions this run would have taken out, kept on one run's grace (as "swim:<key>" or "surf:<key>")."""
 
     def __init__(self, *a):
         super().__init__(*a)
         self.surf = set()
+        self.doubted = set()
 
 
-def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
+def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None, doubted=()):
     """One swim event per day, covering that day's sessions at 9/10+ (weekday middays never go in), and a separate
     surf event on days the surf is pumping. A session already in an event stays until it drops a step below the
-    bar, so one hovering around it doesn't come and go every hour; an event goes once no sessions are left, and
-    once it has started it's left alone. Returns the keys of the sessions in a live swim event."""
+    bar, so one hovering around it doesn't come and go every hour, and only once two runs in a row say so
+    (`doubted`: the last run's Posted.doubted), so one odd model run doesn't take an event out and put it back an
+    hour later; an event goes once no sessions are left, and once it has started it's left alone. Returns the
+    keys of the sessions in a live swim event."""
     from googleapiclient.errors import HttpError
 
     svc = svc or calendar_service()
@@ -181,7 +184,10 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         f"{sum(s.surf_for_calendar for s in sessions)} surf session(s) pumping"
     )
 
-    def put(key, todays, wanted, still_ok, body_fn):
+    posted = Posted()
+    doubted = set(doubted)
+
+    def put(key, todays, wanted, still_ok, body_fn, tag):
         """Create, update or remove one day's event from the sessions it should cover. Returns their keys."""
         ev = existing.get(key)
         live = is_live(ev)
@@ -189,6 +195,11 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         if live and datetime.fromisoformat(ev["start"]["dateTime"]) <= now:  # under way: leave it be
             return {s.key for s in todays if s.slot in had}
         keep = [s for s in todays if s.in_calendar and s.start > now and (wanted(s) or (s.slot in had and still_ok(s)))]
+        # A session this run would take out, that the last run didn't: leave the event as it is for now
+        going = {f"{tag}:{s.key}" for s in todays if s.slot in had and s.start > now and s not in keep}
+        if going - doubted:
+            posted.doubted |= going
+            return {s.key for s in todays if s.slot in had}
         if not keep:
             if live:
                 svc.events().delete(calendarId=cal, eventId=key).execute()
@@ -225,7 +236,6 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
             print(f"restored {key}  {title}")
         return keys
 
-    posted = Posted()
     for day in days:
         todays = sorted((s for s in sessions if s.day == day), key=lambda s: s.start)
         # Events from before days were bundled (one per session): cleared once, unless already under way
@@ -240,7 +250,7 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
         # The day's swim event (9/10+, kept until it drops below 8), and, separately, a surf event when it's
         # pumping (8/10+ on the surf scale, kept until 7): two scales, so never in the same event
         posted |= put(
-            day_key(todays[0]), todays, lambda s: s.for_calendar, lambda s: s.best >= KEEP_THRESHOLD, day_body
+            day_key(todays[0]), todays, lambda s: s.for_calendar, lambda s: s.best >= KEEP_THRESHOLD, day_body, "swim"
         )
         posted.surf |= put(
             day_key(todays[0]) + "su",
@@ -248,5 +258,6 @@ def sync(sessions, hours, ctx, beachwatch, now, cal, svc=None):
             lambda s: s.surf_for_calendar,
             lambda s: bool(s.surf) and s.surf[0][0] >= SURF_KEEP_THRESHOLD,
             surf_day_body,
+            "surf",
         )
     return posted

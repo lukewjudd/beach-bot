@@ -8,7 +8,7 @@ Checks the weather and ocean forecast and tells me when it's worth going to the 
 - Takes rain that's already fallen from BOM's rain gauges (Observatory Hill and Sydney Airport), since the models under-read storms
 - Checks Beachwatch for water quality (only today's forecast; otherwise it goes off recent rain)
 - Scores every beach for three sessions a day, every day: morning (sunrise to 11am), midday (11am to 2pm) and evening (2pm to sunset)
-- Anything 8/10 or better is "worth it" on the site; 9/10 or better goes in a shared Google Calendar, one event a day, and a 10/10 (every part at full marks) gets a 🔥
+- Anything 8/10 or better is "worth it" on the site; 9/10 or better goes in a shared Google Calendar, one event a day, and a 10/10 (every part at full marks) gets a 🔥. An event is only rewritten when its title, times or place change, and a session comes out once two hourly runs in a row say so, to keep Google's update emails down
 - If the forecast turns, a session comes off its event once it drops below 8/10, so it doesn't flip-flop
 - Surf breaks are scored too, on their own scale: they never lead a session, and when it's pumping (8/10) the calendar gets a separate 🏄 Surf event
 - Shore spearfishing spots are scored too, on their own scale: predicted visibility (fitted to the Reef Life Survey's dated readings), surge on the bottom, wind, tide, light and water temperature. Site only, no calendar
