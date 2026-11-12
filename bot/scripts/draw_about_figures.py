@@ -1099,6 +1099,58 @@ def water_fig():
     )
 
 
+def rain_fig():
+    """Rain still to come is a vote of eight models (R-RF1): Friday night, 13 Nov 2026, as each model had it two
+    days out. Three wet, five dry: the third wettest is the forecast, and Clovelly stays under its 10mm limit."""
+    models = [  # mm, 9am Fri to 9am Sat at Clovelly, from the 12 Nov forecasts
+        ("ECMWF (Europe)", 13.5),
+        ("GEM (Canada)", 12.9),
+        ("ECMWF AI", 6.0),
+        ("Météo-France", 2.4),
+        ("ICON (Germany)", 2.1),
+        ("GFS (US)", 1.5),
+        ("UK Met Office", 1.5),
+        ("JMA (Japan)", 0.6),
+    ]
+    row, left, right, top = 20, 112, 60, 26
+    w, h = WIDTH, top + row * len(models) + 30
+    xmax = 15
+    xy = axis_chart(w, h, left, right, top, 30, 0, xmax, 0, 1)
+    body = []
+    for v in (0, 5, 10, 15):
+        x, _ = xy(v, 0)
+        body.append(f'<line x1="{x:.1f}" y1="{top - 4}" x2="{x:.1f}" y2="{h - 26}" stroke="var(--line)"/>')
+        body.append(f'<text x="{x:.1f}" y="{h - 12}" text-anchor="middle" class="hs-small">{v}mm</text>')
+    x0, _ = xy(0, 0)
+    for i, (name, mm) in enumerate(models):
+        y = top + i * row + 4
+        x1, _ = xy(mm, 0)
+        third = i == 2
+        body += [
+            f'<text x="{left - 8}" y="{y + 9}" text-anchor="end" class="hs-small">{name}</text>',
+            f'<rect x="{x0:.1f}" y="{y}" width="{max(1, x1 - x0):.1f}" height="12" rx="2" '
+            f'fill="var(--{"accent" if third else "muted"})" opacity="{1 if third else 0.45}"/>',
+            f'<text x="{x1 + 5:.1f}" y="{y + 10}" class="hs-small{" hs-num" if third else ""}">{mm:g}mm'
+            f"{'  ← the forecast' if third else ''}</text>",
+        ]
+    xl, _ = xy(10, 0)
+    body += [
+        f'<line x1="{xl:.1f}" y1="{top - 8}" x2="{xl:.1f}" y2="{h - 26}" stroke="var(--r-red)" stroke-width="1.5" '
+        'stroke-dasharray="4 3"/>',
+        f'<text x="{xl:.1f}" y="{top - 12}" text-anchor="middle" class="hs-small">Clovelly\'s limit</text>',
+    ]
+    svg(
+        "rain",
+        w,
+        h,
+        "Eight models vote on the rain",
+        "Bar chart of the rain eight weather models forecast for Friday night, 13 November 2026: ECMWF 13.5mm and "
+        "Canada's GEM 12.9mm, then ECMWF's AI model 6mm, and the other five 2.4mm or less. The third wettest, 6mm, "
+        "is the forecast, under Clovelly's 10mm limit.",
+        body,
+    )
+
+
 def sessions_fig():
     """Every day's three sessions on a 24-hour clock, noon at the top: night shaded, sunrise and sunset loose."""
     from beach_bot.config import SESSIONS, SLOT_NAMES
@@ -1400,6 +1452,7 @@ if __name__ == "__main__":
     wind_fig()
     wind_water_fig()
     water_fig()
+    rain_fig()
     warmth_fig()
     sky_fig()
     pools_fig()

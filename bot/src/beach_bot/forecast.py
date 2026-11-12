@@ -10,6 +10,7 @@ import sys
 import tarfile
 import urllib.request
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from statistics import mean, quantiles
@@ -24,6 +25,8 @@ from .config import (
     COOL_CHANGE,
     COUNCIL_STATUS_PAGES,
     FORECAST_DAYS,
+    FORECAST_RAIN_MODELS,
+    FORECAST_RAIN_VOTES,
     LIFEGUARD_FEED,
     RAIN_MODELS,
     TZ,
@@ -365,10 +368,12 @@ def fresh_forecasts(features, today):
 
 
 def past_rain(hours, now, point):
-    """Fallback for when the BOM gauges are down: a wetter read of past rain across several models. One model
-    smears storms out: on the night of 3 Nov 2026 the default had 6mm where Sydney Airport measured 22mm, so the
-    rain rules never kicked in. The 75th percentile of six models had 12.5mm there and barely moves on ordinary
-    days. Leaning wet is the safe side for water quality, since it's the runoff that matters."""
+    """Rain across several models, over the default model's. Past hours: a wetter read, as a fallback for when the
+    BOM gauges are down. One model smears storms out: on the night of 3 Nov 2026 the default had 6mm where Sydney
+    Airport measured 22mm, so the rain rules never kicked in. The 75th percentile of six models had 12.5mm there
+    and barely moves on ordinary days. Leaning wet is the safe side for water quality, since it's the runoff that
+    matters. Hours to come: a vote of eight models (consensus_rain, R-RF1)."""
+    models = tuple(dict.fromkeys(RAIN_MODELS + FORECAST_RAIN_MODELS))
     try:
         wx = fetch_weather(
             "https://api.open-meteo.com/v1/forecast",
@@ -376,10 +381,10 @@ def past_rain(hours, now, point):
                 "latitude": point[0],
                 "longitude": point[1],
                 "hourly": "precipitation",
-                "models": ",".join(RAIN_MODELS),
+                "models": ",".join(models),
                 "timezone": "Australia/Sydney",
                 "past_days": 7,  # a week back: spearfishing reads a week of rain and three days of swell
-                "forecast_days": 1,
+                "forecast_days": FORECAST_DAYS,
             },
         )
     except Exception as e:  # keep the single model's rain
@@ -391,6 +396,44 @@ def past_rain(hours, now, point):
         if t in hours and t <= cutoff:
             vals = [h[f"precipitation_{m}"][i] or 0 for m in RAIN_MODELS]
             hours[t]["precipitation"] = quantiles(vals, n=4, method="inclusive")[2]
+    ahead = {
+        m: {t: v for t, v in zip(h["time"], h[f"precipitation_{m}"], strict=True) if t > cutoff and v is not None}
+        for m in FORECAST_RAIN_MODELS
+    }
+    for t, mm in consensus_rain(ahead).items():
+        if t in hours:
+            hours[t]["precipitation"] = mm
+
+
+def rain_day(t):
+    """The 9am-to-9am day an hour's rain counts to (BOM's rain day). Open-Meteo labels an hour by when it ends, so
+    10:00 Fri (9-10am) to 09:00 Sat (8-9am) is Saturday's."""
+    d = datetime.fromisoformat(t)
+    return (d.date() if d.hour <= 9 else d.date() + timedelta(days=1)).isoformat()
+
+
+def consensus_rain(models):
+    """Rain still to come, hour by hour, from several models' forecasts ({model: {hour: mm}}) (R-RF1). Each rain
+    day's total is the FORECAST_RAIN_VOTES-th wettest model's, spread over the hours the way the models' average
+    has it: models agree on how much far better than on which hour. A model missing a day sits it out; a day with
+    fewer models than votes takes the driest."""
+    days = defaultdict(lambda: defaultdict(float))  # day -> model -> mm
+    shape = defaultdict(list)  # hour -> each model's mm
+    for m, series in models.items():
+        for t, v in series.items():
+            days[rain_day(t)][m] += v
+            shape[t].append(v)
+    total = {}
+    for d, per_model in days.items():
+        wettest = sorted(per_model.values(), reverse=True)
+        total[d] = wettest[min(FORECAST_RAIN_VOTES, len(wettest)) - 1]
+    avg = {t: mean(vs) for t, vs in shape.items()}
+    day_avg = defaultdict(float)
+    for t, v in avg.items():
+        day_avg[rain_day(t)] += v
+    return {
+        t: (total[rain_day(t)] * v / day_avg[rain_day(t)] if day_avg[rain_day(t)] > 0 else 0.0) for t, v in avg.items()
+    }
 
 
 def gauge_rain(hours, stations):

@@ -2,6 +2,7 @@
 
 from datetime import date
 
+import pytest
 from conftest import make_forecast, score
 
 from beach_bot.forecast import fresh_forecasts, hourly_rain
@@ -124,3 +125,22 @@ def test_a_ruled_out_spot_gives_the_reason_not_its_other_notes():
     sessions, _ = score(*make_forecast(WED), WED, beachwatch={"Clovelly Beach": "Likely"})
 
     assert sessions["am"].ruled_out["Clovelly"] == "pollution likely"
+
+
+def test_rain_to_come_takes_three_models_agreeing():
+    """R-RF1, on Friday 13 Nov 2026's real forecast: three models had a wet night, five a dry one."""
+    from beach_bot.forecast import consensus_rain, rain_day
+
+    assert [rain_day(t) for t in ("2026-11-13T09:00", "2026-11-13T10:00", "2026-11-14T09:00")] == [
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-14",
+    ]
+    totals = {"a": 13.5, "b": 12.9, "c": 6.0, "d": 2.4, "e": 2.1, "f": 1.5, "g": 1.5, "h": 0.6}
+    # Each model's rain in two hours of Friday night; the wet ones all at 10pm
+    models = {m: {"2026-11-13T22:00": mm * 0.8, "2026-11-13T23:00": mm * 0.2} for m, mm in totals.items()}
+
+    rain = consensus_rain(models)
+
+    assert round(sum(rain.values()), 1) == 6.0  # the third wettest
+    assert rain["2026-11-13T22:00"] == pytest.approx(4.8)  # spread as the models have it

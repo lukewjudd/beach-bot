@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 216" role="img" aria-labelledby="rain-t rain-d" class="how-swell">
+<title id="rain-t">Eight models vote on the rain</title>
+<desc id="rain-d">Bar chart of the rain eight weather models forecast for Friday night, 13 November 2026: ECMWF 13.5mm and Canada's GEM 12.9mm, then ECMWF's AI model 6mm, and the other five 2.4mm or less. The third wettest, 6mm, is the forecast, under Clovelly's 10mm limit.</desc>
+<line x1="112.0" y1="22" x2="112.0" y2="190" stroke="var(--line)"/>
+<text x="112.0" y="204" text-anchor="middle" class="hs-small">0mm</text>
+<line x1="188.0" y1="22" x2="188.0" y2="190" stroke="var(--line)"/>
+<text x="188.0" y="204" text-anchor="middle" class="hs-small">5mm</text>
+<line x1="264.0" y1="22" x2="264.0" y2="190" stroke="var(--line)"/>
+<text x="264.0" y="204" text-anchor="middle" class="hs-small">10mm</text>
+<line x1="340.0" y1="22" x2="340.0" y2="190" stroke="var(--line)"/>
+<text x="340.0" y="204" text-anchor="middle" class="hs-small">15mm</text>
+<text x="104" y="39" text-anchor="end" class="hs-small">ECMWF (Europe)</text>
+<rect x="112.0" y="30" width="205.2" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="322.2" y="40" class="hs-small">13.5mm</text>
+<text x="104" y="59" text-anchor="end" class="hs-small">GEM (Canada)</text>
+<rect x="112.0" y="50" width="196.1" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="313.1" y="60" class="hs-small">12.9mm</text>
+<text x="104" y="79" text-anchor="end" class="hs-small">ECMWF AI</text>
+<rect x="112.0" y="70" width="91.2" height="12" rx="2" fill="var(--accent)" opacity="1"/>
+<text x="208.2" y="80" class="hs-small hs-num">6mm  ← the forecast</text>
+<text x="104" y="99" text-anchor="end" class="hs-small">Météo-France</text>
+<rect x="112.0" y="90" width="36.5" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="153.5" y="100" class="hs-small">2.4mm</text>
+<text x="104" y="119" text-anchor="end" class="hs-small">ICON (Germany)</text>
+<rect x="112.0" y="110" width="31.9" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="148.9" y="120" class="hs-small">2.1mm</text>
+<text x="104" y="139" text-anchor="end" class="hs-small">GFS (US)</text>
+<rect x="112.0" y="130" width="22.8" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="139.8" y="140" class="hs-small">1.5mm</text>
+<text x="104" y="159" text-anchor="end" class="hs-small">UK Met Office</text>
+<rect x="112.0" y="150" width="22.8" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="139.8" y="160" class="hs-small">1.5mm</text>
+<text x="104" y="179" text-anchor="end" class="hs-small">JMA (Japan)</text>
+<rect x="112.0" y="170" width="9.1" height="12" rx="2" fill="var(--muted)" opacity="0.45"/>
+<text x="126.1" y="180" class="hs-small">0.6mm</text>
+<line x1="264.0" y1="18" x2="264.0" y2="190" stroke="var(--r-red)" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="264.0" y="14" text-anchor="middle" class="hs-small">Clovelly's limit</text>
+</svg>

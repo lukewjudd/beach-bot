@@ -39,6 +39,21 @@ WARMTH_LAND_MIN_SEA = 20
 BOM_OBS_URL = "ftp://ftp.bom.gov.au/anon/gen/fwo/IDN60910.tgz"
 # Past rain the gauges don't cover is read across these models (75th percentile); one model alone under-reads storms
 RAIN_MODELS = ("best_match", "ecmwf_ifs025", "icon_seamless", "gem_seamless", "jma_seamless", "ukmo_seamless")
+# Rain still to come is a vote of these eight (R-RF1): a rain day (9am to 9am) gets the third-wettest model's total,
+# so it takes three models agreeing. Backtested against Sydney Airport's gauge, Aug 2024 to Oct 2026
+# (research/rain-forecast-verification.md): it caught more of the 10mm and 20mm days than any one model, with fewer
+# false alarms two days out than the default model
+FORECAST_RAIN_MODELS = (
+    "ecmwf_ifs025",
+    "ecmwf_aifs025_single",
+    "icon_seamless",
+    "gfs_seamless",
+    "ukmo_seamless",
+    "gem_seamless",
+    "jma_seamless",
+    "meteofrance_seamless",
+)
+FORECAST_RAIN_VOTES = 3  # the Nth wettest model's day total
 
 # Lightning: thunderstorm weather codes, or lots of storm energy (CAPE) with rain likely
 STORM_CODE = 95
