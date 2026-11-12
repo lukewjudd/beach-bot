@@ -24,7 +24,7 @@ export function createMap(container: HTMLElement, region: Region): L.Map {
     maxBounds: L.latLngBounds(region.bounds), // inside the extract's bbox
     maxBoundsViscosity: 1,
     minZoom: 10, // the northern beaches run 25km: a short map needs ~10.5 to show them all
-    maxZoom: 17,
+    maxZoom: 19,
     zoomSnap: 0.25, // fit the coastline snugly rather than rounding down a whole zoom level
   });
   L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -80,7 +80,7 @@ export type Basemap = "map" | "aerial";
 export function basemapPicker(map: L.Map, initial: Basemap, onPick: (b: Basemap) => void) {
   const aerial = L.tileLayer("https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Imagery/MapServer/tile/{z}/{y}/{x}", {
     maxNativeZoom: 19,
-    maxZoom: 17,
+    maxZoom: 19,
     zIndex: 2, // over the base map, under the wind, swell and pins
     attribution: "Imagery &copy; Spatial Services NSW",
   });
