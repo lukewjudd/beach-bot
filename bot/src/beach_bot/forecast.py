@@ -221,28 +221,42 @@ def buoy_readings(sites, now):
     buoys give Hs from zero crossings (WHTH), the IMOS ones spectral Hs (WSSH): near enough the same thing."""
     if not sites:
         return []
-    since = (now - timedelta(hours=24)).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    try:
-        r = requests.get(
-            BUOY_WFS,
-            params={
-                "service": "WFS",
-                "version": "1.0.0",
-                "request": "GetFeature",
-                "typeName": BUOY_LAYER,
-                "outputFormat": "application/json",
-                "propertyName": "site_name,TIME,WSSH,WHTH,WPPE,WPDI",
-                # Sydney's stretch of coast, by place: a filter on the station names trips the server's firewall
-                "CQL_FILTER": f"TIME > '{since}' AND LATITUDE > -34.2 AND LATITUDE < -33.4 AND LONGITUDE > 151",
-            },
-            headers={"User-Agent": "beach-bot"},  # it turns away python-requests' own
-            timeout=60,
-        )
-        r.raise_for_status()
-        return parse_buoys(r.json()["features"], sites)
-    except Exception as e:
-        print(f"wave buoys unavailable ({e})", file=sys.stderr)
-        return []
+    feats = _buoy_features(now.strftime("%Y-%m-%dT%H"))
+    return parse_buoys(feats, sites) if feats is not None else []
+
+
+_BUOYS = {}
+
+
+def _buoy_features(hour):
+    """Every Sydney buoy's last day, fetched once per run (both regions read it) and tried three times: the server
+    is slow at times."""
+    if hour in _BUOYS:
+        return _BUOYS[hour]
+    since = (datetime.fromisoformat(hour + ":00").replace(tzinfo=TZ) - timedelta(hours=24)).astimezone(UTC)
+    params = {
+        "service": "WFS",
+        "version": "1.0.0",
+        "request": "GetFeature",
+        "typeName": BUOY_LAYER,
+        "outputFormat": "application/json",
+        "propertyName": "site_name,TIME,WSSH,WHTH,WPPE,WPDI",
+        # Sydney's stretch of coast, by place: a filter on the station names trips the server's firewall
+        "CQL_FILTER": f"TIME > '{since:%Y-%m-%dT%H:%M:%SZ}' AND "
+        "LATITUDE > -34.2 AND LATITUDE < -33.4 AND LONGITUDE > 151",
+    }
+    err = None
+    for _ in range(3):
+        try:
+            # It turns away python-requests' own user agent
+            r = requests.get(BUOY_WFS, params=params, headers={"User-Agent": "beach-bot"}, timeout=90)
+            r.raise_for_status()
+            _BUOYS[hour] = r.json()["features"]
+            return _BUOYS[hour]
+        except Exception as e:
+            err = e
+    print(f"wave buoys unavailable ({err})", file=sys.stderr)
+    return None
 
 
 def parse_buoys(features, sites):

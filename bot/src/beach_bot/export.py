@@ -425,6 +425,10 @@ def keep_this_week(data, previous, now):
     scores.json, which already holds those frozen calls."""
     data["lifeguard_log"] = lifeguard_log(data, previous, now)
     data["buoy_log"] = buoy_log(data, previous, now)
+    if not data.get("buoys") and previous:
+        data["buoys"] = previous.get(
+            "buoys", []
+        )  # the feed failed this run: the last reading (the site hides it at 3h)
     if not previous:
         return data
     monday = (now.date() - timedelta(days=now.weekday())).isoformat()
