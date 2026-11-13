@@ -12,6 +12,19 @@ import type { Scores, Session, SpearCall, Spot, SpotKind, SpotScore, SurfCall } 
 // the About dialog's figures, drawn by bot/scripts/draw_about_figures.py
 const figures = import.meta.glob<string>("./about/*.svg", { query: "?raw", import: "default", eager: true });
 
+// A page opened before the last deploy asks for code files that have since been replaced (the map, Clovelly's
+// underwater map), and they fail to load: reload to get the new ones, at most once a minute so a real outage can't loop
+window.addEventListener("vite:preloadError", (e) => {
+  try {
+    if (Date.now() - Number(sessionStorage.getItem("reloadedForCode") ?? 0) < 60_000) return;
+    sessionStorage.setItem("reloadedForCode", String(Date.now()));
+  } catch {
+    return;
+  }
+  e.preventDefault();
+  location.reload();
+});
+
 // Which stretch of coast: from the link, else the browser's last choice, else the eastern suburbs
 const params = new URLSearchParams(location.search);
 const region = pickRegion(params);
@@ -918,6 +931,10 @@ document.addEventListener("click", (e) => {
 });
 async function openDepth() {
   const s = data.sessions[current];
+  // In the address first, so the reload after a deploy (above) reopens it
+  const url = new URL(location.href);
+  url.searchParams.set("depth", "1");
+  history.replaceState(null, "", url);
   const { openClovelly } = await import("./clovelly");
   // Start on Clovelly's best hours this session, else the session's first hour
   const w = s.scores.find((x) => x.id === "swim-clovelly")?.window;
@@ -925,9 +942,6 @@ async function openDepth() {
   track("clovelly-depth", "Under the water at Clovelly");
   const dlg = $("depth") as HTMLDialogElement;
   await openClovelly(dlg, data.swell_hours, s.date, start);
-  const url = new URL(location.href);
-  url.searchParams.set("depth", "1");
-  history.replaceState(null, "", url);
   dlg.onclose = () => {
     const u = new URL(location.href);
     u.searchParams.delete("depth");
