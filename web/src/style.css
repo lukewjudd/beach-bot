@@ -520,6 +520,14 @@ button:disabled { opacity: .45; cursor: default; }
 .depth-scale { bottom: 8px; left: 10px; border-bottom: 2px solid #fff; padding-bottom: 1px; text-align: center; }
 .depth-readout { min-height: 1.4em; margin: 4px 0; font-weight: 600; }
 .depth-when { margin: 8px 0 4px; }
+.about.depth .about-head { gap: 8px; }
+.about.depth .about-head h2 { min-width: 0; }
+.depth-mode { flex: 0 0 auto; display: flex; margin-left: auto; margin-right: 4px; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.depth-mode button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 4px 12px; cursor: pointer; }
+.depth-mode button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.depth-3d { margin: 10px 0 6px; border-radius: 10px; overflow: hidden; touch-action: none; }
+.depth-3d canvas { display: block; }
+.depth-3d[hidden], .depth-wrap[hidden], .depth-legend[hidden] { display: none; }
 /* The tide through the week, scrolled sideways under a fixed centre line: the time is what's under the line */
 .tide-wrap { position: relative; margin: 0 0 8px; }
 .tide-scroll {

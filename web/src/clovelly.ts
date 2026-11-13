@@ -164,9 +164,13 @@ export async function openClovelly(dlg: HTMLDialogElement, data: SwellHours | nu
   const series = data ? tideSeries(data) : null;
   const hasTide = !!series && series.v.length > 1;
   dlg.innerHTML = `
-    <div class="about-head"><h2>Under the water at Clovelly</h2><button type="button" class="link" data-close>Done</button></div>
-    <div class="depth-wrap"><img class="depth-photo" alt="" src="${photo(g.box, g.w, g.h)}"><canvas width="${g.w}" height="${g.h}" aria-label="Depth map of Clovelly inlet"></canvas>
+    <div class="about-head"><h2>Under the water at Clovelly</h2>
+      <div class="depth-mode" role="group" aria-label="View"><button type="button" data-v="map" aria-pressed="true">Map</button><button type="button" data-v="3d" aria-pressed="false">3D</button></div>
+      <button type="button" class="link" data-close>Done</button></div>
+    <div class="depth-wrap"><img class="depth-photo" alt="" crossorigin="anonymous" src="${photo(g.box, g.w, g.h)}"><canvas width="${g.w}" height="${g.h}" aria-label="Depth map of Clovelly inlet"></canvas>
       <span class="depth-north" aria-hidden="true">N ↑</span><span class="depth-scale" aria-hidden="true" style="width:${(50 / (g.w * g.cell)) * 100}%">50m</span></div>
+    <div class="depth-3d" hidden></div>
+    <p class="fine depth-3d-hint" hidden>Drag to turn, pinch or scroll to zoom, two fingers or right-drag to move. Heights under the water are stretched 2.5×.</p>
     <p class="depth-readout" aria-live="polite"></p>
     ${
       hasTide
@@ -184,6 +188,36 @@ export async function openClovelly(dlg: HTMLDialogElement, data: SwellHours | nu
   const scroller = dlg.querySelector<HTMLElement>(".tide-scroll");
   let tide = 0;
   let lastCell: number | null = null;
+  let view3d: { setTide(m: number): void; dispose(): void } | null = null;
+
+  // Map or 3D: the 3D view (and three.js) loads the first time it's picked, and goes when the dialog closes
+  const wrap = dlg.querySelector<HTMLElement>(".depth-wrap")!;
+  const box3d = dlg.querySelector<HTMLElement>(".depth-3d")!;
+  const legend = dlg.querySelector<HTMLElement>(".depth-legend");
+  dlg.querySelectorAll<HTMLButtonElement>(".depth-mode button").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const three = b.dataset.v === "3d";
+      dlg.querySelectorAll(".depth-mode button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      wrap.hidden = three;
+      box3d.hidden = !three;
+      readout.hidden = three;
+      dlg.querySelector<HTMLElement>(".depth-3d-hint")!.hidden = !three;
+      if (legend) legend.hidden = three;
+      if (three && !view3d) {
+        const { seabed3d } = await import("./clovelly3d");
+        view3d = seabed3d(box3d, g, photo(g.box, g.w, g.h)); // the same photo the map's already loaded
+        view3d.setTide(tide);
+      }
+    }),
+  );
+  dlg.addEventListener(
+    "close",
+    () => {
+      view3d?.dispose();
+      view3d = null;
+    },
+    { once: true },
+  );
 
   const draw = () => {
     for (let i = 0; i < g.w * g.h; i++) {
@@ -205,6 +239,7 @@ export async function openClovelly(dlg: HTMLDialogElement, data: SwellHours | nu
       img.data[p + 3] = WATER_ALPHA;
     }
     ctx.putImageData(img, 0, 0);
+    view3d?.setTide(tide);
   };
 
   const describe = (i: number) => {
