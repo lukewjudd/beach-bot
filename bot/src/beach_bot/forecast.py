@@ -110,7 +110,7 @@ def load_data(region=EASTERN):
     try:
         bw = fetch_json("https://api.beachwatch.nsw.gov.au/public/sites/geojson", {})
         beachwatch = fresh_forecasts(bw["features"], datetime.now(TZ).date())
-    except Exception as e:  # undocumented API: fall back to rain rules
+    except Exception as e:  # Beachwatch down: fall back to rain rules
         print(f"Beachwatch unavailable ({e}); using rain thresholds", file=sys.stderr)
         beachwatch = {}
     beachwatch = Reports(
@@ -353,7 +353,9 @@ def _stingers(text):
 
 def fresh_forecasts(features, today):
     """Beachwatch pollution forecasts that were issued today. The feed updates around 6am, so an early run
-    sees yesterday's call, which can say "Unlikely" from before a storm; that one is dropped (rain rules apply)."""
+    sees yesterday's call, which can say "Unlikely" from before a storm; that one is dropped (rain rules apply).
+    It's updated at 6am and 1:30pm (and when conditions change), though today's 6am call can take a couple of hours
+    to show up."""
     out = {}
     for f in features:
         p = f["properties"]

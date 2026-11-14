@@ -4,6 +4,7 @@ What changed and why, newest first. Dates are Sydney time.
 
 ## 2026-11-15
 
+- **Beachwatch credited under its licence.** Its forecast feed turns out to be documented (the Data feeds page): open, no key, CC BY 4.0, 24 requests a minute, updated at 6am and 1:30pm. The bot was already using it as documented, with one request per region an hour. The About page now gives the licence, and the notes no longer call the feed undocumented.
 - **"Pollution possible" costs less: 10 points, was 30.** Beachwatch says "possible" means the water is usually suitable for swimming, with caution for young children, older people and those with some health conditions. At 30 it cost more than heavy rain, and it knocked Clovelly from the best swim of the day to off the list on 15 Nov. Now it tips the balance between two otherwise equal beaches, and the note still shows. "Pollution likely" still rules a beach out. Rule R-R1.
 - **The morning call gets Beachwatch's forecast.** A session's call freezes when it starts, and the morning starts before Beachwatch's daily forecast is out (about 6 to 8am). So every morning was called on the rain rules alone: on 15 Nov that put Clovelly's water quality at 10 when Beachwatch had it at "possible", and Coogee's at 1 when Beachwatch had it at "unlikely". Now a session that started today and was called without the forecast is called again, once, on the first run that has it, and that's the call it keeps. Rule R-R1a.
 

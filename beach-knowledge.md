@@ -14,7 +14,7 @@ Source IDs such as `[S4]` refer to the **Sources** list at the end.
 ## 0. Key findings to read first
 
 1. **Open-Meteo marine returns `null` waves at every one of these beaches with the default `cell_selection=land`.** You must pass `cell_selection=sea`. With that setting all nine beaches collapse onto only **two** MeteoFrance MFWAM cells, about 2–4 km offshore: (-33.875, 151.292) for Bondi–Clovelly and (-33.958, 151.292) for Coogee–Little Bay. ECMWF WAM with `cell_selection=sea` snaps Coogee/Maroubra/Malabar/Little Bay to (-33.989, 151.236), which sits near the Botany Bay entrance, so avoid it. **Per-beach differences therefore have to come from the orientation and shelter rules below, not from the model.** [S30 own API test, S29]
-2. **Beachwatch has an undocumented public JSON/GeoJSON API**: `https://api.beachwatch.nsw.gov.au/public/sites/geojson` (246 sites; per-site `pollutionForecast` of Unlikely/Possible/Likely/Forecast not available, plus `latestResult` and `latestResultRating`). It works without a key (tested 2026-11-02). [S12]
+2. **Beachwatch has a public GeoJSON API** (documented on its Data feeds page, no key, CC BY 4.0, 24 requests a minute; the forecast updates at 6am and 1:30pm, and during the day if conditions change): `https://api.beachwatch.nsw.gov.au/public/sites/geojson` (246 sites; per-site `pollutionForecast` of Unlikely/Possible/Likely/Forecast not available, plus `latestResult` and `latestResultRating`). It works without a key (tested 2026-11-02). [S12]
 3. Beachwatch rates **Gordons Bay as more rain-sensitive than Clovelly**: Gordons Bay "often after 10 mm", Clovelly "often after 20 mm". Beachwatch classes both as **ocean beaches, not enclosed waters**, so the 3-day harbour/estuary rule does not apply to them. [S10]
 4. **Coogee has been graded Poor** (2022-23 and again in 2026). Poor-grade advice is to avoid swimming **for up to 3 days after rain**, not 1 day. [S10, S54]
 
@@ -94,7 +94,7 @@ Bearings are the direction the beach faces, looking out to sea. Wind and swell d
 - **Enclosed bays vs ocean beaches**: Beachwatch classes Clovelly and Gordons Bay as **ocean beaches**, so the 1-day rule applies. Harbour and estuarine sites recover more slowly "due to lower levels of flushing". [S10] Gordons Bay is more rain-sensitive than Clovelly. [S10]
 - **Ocean pools**: Beachwatch monitors only South Maroubra Rockpool among these pools. Its advice is to avoid it for 1 day after rain. [S10] The other pools are filled by the sea next to beaches with the grades above. Treat each pool like its adjacent beach. [HEURISTIC]
 - **Beachwatch data access**:
-  - **Undocumented live API**: `GET https://api.beachwatch.nsw.gov.au/public/sites/geojson` returns a GeoJSON FeatureCollection with `siteName`, `pollutionForecast` (Unlikely/Possible/Likely/Forecast not available), `pollutionForecastTimeStamp`, `latestResult` (Good/Bad…), `latestResultRating` and `latestResultObservationDate`. Tested 2026-11-02 with no key. Undocumented, so wrap it in try/except. [S12]
+  - **Public API** (Data feeds page: no key, CC BY 4.0, limit 24 requests a minute, updated 6am and 1:30pm and when conditions change): `GET https://api.beachwatch.nsw.gov.au/public/sites/geojson` returns a GeoJSON FeatureCollection with `siteName`, `pollutionForecast` (Unlikely/Possible/Likely/Forecast not available), `pollutionForecastTimeStamp`, `latestResult` (Good/Bad…), `latestResultRating` and `latestResultObservationDate`. Tested 2026-11-02 with no key. Undocumented, so wrap it in try/except. [S12]
   - Official open data on CKAN: `https://data.nsw.gov.au/data/dataset/beachwatch` (CC-BY 3.0; datastore_search API, location resource id `52f93d20-45dd-4202-9992-536428cf7de3`) plus RSS pollution-forecast feeds per region. [S13]
   - Unofficial Python wrapper: PyPI `beachwatch` (github.com/ben-n93/beachwatch). [S13]
   - Forecasts are rainfall-driven (Unlikely / Possible / Likely). [S60]
@@ -346,7 +346,7 @@ Spots, rules and conditions research: research/spearfishing-spots.md, research/s
 7. **Beach grades change yearly.** Coogee is Poor in 2022-23 and 2026. Malabar was Poor in 2022-23 and had improved by 2026 [S10, S54]. Prefer the live API over hard-coded grades.
 8. **Gordons Bay shelter**: one source says the bay stays calm "even when the open coast is rough" [S45b]; another says it is "quite exposed" [S44]. The rules use the cautious view.
 9. **Mahon Pool exposure**: one reviewer says "open to the south-westerly swell" [S43]. SW swell does not reach this east-facing coast, so this is likely a mistake for S/SE swell.
-10. **Not found**: cleaning days for Giles and Mahon; Bondi Icebergs fee and hours; an official Beachwatch API spec; an official free Fort Denison tide API; Beachsafe API terms (the `/api/v4/beach/{slug}` endpoint used here is undocumented).
+10. **Not found**: cleaning days for Giles and Mahon; Bondi Icebergs fee and hours; an official free Fort Denison tide API; Beachsafe API terms (the `/api/v4/beach/{slug}` endpoint used here is undocumented).
 
 ---
 
@@ -364,7 +364,7 @@ Spots, rules and conditions research: research/spearfishing-spots.md, research/s
 - **S9** Beachsafe, Little Bay 1 & 2: https://beachsafe.org.au/beach/nsw/randwick/little-bay/little-bay-2-2
 - **S10** NSW Beachwatch, State of the Beaches 2022–23, Sydney region (per-beach rain thresholds, grades, patrol notes, grade definitions): https://www.environment.nsw.gov.au/sites/default/files/state-of-the-beaches-2022-23-sydney-region-230279.pdf
 - **S11** NSW Beachwatch, State of the Beaches 2023–24 statewide summary: https://www.environment.nsw.gov.au/sites/default/files/state-of-the-beaches-2023-24-statewide-summary-240249.pdf
-- **S12** Beachwatch public API (undocumented; tested 2026-11-02): https://api.beachwatch.nsw.gov.au/public/sites/geojson
+- **S12** Beachwatch public API: https://api.beachwatch.nsw.gov.au/public/sites/geojson ; terms and schedule https://www.beachwatch.nsw.gov.au/waterMonitoring/beachwatchDataFeeds ; guide https://www.beachwatch.nsw.gov.au/assets/documents/public-api-documentation.pdf (checked 2026-11-15)
 - **S13** Data.NSW Beachwatch dataset (CKAN API, RSS): https://data.nsw.gov.au/data/dataset/beachwatch ; https://data.gov.au/data/dataset/nsw-beachwatch ; wrapper https://pypi.org/project/beachwatch , https://github.com/ben-n93/beachwatch
 - **S14** Swellnet, "South facing vs north facing: what is your beach?": https://swellnet.com/news/swellnet-analysis/2013/10/25/south-facing-vs-north-facing-what-your-beach
 - **S15** Swellnet forecaster notes, 25 Jun 2014 (Bondi "south swell magnet" 3 ft vs Maroubra 1.5 ft): https://swellnet.com/reports/forecaster-notes/sydney-hunter-illawarra/2014/06/25/continuing-flukey-south-swells-and-gusty
