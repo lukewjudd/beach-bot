@@ -137,6 +137,8 @@ def export_scores(sessions, hours, ctx, beachwatch, now, posted=None, sun=None, 
                 "start": sess.start.isoformat(),
                 "end": sess.end.isoformat(),
                 "started": sess.start <= now,
+                # Called with Beachwatch's forecast for its day (only today's exists, from about 6am): R-R1a
+                "beachwatch": sess.day == now.date() and len(beachwatch) > 0,
                 # Worth it on the site at 8/10; the calendar holds out for 9 (in_event says if it has one)
                 "posted": bool(sess.is_good),
                 "in_event": sess.key in posted if posted is not None else bool(sess.for_calendar),
@@ -436,6 +438,11 @@ def keep_this_week(data, previous, now):
     for old in previous.get("sessions", []):
         if old["date"] < monday or old["start"] > now.isoformat():
             continue  # last week's, or hasn't started yet (the fresh call wins)
+        new = fresh.get(old["key"])
+        if new and old["date"] == now.date().isoformat() and not old.get("beachwatch") and new.get("beachwatch"):
+            # Frozen before Beachwatch's forecast was out (the morning, every day): called again, once, with it (R-R1a)
+            fresh[old["key"]] = {**new, "started": True, "frozen": True}
+            continue
         # Started: freeze the call as it stood, whether this run recalculated it or the forecast has moved on
         fresh[old["key"]] = {**old, "started": True, "frozen": True}
     data["sessions"] = sorted(fresh.values(), key=lambda s: s["start"])

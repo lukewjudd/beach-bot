@@ -240,7 +240,8 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
   - Days a year at 8+ over the archive: Diamonds 5.4, Voodoo 2.1, Diggers Rights 0.2, Turimetta 6.6, Little Avalon 5.6, the Wedge 3.1, Bungan 5.0, Bilgola 7.4, Whale Beach 8.7.
 
 ### 4.4 Rain / water-quality rules
-- R-R1 IF the Beachwatch API `pollutionForecast` for the site = "Likely" → NO. = "Possible" → −30. [S12, S60]
+- R-R1 IF the Beachwatch API `pollutionForecast` for the site = "Likely" → NO. = "Possible" → −10. Beachwatch calls "Possible" "usually suitable for swimming", with caution for young children, the elderly and people with some health conditions (its advice: consider waiting), so it's a nudge between two otherwise equal beaches, not a ruling (was −30 until 2026-11-15, more than heavy rain). [S12, S60]
+- R-R1a Beachwatch's forecast comes out around 6am, after the morning session has started and its call has frozen. A session that started today and was called without that forecast is called again, once, on the first run that has it, and that call is the one kept. [S12]
 - R-R2 Fallback when the API fails, using the per-site thresholds in §3.1 [S10]:
   - IF rain24 ≥ "often" threshold → NO.
   - IF rain24 ≥ "occasionally" threshold → −25.

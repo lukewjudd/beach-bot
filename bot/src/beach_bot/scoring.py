@@ -223,7 +223,7 @@ def water_quality(b: Beach, t: str, ctx: Context, beachwatch: dict, today: date,
         return None
     if bw == "Possible":
         notes.append("pollution possible")
-        return -30
+        return -10  # "usually suitable for swimming", caution for the young, old or unwell: a nudge, not a ruling
     if bw == "Unlikely":
         return 0
     s = 0

@@ -187,6 +187,32 @@ def test_started_sessions_keep_their_last_call_until_the_week_is_out():
     assert keys["beach20261104pm"]["lead"]["rating"] == 3  # started an hour ago: the call it had, not a rescore
 
 
+def test_a_morning_frozen_before_beachwatch_is_called_again_once_with_it():
+    from datetime import datetime
+
+    from beach_bot.config import TZ
+    from beach_bot.export import keep_this_week
+
+    def run(now, old_am, new_am, day="2026-11-15"):
+        base = {"key": f"beach{day.replace('-', '')}am", "date": day, "start": f"{day}T05:48:00+11:00"}
+        out = keep_this_week({"sessions": [{**base, **new_am}]}, {"sessions": [{**base, **old_am}]}, now)
+        return out["sessions"][0]
+
+    at_8 = datetime(2026, 11, 15, 8, 15, tzinfo=TZ)
+    # Frozen at 5am on the rain rules; Beachwatch is out by 8: the 8am call, with it, is kept
+    am = run(at_8, {"lead": {"rating": 6}, "beachwatch": False}, {"lead": {"rating": 3}, "beachwatch": True})
+    assert am["lead"]["rating"] == 3 and am["frozen"]
+    # From then on it's frozen as usual
+    am = run(at_8, {"lead": {"rating": 3}, "beachwatch": True}, {"lead": {"rating": 7}, "beachwatch": True})
+    assert am["lead"]["rating"] == 3
+    # Beachwatch down all morning: the 5am call stands
+    am = run(at_8, {"lead": {"rating": 6}, "beachwatch": False}, {"lead": {"rating": 2}, "beachwatch": False})
+    assert am["lead"]["rating"] == 6
+    # Yesterday's sessions aren't touched
+    am = run(at_8, {"lead": {"rating": 6}}, {"lead": {"rating": 2}, "beachwatch": True}, day="2026-11-14")
+    assert am["lead"]["rating"] == 6
+
+
 def test_harbour_beaches_never_lead_or_make_a_session_worth_it():
     # A big swell rules the ocean beaches out; the harbour stays calm but must not post on its own
     def big_swell(t, h):
