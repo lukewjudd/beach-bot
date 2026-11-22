@@ -109,7 +109,7 @@ def swim_parts(b: Beach, t: str, h: dict, ctx: Context, beachwatch: dict, today:
     calm = 15 if hb < 0.5 else -20 if hb > 0.8 else 0
     if b.name == "Clovelly" and hs > 2.5 and sector in ("E", "SE"):  # R-S3
         calm, nogo = None, nogo or "too much swell in the inlet"
-    elif b.name == "Gordons Bay" and hs > 1.2 and sector in ("NE", "E", "SE"):  # R-S5
+    elif hb > b.swim_limit and b.name == "Gordons Bay":  # R-S5: the council's "waves in the bay"
         calm, nogo = None, nogo or "waves in the bay"
     elif hb > b.swim_limit:
         calm, nogo = None, nogo or f"~{hb:.1f}m at the beach"

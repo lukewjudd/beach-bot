@@ -2,6 +2,10 @@
 
 What changed and why, newest first. Dates are Sydney time.
 
+## 2026-11-23
+
+- **Gordons Bay goes on the waves in the bay, not the swell outside.** It was ruled out ("waves in the bay") whenever the open sea was over 1.2m from NE to SE, whatever the period. On 23 Nov that took it out all day for 1.2–1.3m of ENE wind swell at 7 seconds, while the cam showed the middle of the bay calm, with only surge on the rocks at the edges. It now uses the bot's own estimate of the waves inside the bay, which allows for each swell's direction and period, against Gordons' 0.6m limit. On 23 Nov that's 0.6m at dawn and under it from mid-morning. Rule R-S5.
+
 ## 2026-11-15
 
 - **Beachwatch credited under its licence.** Its forecast feed turns out to be documented (the Data feeds page): open, no key, CC BY 4.0, 24 requests a minute, updated at 6am and 1:30pm. The bot was already using it as documented, with one request per region an hour. The About page now gives the licence, and the notes no longer call the feed undocumented.

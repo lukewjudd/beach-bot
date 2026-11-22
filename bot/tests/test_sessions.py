@@ -380,3 +380,23 @@ def test_storms_after_the_best_hours_show_on_the_strip_and_as_a_warning():
     assert clovelly["hourly"][0] >= 80 and clovelly["hourly"][2] is None
     assert clovelly["why"]["2"] == "storms ⚡"
     assert clovelly["later"] == "⚡ storms from 4pm"
+
+
+def test_gordons_bay_goes_on_the_waves_in_the_bay_not_the_swell_outside():
+    from beach_bot.scoring import score_swim_hour
+
+    gordons = next(b for b in BEACHES if b.name == "Gordons Bay")
+    t = f"{WED.isoformat()}T11:00"
+
+    def at(**sea):
+        hours, _ = make_forecast(WED, lambda _, h: {**h, **sea})
+        return score_swim_hour(gordons, t, hours[t], Context(hours), {}, WED)
+
+    # 23 Nov: 1.25m ENE wind swell at 7s, the middle of the bay calm on the cam. It used to be out on the 1.2m alone
+    sea = dict(secondary_swell_wave_height=0.22, secondary_swell_wave_direction=159, secondary_swell_wave_period=11.7)
+    sea |= dict(wind_wave_height=0.12, wind_wave_direction=298, wind_wave_period=1.7)
+    sc, notes = at(wave_height=1.25, swell_wave_height=1.22, swell_wave_direction=65, swell_wave_period=7.3, **sea)
+    assert sc is not None, notes
+    # A proper ENE swell still fills the bay
+    sc, notes = at(wave_height=2.2, swell_wave_height=2.1, swell_wave_direction=70, swell_wave_period=10, **sea)
+    assert sc is None and notes == ["waves in the bay"]

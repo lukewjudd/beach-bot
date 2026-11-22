@@ -193,7 +193,7 @@ Effective height at the beach is `Hb = Hs × k(beach, swell_sector)`. Swell sect
 - R-S2 Tamarama: one step stricter (NO at Hb > 0.9 m). [Hazard 8; highest rescue rate, S2]
 - R-S3 Clovelly swim: NO only when **Hs > 2.5 m from SE/E** (inside-bay Hb > ~0.8). Randwick lifeguards logged Clovelly as "rough" at a 2 m report. [S52] Beachsafe calls it the quietest patrolled beach [S4].
 - R-S4 Snorkel at Clovelly: Hs < 1.0 m → +25; 1.0–1.5 → 0; 1.5–2.0 → −25; >2.0 → NO. [HEURISTIC; S46 says visibility holds with surge; S52 says rough at 2 m]
-- R-S5 Snorkel at Gordons Bay: stricter. Hs < 0.8 m AND swell not from E/NE → +25; Hs 0.8–1.2 → −10; Hs > 1.2 m from NE/E/SE → NO. [HEURISTIC; "do not enter the water if there are waves in the bay", S44]
+- R-S5 Gordons Bay: NO when the modelled wave height in the bay (Hb, from each swell train's direction and period) is over its swim limit, 0.6 m, shown as "waves in the bay". [HEURISTIC; "do not enter the water if there are waves in the bay", S44] Until 2026-11-23 it was NO whenever the offshore Hs was over 1.2 m from NE/E/SE, whatever the period; on 23 Nov that ruled the bay out all day for 1.2–1.3 m ENE wind swell at 7 s, while the cam showed the middle of the bay calm with only surge on the rocks at the edges, and Hb was 0.5–0.6 m.
 - R-S6 Little Bay snorkel: Hs < 1.0 → +15; > 1.8 → NO ("higher waves break at the bay entrance", S9). [HEURISTIC]
 - R-S7 Any location: IF swell_period ≥ 12 s → multiply Hb by 1.3. Long-period groundswell wraps into bays and adds surge. [HEURISTIC; the NSW hazardous-surf warnings use height **and** period, S64]
 
